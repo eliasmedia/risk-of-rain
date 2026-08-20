@@ -251,6 +251,23 @@ Lokal mit Server testen:
 python3 -m http.server 8792
 ```
 
+### Auf eliasmedia.at
+
+Das Spiel liegt dort als eigener Ordner `risk-of-rain/` neben `pokemon/` und
+`minecraft/` und ist unter **eliasmedia.at/risk-of-rain** erreichbar. Der einzige
+Unterschied zum Projektordner: der Einstieg heißt dort `index.html` statt
+`risk-of-rain.html`, damit die Adresse ohne Dateinamen funktioniert.
+
+Abgleich mit einem Befehl:
+
+```bash
+./deploy.sh --push
+```
+
+Das kopiert `game/` und den Einstieg ins Website-Repo, committet und lädt hoch.
+Ohne `--push` wird nur kopiert. Liegt das Website-Repo woanders, hilft
+`ROR_WEB=/pfad/zum/repo ./deploy.sh`.
+
 ---
 
 ## Was Stufe 5 gebracht hat

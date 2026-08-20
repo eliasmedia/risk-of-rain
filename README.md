@@ -8,16 +8,16 @@ Build-Schritt, keine Internetverbindung, keine einzige Bild- oder Tondatei.
 
 ## Aktueller Stand
 
-**Stufe 2 abgeschlossen** — Welt, Kamera, Bewegung, Kampf.
+**Stufe 3 abgeschlossen** — Welt, Bewegung, Kampf, Gegner, Schwierigkeitskurve.
 
 | Stufe | Inhalt | Status |
 |---|---|---|
 | 1 | Gerüst, prozedurale Stage, Third-Person-Kamera, Bewegung, Fallschaden | ✅ fertig |
 | 2 | Kampf: Werte, Schadenspipeline mit Proc-Coefficient, Commando mit vier Skills | ✅ fertig |
-| 3 | 14 Gegner, Combat Director mit Credit-System, Schwierigkeitskoeffizient | offen |
+| 3 | 14 Gegner, Combat Director mit Credit-System, Schwierigkeitskoeffizient | ✅ fertig |
 | 4 | ~65 Items mit Stapelverhalten, Kisten, Schreine, 3D-Drucker | offen |
 | 5 | Teleporter-Event, fünf Bosse, fünf Stages, Loop | offen |
-| 6 | Huntress, Engineer, MUL-T, Artificer, Mercenary | offen |
+| 6 | Huntress, Engineer, MUL-T, Artificer, Mercenary **+ Charakterdesign aufwerten** | offen |
 | 7 | Elite-Affixe, Ausrüstung, Drohnen, Bazaar, Mithrix | offen |
 | 8 | Menüs, Freischaltungen, Logbuch, Spielstand | offen |
 | 9 | Prozedurale Musik, Partikel, Trefferfeedback | offen |
@@ -42,7 +42,9 @@ an — darum tut **`M`** dasselbe und funktioniert überall. Ohne Zeigerfang lä
 sich die Kamera auch mit gedrückter linker Maustaste ziehen; das ist der
 Rückfallweg, wenn der Browser den Zeigerfang verweigert.
 
-`?seed=12345` in der Adresszeile erzeugt reproduzierbar dieselbe Welt.
+In der Adresszeile: `?seed=12345` erzeugt reproduzierbar dieselbe Welt,
+`?schwer=drizzle|rainstorm|monsoon` wählt den Schwierigkeitsgrad, `?dummies=1`
+stellt die drei Trainingspuppen auf.
 
 ---
 
@@ -79,13 +81,16 @@ game/
     camera.js              Verfolgerkamera mit Sichtstrahl gegen Hindernisse
     engine.js              Renderer, Szene, Hauptschleife mit festem Takt
   sim/
+    difficulty.js          Der Koeffizient, an dem alles hängt
     stats.js               Grundwerte + Stufe + Items + Buffs → Endwerte
     buffs.js               Zeitlich begrenzte Zustände, Schaden über Zeit
     body.js                Alles, was Schaden nehmen kann; Trefferkapsel, Strahlen
     damage.js              Schadenspipeline: Abfall, Krit, Rüstung, Proc-Kette
+    director.js            Credits, Spawnkarten, Wellen, „zu billig"-Regel
   data/
     stages.js              Stage-Themen: Gelände, Farben, Bewuchs (reine Daten)
     survivors.js           Figuren: Grundwerte, Aussehen, vier Fähigkeiten
+    monsters.js            14 Gegner: Werte, Director-Kosten, Bauart, Verhalten
   world/
     terrain.js             Höhenfunktion, Geometrie, Vertexfarben, Abfragen
     props.js               Felsen, Bäume, Monolithen, schwebende Plattformen
@@ -93,6 +98,7 @@ game/
   entities/
     projectile.js          Vorrat an Spuren, Funken und fliegenden Geschossen
     player.js              Figur, Bewegung, Zielen, Ablauf der Fähigkeiten
+    monster.js             Sechs Modell-Bauarten und die Gegner-Zustandsmaschine
     dummy.js               Trainingspuppen mit 0, 20 und 100 Rüstung
   ui/
     style.css              Oberfläche
@@ -134,6 +140,15 @@ Kugeln achtmal so oft auslösen wie ein einzelner Schuss — und Ukulele, AtG un
 Gasoline wären in Stufe 4 nicht mehr auszubalancieren. Nachrüsten ginge nicht,
 ohne jede Fähigkeit noch einmal anzufassen.
 
+**Eine Zahl treibt die ganze Kurve.** Der Schwierigkeitskoeffizient wächst mit
+der Zeit und springt bei jeder abgeschlossenen Stage. Aus ihm folgen Gegnerstufe,
+die Credits des Directors, Erfahrung, Gold *und* die Preise der Kisten. Es gibt
+keine Wellentabelle: dass aus einzelnen Käfern erst Rudel und dann Minibosse
+werden, ist eine Folge davon, dass der Director mehr Credits bekommt und sie
+möglichst vollständig ausgibt. Die „zu billig"-Regel — mehr als das Sechsfache
+des gewählten Gegners auf dem Konto heißt neu würfeln — ist das Scharnier, an
+dem er vom Sparen ins Klotzen kippt.
+
 **Fadenkreuz und Einschlag sind dieselbe Richtung.** Die Kamera bekommt ihre
 Ausrichtung direkt aus Gier und Nick, nicht über `lookAt` auf die Figur. Sonst
 laufen beide auseinander: die Kamera steht seitlich versetzt, und der Schuss
@@ -163,6 +178,12 @@ Fähigkeit ist ein Objekt mit `mode` (`auto`, `press` oder `stance`) und einer
 `ROR.Projectiles`, nicht als absolute Zahl — dadurch skaliert alles von selbst
 mit Stufe und Items.
 
+**Neuen Gegner** — Eintrag in `game/data/monsters.js`: Werte, `cost` (die
+Director-Credits, aus denen auch Erfahrung und Gold folgen), eine der sechs
+`shape`-Bauarten und ein `ai`-Profil (`melee`, `ranged`, `charger`, `suicide`,
+`turret`). Geometrie muss keine geschrieben werden. `stages` steuert, auf
+welchen Stages er im Deck landen kann.
+
 **Neuen Buff** — Eintrag in `DEFS` in `game/sim/buffs.js`. `modify(body, out)`
 verändert Werte, `dot` teilt regelmäßig Schaden aus. Dass Buffs überhaupt auf
 Werte wirken, weiß `stats.js` nicht — `buffs.js` meldet sich über
@@ -185,6 +206,32 @@ python3 -m http.server 8792
 ```
 
 ---
+
+## Was Stufe 3 gebracht hat
+
+Die Kurve läuft. Der Director sammelt Credits, gibt sie aus, und aus dieser
+einen Mechanik entsteht die ganze Eskalation — nachgemessen über dreißig
+simulierte Minuten:
+
+| Zeit / Stages | coeff | Gegnerstufe | Anzeige | Was gespawnt wurde |
+|---|---|---|---|---|
+| 1 min / 0 | 1.1 | 1 | Easy | nur Beetles |
+| 10 min / 1 | 2.3 | 5 | Easy | Beetle, Lemurian, Bison, Blind Pest |
+| 15 min / 2 | 3.3 | 8 | Normal | dazu Stone Golem |
+| 25 min / 4 | 6.2 | 17 | Very Hard | dazu Beetle Guard (Miniboss) |
+| 30 min / 5 | 8.1 | 23 | Very Hard | Rudel aus Beetles und Guards |
+
+Weitere Messungen: der Koeffizient stimmt für alle drei Schwierigkeitsgrade und
+für 1 bis 4 Spieler mit der Formel überein; Gegnerwerte auf Stufe 5 treffen
++30 % Leben und +20 % Schaden je Stufe exakt (Beetle 176 / 21.6); Erfahrung und
+Gold folgen `coeff × wert × 0.2` bzw. dem Doppelten; Kisten kosten auf Stage 1
+genau 25 und nach 15 Minuten und drei Stages 134. Ein simulierter Durchlauf über
+90 Sekunden: 23 Kills, 180 erlittener Schaden, Tiefstand bei 24 von 143 Leben,
+79 Gold — knapp, aber überlebbar.
+
+Die Trainingspuppen aus Stufe 2 sind jetzt ein Prüfwerkzeug und stehen nur noch
+auf Anforderung da: `risk-of-rain.html?dummies=1`. Ebenso lässt sich mit
+`?schwer=monsoon` der Schwierigkeitsgrad wählen.
 
 ## Was Stufe 2 gebracht hat
 

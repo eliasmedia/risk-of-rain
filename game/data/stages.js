@@ -47,7 +47,8 @@
         sun: 0xffe6bc, sunIntensity: 2.5,
         // Three rechnet seit r155 mit physikalischen Einheiten: unter 1.5
         // Umgebungslicht wird jede sonnenabgewandte Fläche fast schwarz.
-        ambientSky: 0xc0d2dc, ambientGround: 0x5d5c3c, ambientIntensity: 1.85,
+        ambientSky: 0xc0d2dc, ambientGround: 0x6d6a48, ambientIntensity: 1.9,
+        fillIntensity: 0.6,
         grass: 0x77913f, grassDark: 0x415725,
         rock: 0x9e937b, rockDark: 0x5a5245,
         dirt: 0x7f6d4c,

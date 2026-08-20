@@ -105,6 +105,82 @@ html, body {
   font-variant-numeric: tabular-nums; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
 }
 
+/* --------------------------------------------------- Schwierigkeitsbalken */
+
+/* Dieselbe Zahl, die der Director und die Preise sehen. Die Farbe wandert mit
+   der Stufe von Grün nach Rot — man soll erkennen können, wie spät es ist,
+   ohne den Namen zu lesen. */
+#diffwrap {
+  position: absolute; top: 44px; left: 50%; transform: translateX(-50%);
+  width: 250px; text-align: center;
+}
+#diffbar {
+  position: relative; height: 7px;
+  background: rgba(8, 14, 20, 0.66); border: 1px solid var(--edge);
+  overflow: hidden;
+}
+#difffill {
+  position: absolute; inset: 0 auto 0 0; width: 0;
+  background: #74d36a; transition: width 0.3s linear, background-color 0.6s;
+}
+#diffbar[data-tier="1"] #difffill { background: #b9d152; }
+#diffbar[data-tier="2"] #difffill { background: #e0c14a; }
+#diffbar[data-tier="3"] #difffill { background: #e39b3f; }
+#diffbar[data-tier="4"] #difffill { background: #e0703c; }
+#diffbar[data-tier="5"] #difffill { background: #d9463c; }
+#diffbar[data-tier="6"] #difffill,
+#diffbar[data-tier="7"] #difffill,
+#diffbar[data-tier="8"] #difffill { background: #b8243f; box-shadow: 0 0 10px #ff4a5a; }
+#diffname {
+  margin-top: 4px; font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--ink-dim); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+}
+#diffbar[data-tier="6"] ~ #diffname,
+#diffbar[data-tier="7"] ~ #diffname,
+#diffbar[data-tier="8"] ~ #diffname { color: #ff8a92; }
+
+/* ------------------------------------------------------------ Ziel-Anzeige */
+
+#target {
+  position: absolute; left: 0; top: 0; opacity: 0;
+  transform: translate(-999px, -999px);
+  min-width: 130px; padding: 3px 7px 5px;
+  background: rgba(8, 14, 20, 0.6); border: 1px solid var(--edge);
+  transition: opacity 0.18s; text-align: center;
+  will-change: transform, opacity;
+}
+#targetname {
+  display: block; font-size: 10px; letter-spacing: 0.1em;
+  color: var(--ink); text-shadow: 0 1px 2px #000; margin-bottom: 3px;
+}
+#targetbar { position: relative; height: 5px; background: rgba(0, 0, 0, 0.55); }
+#targetfill { position: absolute; inset: 0 auto 0 0; width: 100%; background: #e2624f; }
+
+/* ------------------------------------------------------------ Einblendung */
+
+#toast {
+  position: absolute; left: 50%; top: 30%; transform: translate(-50%, -50%) scale(0.9);
+  font: 800 26px/1.2 system-ui, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: 0.14em; color: var(--gold);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
+  opacity: 0; transition: opacity 0.25s, transform 0.25s; pointer-events: none;
+}
+#toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+/* ----------------------------------------------------------------- Tod */
+
+#dead {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 14px;
+  background: rgba(40, 6, 6, 0.55); backdrop-filter: blur(2px);
+}
+#dead.hidden { display: none; }
+#dead b {
+  font: 800 42px/1 system-ui, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: 0.2em; color: #ff6b5c; text-shadow: 0 3px 14px rgba(0, 0, 0, 0.9);
+}
+#dead span { color: var(--ink-dim); letter-spacing: 0.1em; }
+
 /* ------------------------------------------------------------ Fadenkreuz */
 
 #crosshair {
@@ -178,6 +254,8 @@ html, body {
   #timer { font-size: 17px; }
   #stagename { display: none; }
   #gold { top: 12px; right: 12px; font-size: 16px; }
+  #diffwrap { top: 34px; width: 170px; }
+  #dead b { font-size: 28px; }
   .dmg { font-size: 15px; }
   .dmg.crit { font-size: 20px; }
 }

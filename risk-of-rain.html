@@ -18,6 +18,16 @@
   </div>
   <div id="gold">$0</div>
 
+  <div id="diffwrap">
+    <div id="diffbar" data-tier="0"><i id="difffill"></i></div>
+    <div id="diffname">Easy</div>
+  </div>
+
+  <div id="target">
+    <span id="targetname"></span>
+    <div id="targetbar"><i id="targetfill"></i></div>
+  </div>
+
   <div id="crosshair"><i></i><i></i><i></i><i></i></div>
 
   <div id="vitals">
@@ -33,6 +43,11 @@
   <div id="skills"></div>
 
   <div id="numbers"></div>
+  <div id="toast"></div>
+  <div id="dead" class="hidden">
+    <b>GESTORBEN</b>
+    <span>Enter drücken für einen neuen Versuch</span>
+  </div>
   <div id="vignette"></div>
   <pre id="debug" class="hidden"></pre>
 
@@ -52,18 +67,22 @@
 <script src="game/core/input.js"></script>
 <script src="game/core/engine.js"></script>
 <script src="game/core/camera.js"></script>
+<script src="game/sim/difficulty.js"></script>
 <script src="game/sim/stats.js"></script>
 <script src="game/sim/buffs.js"></script>
 <script src="game/sim/body.js"></script>
 <script src="game/sim/damage.js"></script>
 <script src="game/data/stages.js"></script>
 <script src="game/data/survivors.js"></script>
+<script src="game/data/monsters.js"></script>
 <script src="game/world/terrain.js"></script>
 <script src="game/world/props.js"></script>
 <script src="game/world/stage.js"></script>
 <script src="game/entities/projectile.js"></script>
 <script src="game/entities/player.js"></script>
+<script src="game/entities/monster.js"></script>
 <script src="game/entities/dummy.js"></script>
+<script src="game/sim/director.js"></script>
 <script src="game/ui/hud.js"></script>
 <script src="game/main.js"></script>
 

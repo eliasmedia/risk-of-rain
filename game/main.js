@@ -3,12 +3,14 @@
    passiert — und sonst möglichst wenig.
 
    Reihenfolge der Aktualisierer (kleinere Zahl läuft früher):
-     -10 Eingabe einlesen      0 Spieler        10 Gegner
-      20 Geschosse            30 Bodies        100 Eingabeflanken verwerfen
+     -10 Eingabe    -5 Schwierigkeit    0 Spieler    5 Director
+      10 Gegner     20 Geschosse       30 Bodies   100 Eingabeflanken verwerfen
 
-   Die Geschosse laufen *nach* dem Spieler, damit ein in diesem Schritt
-   abgefeuerter Schuss auch in diesem Schritt fliegt; die Bodies laufen zuletzt,
-   damit Regeneration und Bufflaufzeit den bereits verrechneten Schaden sehen. */
+   Die Schwierigkeit läuft ganz vorn, damit der Director im selben Schritt mit
+   dem aktuellen Koeffizienten rechnet. Die Geschosse laufen *nach* Spieler und
+   Gegnern, damit ein in diesem Schritt abgefeuerter Schuss auch in diesem
+   Schritt fliegt; die Bodies laufen zuletzt, damit Regeneration und
+   Bufflaufzeit den bereits verrechneten Schaden sehen. */
 (function (ROR) {
   'use strict';
 
@@ -26,11 +28,23 @@
       return (Math.random() * 4294967296) >>> 0;
     },
 
+    /* Trainingspuppen sind ein Prüfwerkzeug, kein Spielinhalt — sie stehen
+       nur da, wenn man sie über `?dummies=1` anfordert. */
+    wantsDummies() { return /[?&]dummies=1/.test(location.search); },
+
+    difficultyFromUrl() {
+      const m = /[?&]schwer=(drizzle|rainstorm|monsoon)/.exec(location.search);
+      return m ? m[1] : 'rainstorm';
+    },
+
     newRun(seed) {
       Game.seed = seed === undefined ? Game.readSeed() : seed >>> 0;
+      Game.over = false;
 
-      ROR.Body.clear();
+      ROR.Monsters.clear();
       ROR.Dummy.clear();
+      ROR.Body.clear();
+      ROR.Difficulty.reset(Game.difficultyFromUrl());
 
       const theme = ROR.Data.stageByOrder(1)[0];
       Game.stage = ROR.Stage.load(theme, Game.seed);
@@ -39,15 +53,20 @@
       const def = ROR.Data.survivor('commando');
       const spawn = Game.stage.spawn;
       Game.player = ROR.Player.create(def, { x: spawn.x, y: spawn.y + 0.5, z: spawn.z });
+      Game.player.onLevelUp = function (lvl) { ROR.HUD.toast('Stufe ' + lvl); };
+      Game.player.onDeath = function () { endRun(); };
       ROR.HUD.buildSkills(def);
+      ROR.HUD.setDead(false);
 
-      ROR.Dummy.placeNear(Game.stage, spawn);
+      if (Game.wantsDummies()) ROR.Dummy.placeNear(Game.stage, spawn);
+      ROR.Director.beginStage(theme.order, Game.seed);
 
       ROR.Camera.init(Game.player);
       ROR.Camera.yaw = Math.atan2(-spawn.x, -spawn.z);   // zur Inselmitte schauen
 
       ROR.Engine.time = 0;
-      console.log('[ROR] Stage »' + theme.name + '«, Seed ' + Game.seed);
+      console.log('[ROR] Stage »' + theme.name + '«, Seed ' + Game.seed
+                + ', ' + ROR.Difficulty.mode.name);
     },
 
     boot() {
@@ -70,10 +89,14 @@
         ROR.Input.beginFrame();
         if (ROR.Input.pressed('debug')) ROR.HUD.toggleDebug();
         if (ROR.Input.pressed('pause')) togglePause();
+        if (Game.over && ROR.Input.key('Enter')) Game.newRun();
       }, -10);
 
+      ROR.Engine.onUpdate(function (dt) { if (!Game.over) ROR.Difficulty.update(dt); }, -5);
       ROR.Engine.onUpdate(function (dt) { Game.player.update(dt); }, 0);
-      ROR.Engine.onUpdate(function (dt) { ROR.Dummy.update(dt); }, 10);
+      ROR.Engine.onUpdate(function (dt) { ROR.Director.update(dt); }, 5);
+      ROR.Engine.onUpdate(function (dt) { ROR.Monsters.update(dt); }, 10);
+      ROR.Engine.onUpdate(function (dt) { ROR.Dummy.update(dt); }, 12);
       ROR.Engine.onUpdate(function (dt) { ROR.Projectiles.update(dt); }, 20);
       ROR.Engine.onUpdate(function (dt) { ROR.Body.updateAll(dt); }, 30);
 
@@ -93,6 +116,14 @@
       Game.started = true;
     }
   };
+
+  function endRun() {
+    if (Game.over) return;
+    Game.over = true;
+    ROR.Director.stop();
+    ROR.Input.unlock();
+    ROR.HUD.setDead(true);
+  }
 
   function togglePause() {
     const p = !ROR.Engine.isPaused;

@@ -21,6 +21,7 @@
   const numbers = [];
   let numberNext = 0;
   const _v = new THREE.Vector3();
+  const _aim = new THREE.Vector3();
 
   function set(node, text) {
     if (last[node.id] === text) return;
@@ -39,7 +40,9 @@
     init() {
       ['hpbar', 'hpfill', 'hplag', 'hptext', 'shieldfill', 'timer', 'stagename',
        'hint', 'debug', 'vignette', 'skills', 'numbers', 'crosshair',
-       'levelout', 'survivorname', 'gold'].forEach((id) => { el[id] = document.getElementById(id); });
+       'levelout', 'survivorname', 'gold', 'diffbar', 'difffill', 'diffname',
+       'target', 'targetname', 'targetfill', 'toast', 'dead'
+      ].forEach((id) => { el[id] = document.getElementById(id); });
 
       const pool = el.numbers;
       for (let i = 0; i < NUMBER_POOL; i++) {
@@ -71,6 +74,16 @@
     },
 
     hideHint() { el.hint.classList.add('hidden'); },
+
+    /* Kurze Einblendung in der Bildmitte — Stufenaufstieg, Stageschild. */
+    toast(text, kind) {
+      el.toast.textContent = text;
+      el.toast.className = 'show ' + (kind || '');
+      clearTimeout(HUD._toastTimer);
+      HUD._toastTimer = setTimeout(function () { el.toast.className = ''; }, 1600);
+    },
+
+    setDead(on) { el.dead.classList.toggle('hidden', !on); },
     showHint() { el.hint.classList.remove('hidden'); },
 
     toggleDebug() {
@@ -112,6 +125,36 @@
       }
     },
 
+    /* ------------------------------------------------- Anzeige des Ziels */
+
+    /* Der Balken über dem Gegner unter dem Fadenkreuz. Er bleibt kurz stehen,
+       nachdem man weggezielt hat — sonst flackert er bei jeder Bewegung. */
+    updateTarget(p) {
+      const cam = ROR.Engine.camera;
+      ROR.Camera.aim(_aim);
+      const hit = ROR.Body.raycast(cam.position, _aim, 220, ROR.Body.PLAYER);
+      if (hit && hit.body.alive) { HUD._target = hit.body; HUD._targetHold = 1.4; }
+      else if (HUD._targetHold > 0) HUD._targetHold -= 1 / 60;
+
+      const t = HUD._target;
+      if (!t || !t.alive || HUD._targetHold <= 0) { el.target.style.opacity = '0'; return; }
+
+      t.center(_v);
+      _v.y += t.height * 0.62;
+      _v.project(cam);
+      if (_v.z > 1) { el.target.style.opacity = '0'; return; }
+
+      const x = (_v.x * 0.5 + 0.5) * innerWidth;
+      const y = (-_v.y * 0.5 + 0.5) * innerHeight;
+      el.target.style.transform = 'translate(' + (x | 0) + 'px,' + (y | 0) + 'px) translate(-50%,-100%)';
+      el.target.style.opacity = '1';
+      el.targetfill.style.width = (U.clamp(t.combinedFraction, 0, 1) * 100).toFixed(1) + '%';
+      set(el.targetname, t.name + '  ·  Stufe ' + t.level);
+    },
+
+    _target: null,
+    _targetHold: 0,
+
     /* ------------------------------------------------------------- Rest */
 
     update(game, dt) {
@@ -148,6 +191,14 @@
       el.vignette.style.opacity = p.hurtFlash ? String(U.clamp(p.hurtFlash * 2.6, 0, 0.85)) : '0';
       el.crosshair.classList.toggle('firing', p._aimTimer > 0);
 
+      /* Schwierigkeitsbalken: derselbe Wert, den auch der Director und die
+         Preise sehen — nur eben sichtbar. */
+      const D = ROR.Difficulty;
+      el.difffill.style.width = (D.tierProgress * 100).toFixed(1) + '%';
+      set(el.diffname, D.tierName);
+      el.diffbar.dataset.tier = String(D.tierIndex);
+
+      HUD.updateTarget(p);
       HUD.updateNumbers(dt);
 
       if (HUD.debugVisible) {
@@ -162,6 +213,11 @@
           'schaden  ' + S.damage.toFixed(1) + '   tempo ' + S.attackSpeed.toFixed(2)
             + '   crit ' + S.crit.toFixed(0) + '%',
           'rüstung  ' + S.armor.toFixed(0) + '   regen ' + S.regen.toFixed(2) + '/s',
+          'coeff    ' + ROR.Difficulty.coeff.toFixed(2) + '   gegnerstufe '
+            + ROR.Difficulty.enemyLevel.toFixed(1) + '   ' + ROR.Difficulty.tierName,
+          ROR.Director.debugLine(),
+          'gold/xp  ' + Math.floor(p.gold) + ' / ' + Math.floor(p.exp)
+            + '   nächste stufe bei ' + Math.floor(ROR.Stats.expForLevel(b.level + 1)),
           'bodies   ' + ROR.Body.all.length + '   buffs ' + b.buffs.length,
           'seed     ' + (game.stage ? game.stage.seed : '-')
         ].join('\n'));

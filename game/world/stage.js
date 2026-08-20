@@ -98,7 +98,14 @@
       sun.shadow.camera.top = ext; sun.shadow.camera.bottom = -ext;
       sun.shadow.bias = -0.0004;
       sun.shadow.normalBias = 0.22;   // gegen Streifen auf flachen Hängen
-      root.add(hemi, sun, sun.target);
+      /* Gegenlicht ohne Schatten. Ohne es sind alle sonnenabgewandten Flächen
+         praktisch schwarz — am deutlichsten an den Unterseiten der schwebenden
+         Plattformen, die als Löcher im Himmel standen. Es kommt flach von der
+         Gegenseite und hebt nur die Grundhelligkeit an. */
+      const fill = new THREE.DirectionalLight(P.ambientSky, P.fillIntensity || 0.55);
+      fill.position.set(-sunDir.x * 100, Math.max(12, sunDir.y * 25), -sunDir.z * 100);
+
+      root.add(hemi, sun, sun.target, fill);
 
       // Nebelfarbe = Horizontfarbe: dadurch geht das Wasser nahtlos in den
       // Himmel über und seine Kante ist nie zu sehen.

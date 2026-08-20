@@ -448,16 +448,22 @@
     if (p._dive > 0) {
       // Rolle: zusammengekauert und um die eigene Achse.
       const t = 1 - p._dive / DIVE_TIME;
-      b.hips.rotation.x = t * Math.PI * 2;
-      b.legs[0].hip.rotation.x = -1.1; b.legs[1].hip.rotation.x = -1.1;
-      b.legs[0].knee.rotation.x = 1.6; b.legs[1].knee.rotation.x = 1.6;
+      // Vorwärtsüberschlag: der Kopf muss nach -Z wandern, das ist eine
+      // *negative* Drehung um X. Mit positiver rollte die Figur rückwärts,
+      // während sie sich vorwärts bewegte.
+      b.hips.rotation.x = -t * Math.PI * 2;
+      b.legs[0].hip.rotation.x = 1.1; b.legs[1].hip.rotation.x = 1.1;
+      b.legs[0].knee.rotation.x = -1.6; b.legs[1].knee.rotation.x = -1.6;
       b.arms[0].shoulder.rotation.x = -1.3; b.arms[1].shoulder.rotation.x = -1.3;
       b.hips.position.y = 0.62;
     } else if (p.grounded) {
       b.legs[0].hip.rotation.x = swing * 0.85;
       b.legs[1].hip.rotation.x = swing2 * 0.85;
-      b.legs[0].knee.rotation.x = Math.max(0, -swing) * 0.9;
-      b.legs[1].knee.rotation.x = Math.max(0, -swing2) * 0.9;
+      // Knie beugen nach hinten: negative Drehung um X. Der Betrag ist der
+      // Rückschwung des Beins, das Vorzeichen macht daraus ein Knie und
+      // kein Storchenbein.
+      b.legs[0].knee.rotation.x = -Math.max(0, -swing) * 0.9;
+      b.legs[1].knee.rotation.x = -Math.max(0, -swing2) * 0.9;
       b.arms[0].shoulder.rotation.x = swing2 * 0.6;
       b.hips.position.y = 0.92 + Math.abs(Math.sin(p._walkPhase)) * 0.05 * stride
                         - (p._landTimer > 0 ? p._landTimer * 0.55 : 0);
@@ -466,8 +472,8 @@
       const t = U.clamp(p._airTime * 4, 0, 1);
       b.legs[0].hip.rotation.x = U.lerp(b.legs[0].hip.rotation.x, -0.5 * t, 0.25);
       b.legs[1].hip.rotation.x = U.lerp(b.legs[1].hip.rotation.x, 0.25 * t, 0.25);
-      b.legs[0].knee.rotation.x = U.lerp(b.legs[0].knee.rotation.x, 0.9 * t, 0.25);
-      b.legs[1].knee.rotation.x = U.lerp(b.legs[1].knee.rotation.x, 0.35 * t, 0.25);
+      b.legs[0].knee.rotation.x = U.lerp(b.legs[0].knee.rotation.x, -0.9 * t, 0.25);
+      b.legs[1].knee.rotation.x = U.lerp(b.legs[1].knee.rotation.x, -0.35 * t, 0.25);
       b.arms[0].shoulder.rotation.x = U.lerp(b.arms[0].shoulder.rotation.x, -0.7 * t, 0.2);
       b.hips.position.y = 0.92;
       b.hips.rotation.x = U.damp(b.hips.rotation.x, 0, 0.1, dt);
@@ -476,7 +482,9 @@
     /* Der Waffenarm hebt sich beim Zielen und wird vom Rückstoß geworfen. */
     if (p._dive <= 0) {
       const aiming = p._aimTimer > 0;
-      const want = aiming ? -1.45 - p._gunKick * 0.45 : (p.grounded ? swing * 0.45 - 0.25 : -0.45);
+      // +1.45 rad bringt den hängenden Arm auf Waagerechte nach vorn.
+      // Der Rückstoß hebt die Mündung, dreht also *weiter* in dieselbe Richtung.
+      const want = aiming ? 1.45 + p._gunKick * 0.30 : (p.grounded ? swing * 0.45 - 0.2 : -0.4);
       b.arms[1].shoulder.rotation.x = U.damp(b.arms[1].shoulder.rotation.x, want, 0.03, dt);
       b.arms[1].elbow.rotation.x = U.damp(b.arms[1].elbow.rotation.x, aiming ? 0.1 : 0, 0.05, dt);
     }

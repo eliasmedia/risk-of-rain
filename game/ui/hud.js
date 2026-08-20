@@ -41,7 +41,8 @@
       ['hpbar', 'hpfill', 'hplag', 'hptext', 'shieldfill', 'timer', 'stagename',
        'hint', 'debug', 'vignette', 'skills', 'numbers', 'crosshair',
        'levelout', 'survivorname', 'gold', 'diffbar', 'difffill', 'diffname',
-       'target', 'targetname', 'targetfill', 'toast', 'dead'
+       'target', 'targetname', 'targetfill', 'toast', 'dead',
+       'itembar', 'prompt', 'pickup', 'equipslot', 'equipsweep', 'equipname'
       ].forEach((id) => { el[id] = document.getElementById(id); });
 
       const pool = el.numbers;
@@ -84,6 +85,50 @@
     },
 
     setDead(on) { el.dead.classList.toggle('hidden', !on); },
+
+    /* Aufsammelmeldung: Name und Wirkung, damit man ein unbekanntes Item
+       nicht erst im Logbuch nachschlagen muss. */
+    itemToast(def) {
+      const c = ROR.Loot.TIER_COLOR[def.tier] || 0xffffff;
+      el.pickup.innerHTML = '<b style="color:#' + c.toString(16).padStart(6, '0') + '">'
+        + def.name + '</b><span>' + (def.desc || '') + '</span>';
+      el.pickup.className = 'show';
+      clearTimeout(HUD._pickTimer);
+      HUD._pickTimer = setTimeout(function () { el.pickup.className = ''; }, 3200);
+    },
+
+    /* Die Leiste der gesammelten Items. Wird nur neu gebaut, wenn sich das
+       Inventar wirklich geändert hat — sonst hinge das HUD an der Item-Zahl. */
+    updateItems(body) {
+      let sig = '';
+      for (const id in body.items) sig += id + body.items[id] + ',';
+      if (body.equipment) sig += '#' + body.equipment.def.id;
+      if (sig === HUD._itemSig) return;
+      HUD._itemSig = sig;
+
+      const ORDER = ['boss', 'legendary', 'uncommon', 'common', 'lunar'];
+      const gruppen = {};
+      for (const id in body.items) {
+        const def = ROR.Items.def(id);
+        if (!def) continue;
+        (gruppen[def.tier] = gruppen[def.tier] || []).push({ def: def, n: body.items[id] });
+      }
+      let html = '';
+      for (let i = 0; i < ORDER.length; i++) {
+        const g = gruppen[ORDER[i]];
+        if (!g) continue;
+        const c = '#' + (ROR.Loot.TIER_COLOR[ORDER[i]] || 0xffffff).toString(16).padStart(6, '0');
+        for (let k = 0; k < g.length; k++) {
+          html += '<i style="--c:' + c + '" title="' + g[k].def.name + ' — ' + g[k].def.desc + '">'
+                + g[k].def.name.charAt(0) + (g[k].n > 1 ? '<u>' + g[k].n + '</u>' : '') + '</i>';
+        }
+      }
+      el.itembar.innerHTML = html;
+
+      const e = body.equipment;
+      el.equipslot.classList.toggle('empty', !e);
+      set(el.equipname, e ? e.def.name : '');
+    },
     showHint() { el.hint.classList.remove('hidden'); },
 
     toggleDebug() {
@@ -199,6 +244,25 @@
       el.diffbar.dataset.tier = String(D.tierIndex);
 
       HUD.updateTarget(p);
+      HUD.updateItems(b);
+
+      /* Aufforderung am nächsten bedienbaren Objekt. */
+      const f = ROR.Interactables && ROR.Interactables.focus;
+      if (f) {
+        const pr = ROR.Interactables.prompt(f, b);
+        set(el.prompt, 'E  ·  ' + pr.text);
+        el.prompt.className = pr.ok ? 'show' : 'show poor';
+      } else {
+        el.prompt.className = '';
+      }
+
+      const e = b.equipment;
+      if (e) {
+        const pct = e.charges > 0 ? 0 : U.clamp(e.cooldown / (e.def.cooldown * (e.cdScale || 1)), 0, 1) * 100;
+        el.equipsweep.style.setProperty('--p', pct.toFixed(0) + '%');
+        el.equipslot.classList.toggle('ready', e.charges > 0);
+      }
+
       HUD.updateNumbers(dt);
 
       if (HUD.debugVisible) {
@@ -218,6 +282,8 @@
           ROR.Director.debugLine(),
           'gold/xp  ' + Math.floor(p.gold) + ' / ' + Math.floor(p.exp)
             + '   nächste stufe bei ' + Math.floor(ROR.Stats.expForLevel(b.level + 1)),
+          'items    ' + ROR.Items.total(b) + '   glück ' + ROR.Items.luck(b)
+            + '   drops ' + ROR.Loot.pending,
           'bodies   ' + ROR.Body.all.length + '   buffs ' + b.buffs.length,
           'seed     ' + (game.stage ? game.stage.seed : '-')
         ].join('\n'));

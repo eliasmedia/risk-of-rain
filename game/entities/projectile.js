@@ -117,6 +117,37 @@
       return hit;
     },
 
+    /* Nächster Gegner in Reichweite. Braucht fast jedes Item, das von selbst
+       etwas abfeuert. */
+    nearestEnemy(pos, range, team, exclude) {
+      let best = null, bd = range * range;
+      const all = ROR.Body.all;
+      for (let i = 0; i < all.length; i++) {
+        const b = all[i];
+        if (!b.alive || b.team === team || b === exclude) continue;
+        if (exclude && exclude.indexOf && exclude.indexOf(b) >= 0) continue;
+        const dx = b.position.x - pos.x, dy = b.position.y - pos.y, dz = b.position.z - pos.z;
+        const d = dx * dx + dy * dy + dz * dz;
+        if (d < bd) { bd = d; best = b; }
+      }
+      return best;
+    },
+
+    /* Mehrere verschiedene Gegner in Reichweite, nach Entfernung sortiert. */
+    enemiesInRange(pos, range, team, max) {
+      const out = [];
+      const all = ROR.Body.all;
+      for (let i = 0; i < all.length; i++) {
+        const b = all[i];
+        if (!b.alive || b.team === team) continue;
+        const dx = b.position.x - pos.x, dy = b.position.y - pos.y, dz = b.position.z - pos.z;
+        const d2 = dx * dx + dy * dy + dz * dz;
+        if (d2 <= range * range) out.push({ body: b, d2: d2 });
+      }
+      out.sort((a, b) => a.d2 - b.d2);
+      return out.slice(0, max || out.length).map((o) => o.body);
+    },
+
     tracer(origin, dir, length, color) {
       const t = tracers[tracerNext = (tracerNext + 1) % tracers.length];
       t.mesh.position.copy(origin);
@@ -156,12 +187,18 @@
       s.life = opts.life || 3;
       s.radius = opts.radius || 0.4;
       s.coefficient = opts.coefficient || 1;
+      s.flat = opts.flat;   // fester Schaden, z. B. N'kuhanas Schädel
       s.proc = opts.proc === undefined ? 1 : opts.proc;
       s.pierce = !!opts.pierce;
       // Phase Round wird mit jedem durchschlagenen Gegner stärker.
       s.pierceGrowth = opts.pierceGrowth || 0;
       s.ghost = !!opts.ghost;          // fliegt durch Gelände
       s.gravity = opts.gravity || 0;
+      /* Zielsuchende Geschosse: Raketen, Dolche, Haken, Schädel. Sie drehen
+         mit `turn` Radiant je Sekunde auf ihr Ziel zu, statt es sofort zu
+         treffen — dadurch sieht man sie fliegen und kann sie zuordnen. */
+      s.homing = opts.homing || null;
+      s.turn = opts.turn || 7;
       s.explode = opts.explode || null;
       s.travelled = 0;
       s.hit.length = 0;
@@ -202,6 +239,16 @@
         if (s.life <= 0) { finish(s, false); continue; }
 
         if (s.gravity) { s.dir.y -= s.gravity * dt / s.speed; s.dir.normalize(); }
+        if (s.homing && s.homing.alive) {
+          _p.set(s.homing.position.x - s.mesh.position.x,
+                 s.homing.position.y + s.homing.height * 0.5 - s.mesh.position.y,
+                 s.homing.position.z - s.mesh.position.z).normalize();
+          const t = Math.min(1, s.turn * dt);
+          s.dir.x += (_p.x - s.dir.x) * t;
+          s.dir.y += (_p.y - s.dir.y) * t;
+          s.dir.z += (_p.z - s.dir.z) * t;
+          s.dir.normalize();
+        }
         const step = s.speed * dt;
         _o.copy(s.mesh.position);
 
@@ -219,8 +266,9 @@
           const bonus = 1 + s.pierceGrowth * s.hit.length;
           ROR.Damage.deal({
             attacker: s.attacker, victim: b,
-            coefficient: s.coefficient * bonus, proc: s.proc,
-            position: _p.clone()
+            coefficient: s.coefficient * bonus,
+            flat: s.flat === undefined ? undefined : s.flat * bonus,
+            proc: s.proc, position: _p.clone()
           });
           s.hit.push(b);
           Projectiles.spark(_p, 0xffc98a, 0.7);

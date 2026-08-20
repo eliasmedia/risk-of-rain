@@ -17,7 +17,8 @@
      das läuft bei vierzig Gegnern mehrmals pro Sekunde. */
   const OUT_KEYS = ['maxHealth', 'maxShield', 'damage', 'regen', 'armor',
                     'moveSpeed', 'attackSpeed', 'crit', 'critMult',
-                    'cooldownScale', 'jumpCount', 'damageTaken'];
+                    'cooldownScale', 'jumpCount', 'jumpPower', 'damageTaken',
+                    'healMult', 'healCap'];
 
   function blank(out) {
     for (let i = 0; i < OUT_KEYS.length; i++) out[OUT_KEYS[i]] = 0;
@@ -53,7 +54,10 @@
       out.critMult = 2;
       out.cooldownScale = 1;
       out.jumpCount = d.jumpCount || 1;
+      out.jumpPower = 1;               // Vielfaches der Sprunggeschwindigkeit
       out.damageTaken = 1;             // Faktor für erlittenen Schaden
+      out.healMult = 1;                // Rejuvenation Rack, Corpsebloom
+      out.healCap = 0;                 // 0 = keine Obergrenze je Sekunde
 
       for (let i = 0; i < modifiers.length; i++) modifiers[i](body, out);
 

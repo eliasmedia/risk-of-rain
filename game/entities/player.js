@@ -180,6 +180,8 @@
 
         recoil(amount) { p._gunKick = Math.min(1.4, p._gunKick + amount); },
 
+        beginFlight(seconds) { p._flight = seconds; },
+
         startDive() {
           p._dive = DIVE_TIME;
           // Rollt in Laufrichtung; wer steht, rollt nach vorn.
@@ -325,10 +327,17 @@
     // Sprint gilt nur vorwärts — seitwärts wegrennen wäre im Original auch nicht drin.
     const wantSprint = inp.down('sprint') && wishLen > 0.1 && inp.move.z < -0.3;
     p.sprinting = wantSprint && p._aimTimer <= 0;
+    // Als Buff geführt, damit Items den Zustand abfragen können.
+    if (p.sprinting !== p._wasSprinting) {
+      p._wasSprinting = p.sprinting;
+      if (p.sprinting) ROR.Buffs.apply(p.body, 'sprinting', 0);
+      else ROR.Buffs.clear(p.body, 'sprinting');
+    }
     const speed = S.moveSpeed * (p.sprinting ? SPRINT_MULT : 1) * wishLen;
     ROR.Camera.setFovBoost(p.sprinting ? 9 : 0);
 
     updateSkills(p, dt);
+    ROR.Items.updateEquipment(p.body, dt, inp.pressed('equipment'));
 
     if (p._dive > 0) {
       // Während der Rolle zählt nur die Rollrichtung.
@@ -355,14 +364,21 @@
 
     if (p._jumpBuffer > 0 && (p._coyote > 0 || p._jumpsLeft > 0)) {
       if (p._coyote <= 0) p._jumpsLeft--;
-      p.velocity.y = JUMP_VELOCITY;
+      p.velocity.y = JUMP_VELOCITY * Math.sqrt(S.jumpPower || 1);
       p._jumpBuffer = 0;
       p._coyote = 0;
       p.grounded = false;
     }
 
-    p.velocity.y -= GRAVITY * dt;
-    if (p.velocity.y < -90) p.velocity.y = -90;
+    if (p._flight > 0) {
+      // Milky Chrysalis: freies Schweben, Leertaste hoch, Strg runter.
+      p._flight -= dt;
+      const steig = (inp.down('jump') ? 1 : 0) - (inp.down('sprint') ? 1 : 0);
+      p.velocity.y = U.approach(p.velocity.y, steig * 9, 40 * dt);
+    } else {
+      p.velocity.y -= GRAVITY * dt;
+      if (p.velocity.y < -90) p.velocity.y = -90;
+    }
 
     p.position.x += p.velocity.x * dt;
     p.position.z += p.velocity.z * dt;
@@ -420,6 +436,19 @@
     const speed = p._lastFallSpeed;
     p._lastFallSpeed = 0;
     p._landTimer = 0.22;
+
+    /* H3AD-5T v2: die Landung selbst ist der Angriff. Je härter der Aufschlag,
+       desto größer der Einschlag — und der Sturzschaden entfällt dafür. */
+    const heads = p.body.items.h3ad5t || 0;
+    if (heads > 0 && speed > 14) {
+      const wucht = U.clamp(speed / 40, 0, 2.5);
+      ROR.Damage.explode({
+        attacker: p.body, team: p.body.team, position: p.position.clone(),
+        radius: 6 + 4 * heads, coefficient: 10 * heads * wucht, proc: 0
+      });
+      ROR.Projectiles.spark(p.position.clone(), 0xffd070, (6 + 4 * heads) * 0.5);
+      return;
+    }
     if (speed > FALL_DAMAGE_SPEED) nonLethal(p, p.body.stats.maxHealth * 0.1);
   }
 

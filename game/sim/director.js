@@ -103,6 +103,14 @@
       }
     },
 
+    /* Zusätzliche Credits von außen — der Kampfschrein kauft damit eine
+       Welle ein, ohne dass er eigene Spawnlogik bräuchte. */
+    gift(credits) {
+      if (!Director.directors.length) return;
+      Director.directors[0].credits += credits;
+      Director.directors[0].nextSpend = 0.2;
+    },
+
     /* Für die Technikanzeige. */
     debugLine() {
       if (!Director.active) return 'director  aus';

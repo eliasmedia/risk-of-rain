@@ -49,10 +49,17 @@
           b.health = b.stats.maxHealth * frac;
         },
 
+        /* Rejuvenation Rack verstärkt, Corpsebloom deckelt: mehr Heilung,
+           aber höchstens ein Anteil der Höchstgesundheit je Sekunde. */
         heal(amount) {
           if (!b.alive) return 0;
+          let want = amount * (b.stats.healMult || 1);
+          if (b.stats.healCap > 0) {
+            const grenze = b.stats.maxHealth * b.stats.healCap * ROR.Engine.step;
+            want = Math.min(want, grenze);
+          }
           const before = b.health;
-          b.health = Math.min(b.stats.maxHealth, b.health + amount);
+          b.health = Math.min(b.stats.maxHealth, b.health + want);
           return b.health - before;
         },
 
@@ -88,6 +95,7 @@
         update(dt) {
           if (!b.alive) return;
           ROR.Buffs.update(b, dt);
+          if (b.team === ROR.Body.PLAYER && ROR.Items) ROR.Items.update(b, dt);
           if (b.statsDirty) { ROR.Stats.recompute(b); b.statsDirty = false; }
           b.outOfCombat += dt;
           b.invulnerable = Math.max(0, b.invulnerable - dt);

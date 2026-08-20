@@ -4,7 +4,8 @@
 
    Reihenfolge der Aktualisierer (kleinere Zahl läuft früher):
      -10 Eingabe    -5 Schwierigkeit    0 Spieler    5 Director
-      10 Gegner     20 Geschosse       30 Bodies   100 Eingabeflanken verwerfen
+      10 Gegner     15 Interactables   18 Beute    20 Geschosse
+      30 Bodies    100 Eingabeflanken verwerfen
 
    Die Schwierigkeit läuft ganz vorn, damit der Director im selben Schritt mit
    dem aktuellen Koeffizienten rechnet. Die Geschosse laufen *nach* Spieler und
@@ -43,6 +44,8 @@
 
       ROR.Monsters.clear();
       ROR.Dummy.clear();
+      ROR.Interactables.clear();
+      ROR.Loot.clear();
       ROR.Body.clear();
       ROR.Difficulty.reset(Game.difficultyFromUrl());
 
@@ -60,13 +63,18 @@
 
       if (Game.wantsDummies()) ROR.Dummy.placeNear(Game.stage, spawn);
       ROR.Director.beginStage(theme.order, Game.seed);
+      ROR.Loot.init();
+      const anzahl = ROR.Interactables.populate(Game.stage, theme.order, Game.seed);
+      ROR.Items.rebuild(Game.player.body);
+      ROR.Items.stageStart(Game.player.body);
+      Game.mountainShrines = 0;
 
       ROR.Camera.init(Game.player);
       ROR.Camera.yaw = Math.atan2(-spawn.x, -spawn.z);   // zur Inselmitte schauen
 
       ROR.Engine.time = 0;
       console.log('[ROR] Stage »' + theme.name + '«, Seed ' + Game.seed
-                + ', ' + ROR.Difficulty.mode.name);
+                + ', ' + ROR.Difficulty.mode.name + ', ' + anzahl + ' Objekte');
     },
 
     boot() {
@@ -97,6 +105,8 @@
       ROR.Engine.onUpdate(function (dt) { ROR.Director.update(dt); }, 5);
       ROR.Engine.onUpdate(function (dt) { ROR.Monsters.update(dt); }, 10);
       ROR.Engine.onUpdate(function (dt) { ROR.Dummy.update(dt); }, 12);
+      ROR.Engine.onUpdate(function (dt) { ROR.Interactables.update(dt); }, 15);
+      ROR.Engine.onUpdate(function (dt) { ROR.Loot.update(dt); }, 18);
       ROR.Engine.onUpdate(function (dt) { ROR.Projectiles.update(dt); }, 20);
       ROR.Engine.onUpdate(function (dt) { ROR.Body.updateAll(dt); }, 30);
 

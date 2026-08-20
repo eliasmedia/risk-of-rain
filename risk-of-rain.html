@@ -40,7 +40,17 @@
     <div class="sub"><span id="survivorname">Commando</span><span id="levelout">Stufe 1</span></div>
   </div>
 
+  <div id="itembar"></div>
+
+  <div id="equipwrap">
+    <div id="equipslot" class="empty"><i class="sweep" id="equipsweep"></i><span>Q</span></div>
+    <div id="equipname"></div>
+  </div>
+
   <div id="skills"></div>
+
+  <div id="prompt"></div>
+  <div id="pickup"></div>
 
   <div id="numbers"></div>
   <div id="toast"></div>
@@ -56,6 +66,7 @@
     <b>W A S D</b> laufen &nbsp;·&nbsp; <b>Maus</b> zielen &nbsp;·&nbsp; <b>Leertaste</b> springen &nbsp;·&nbsp; <b>Strg</b> sprinten<br>
     <b>Maus links</b> Double Tap &nbsp;·&nbsp; <b>Maus rechts</b> Phase Round &nbsp;·&nbsp;
     <b>Shift</b> Tactical Dive &nbsp;·&nbsp; <b>R</b> Suppressive Fire<br>
+    <b>E</b> benutzen &nbsp;·&nbsp; <b>Q</b> Ausrüstung &nbsp;·&nbsp;
     <b>M</b> Pause &nbsp;·&nbsp; <b>F3</b> Technikanzeige
   </div>
 
@@ -75,13 +86,18 @@
 <script src="game/data/stages.js"></script>
 <script src="game/data/survivors.js"></script>
 <script src="game/data/monsters.js"></script>
+<script src="game/data/items.js"></script>
+<script src="game/data/interactables.js"></script>
 <script src="game/world/terrain.js"></script>
 <script src="game/world/props.js"></script>
 <script src="game/world/stage.js"></script>
 <script src="game/entities/projectile.js"></script>
 <script src="game/entities/player.js"></script>
 <script src="game/entities/monster.js"></script>
+<script src="game/entities/interactable.js"></script>
 <script src="game/entities/dummy.js"></script>
+<script src="game/sim/items.js"></script>
+<script src="game/sim/loot.js"></script>
 <script src="game/sim/director.js"></script>
 <script src="game/ui/hud.js"></script>
 <script src="game/main.js"></script>

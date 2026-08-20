@@ -365,6 +365,34 @@
       p.gold += xp * 2;
     },
 
+    /* Verbündeter aus einem Item (Queen's Gland). Er ist derselbe Gegner,
+       nur im Team des Spielers — dadurch greift ihn der Rest von selbst an. */
+    spawnAlly(defId, owner) {
+      const def = ROR.Data.monster(defId);
+      const stage = ROR.Stage.current;
+      if (!def || !stage) return null;
+      const spot = stage.terrain.findSpot(U.chaos, {
+        rMin: 0, rMax: 6, tries: 20,
+        minHeight: stage.terrain.seaLevel + 1
+      }) || { x: owner.position.x + 3, y: owner.position.y, z: owner.position.z };
+      const m = Monsters.spawn(def, ROR.Difficulty.spawnLevel,
+        new THREE.Vector3(owner.position.x + (spot.x - owner.position.x) * 0.2 + 3,
+                          owner.position.y + (def.flying ? def.hoverHeight : 0),
+                          owner.position.z + 3));
+      if (m) {
+        m.body.team = ROR.Body.PLAYER;
+        m.isAlly = true;
+        m.body.onDeath = function () { m.deathFx = 0.7; m.state = 'dead'; };
+        m.model.traverse(function (o) {
+          if (o.isMesh && o.material && o.material.color) {
+            o.material = o.material.clone();
+            o.material.color.lerp(new THREE.Color(0x6fd0ff), 0.35);
+          }
+        });
+      }
+      return m;
+    },
+
     clear() {
       for (let i = 0; i < list.length; i++) {
         ROR.Engine.scene.remove(list[i].model);
@@ -401,8 +429,12 @@
 
   function step(m, dt) {
     const stage = ROR.Stage.current;
-    const p = ROR.Game.player;
-    if (!stage || !p || !p.body.alive) return;
+    /* Verbündete zielen auf den nächsten Gegner, alle anderen auf den Spieler.
+       Sonst wäre ein Queen's-Gland-Käfer nur Dekoration. */
+    const p = m.isAlly
+      ? (ROR.Projectiles.nearestEnemy(m.model.position, 70, m.body.team) || ROR.Game.player)
+      : ROR.Game.player;
+    if (!stage || !p || !p.body || !p.body.alive) return;
 
     const def = m.def;
     const S = m.body.stats;
@@ -410,6 +442,7 @@
     const stunned = ROR.Buffs.has(m.body, 'stun');
     if (stunned && m.state === 'charge') m.state = 'chase';   // Ansturm bricht ab
 
+    if (!p.velocity) p.velocity = { x: 0, y: 0, z: 0 };   // Bodies haben keine
     _v.set(p.position.x - pos.x, 0, p.position.z - pos.z);
     const flat = _v.length();
     const dist = Math.hypot(flat, p.position.y + 0.9 - (pos.y + def.height * 0.5));

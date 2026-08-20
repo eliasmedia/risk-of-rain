@@ -181,6 +181,78 @@ html, body {
 }
 #dead span { color: var(--ink-dim); letter-spacing: 0.1em; }
 
+/* ------------------------------------------------------------- Itemleiste */
+
+/* Über dem Lebensbalken, nach Stufe sortiert. Die Farbe trägt die ganze
+   Information — man erkennt an einem Blick, ob rot dabei ist. */
+#itembar {
+  position: absolute; left: 22px; bottom: 78px;
+  display: flex; flex-wrap: wrap-reverse; gap: 3px;
+  width: min(420px, 46vw); align-content: flex-start;
+}
+#itembar i {
+  position: relative; width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(8, 14, 20, 0.72);
+  border: 1px solid var(--c); color: var(--c);
+  font: 800 13px/1 system-ui, sans-serif; font-style: normal;
+  clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 5px 100%, 0 calc(100% - 5px));
+}
+#itembar i u {
+  position: absolute; right: -1px; bottom: -2px;
+  font: 700 10px/1 system-ui, sans-serif; text-decoration: none;
+  color: var(--ink); text-shadow: 0 1px 2px #000;
+}
+
+/* ------------------------------------------------------------ Ausrüstung */
+
+#equipwrap { position: absolute; right: 22px; bottom: 92px; text-align: right; }
+#equipslot {
+  position: relative; width: 58px; height: 58px; margin-left: auto;
+  background: var(--panel); border: 1px solid #ff8a3a;
+  clip-path: var(--bevel);
+  display: flex; align-items: center; justify-content: center;
+  color: #ff8a3a; font-size: 13px;
+}
+#equipslot.empty { border-color: var(--edge); color: var(--ink-dim); opacity: 0.5; }
+#equipslot .sweep {
+  position: absolute; inset: 0; --p: 0%;
+  background: conic-gradient(rgba(4, 8, 12, 0.78) var(--p), transparent 0);
+}
+#equipname {
+  margin-top: 4px; font-size: 10px; color: var(--ink-dim);
+  letter-spacing: 0.08em; max-width: 150px; text-shadow: 0 1px 3px #000;
+}
+
+/* -------------------------------------------------------- Aufforderung */
+
+#prompt {
+  position: absolute; left: 50%; bottom: 22%; transform: translateX(-50%);
+  padding: 8px 16px; background: rgba(8, 14, 20, 0.78);
+  border: 1px solid var(--edge); color: var(--ink);
+  letter-spacing: 0.06em; white-space: nowrap; opacity: 0;
+  transition: opacity 0.12s;
+  clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 9px 100%, 0 calc(100% - 9px));
+}
+#prompt.show { opacity: 1; }
+#prompt.poor { color: #ff8177; border-color: rgba(255, 100, 90, 0.45); }
+
+/* ----------------------------------------------------- Aufsammelmeldung */
+
+#pickup {
+  position: absolute; left: 50%; bottom: 12%; transform: translate(-50%, 8px);
+  padding: 9px 18px; background: rgba(8, 14, 20, 0.82);
+  border: 1px solid var(--edge); text-align: center; max-width: min(520px, 84vw);
+  opacity: 0; transition: opacity 0.2s, transform 0.2s;
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+}
+#pickup.show { opacity: 1; transform: translate(-50%, 0); }
+#pickup b { display: block; font-size: 15px; letter-spacing: 0.08em; margin-bottom: 3px; }
+#pickup span { font-size: 12px; color: var(--ink-dim); line-height: 1.5; }
+
+#toast.gold { color: var(--gold); }
+#toast.bad  { color: #ff6b5c; }
+
 /* ------------------------------------------------------------ Fadenkreuz */
 
 #crosshair {
@@ -256,6 +328,11 @@ html, body {
   #gold { top: 12px; right: 12px; font-size: 16px; }
   #diffwrap { top: 34px; width: 170px; }
   #dead b { font-size: 28px; }
+  #itembar { left: 12px; bottom: 62px; width: min(280px, 52vw); gap: 2px; }
+  #itembar i { width: 21px; height: 21px; font-size: 11px; }
+  #equipwrap { right: 12px; bottom: 66px; }
+  #equipslot { width: 44px; height: 44px; }
+  #pickup { max-width: 92vw; }
   .dmg { font-size: 15px; }
   .dmg.crit { font-size: 20px; }
 }

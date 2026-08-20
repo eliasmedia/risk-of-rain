@@ -8,14 +8,14 @@ Build-Schritt, keine Internetverbindung, keine einzige Bild- oder Tondatei.
 
 ## Aktueller Stand
 
-**Stufe 3 abgeschlossen** — Welt, Bewegung, Kampf, Gegner, Schwierigkeitskurve.
+**Stufe 4 abgeschlossen** — Welt, Bewegung, Kampf, Gegner, Kurve, Items und Beute.
 
 | Stufe | Inhalt | Status |
 |---|---|---|
 | 1 | Gerüst, prozedurale Stage, Third-Person-Kamera, Bewegung, Fallschaden | ✅ fertig |
 | 2 | Kampf: Werte, Schadenspipeline mit Proc-Coefficient, Commando mit vier Skills | ✅ fertig |
 | 3 | 14 Gegner, Combat Director mit Credit-System, Schwierigkeitskoeffizient | ✅ fertig |
-| 4 | ~65 Items mit Stapelverhalten, Kisten, Schreine, 3D-Drucker | offen |
+| 4 | 71 Items mit Stapelverhalten, Kisten, Schreine, 3D-Drucker | ✅ fertig |
 | 5 | Teleporter-Event, fünf Bosse, fünf Stages, Loop | offen |
 | 6 | Huntress, Engineer, MUL-T, Artificer, Mercenary **+ Charakterdesign aufwerten** | offen |
 | 7 | Elite-Affixe, Ausrüstung, Drohnen, Bazaar, Mithrix | offen |
@@ -87,10 +87,14 @@ game/
     body.js                Alles, was Schaden nehmen kann; Trefferkapsel, Strahlen
     damage.js              Schadenspipeline: Abfall, Krit, Rüstung, Proc-Kette
     director.js            Credits, Spawnkarten, Wellen, „zu billig"-Regel
+    items.js               Inventar, Auslöser, Stapelkurven, Glück
+    loot.js                Beutetabellen, Item-Kugeln, Aufsammeln
   data/
     stages.js              Stage-Themen: Gelände, Farben, Bewuchs (reine Daten)
     survivors.js           Figuren: Grundwerte, Aussehen, vier Fähigkeiten
     monsters.js            14 Gegner: Werte, Director-Kosten, Bauart, Verhalten
+    items.js               71 Items als Hook-Sätze
+    interactables.js       Kisten, Schreine, Drucker: Preise, Gewichte, Budget
   world/
     terrain.js             Höhenfunktion, Geometrie, Vertexfarben, Abfragen
     props.js               Felsen, Bäume, Monolithen, schwebende Plattformen
@@ -99,6 +103,7 @@ game/
     projectile.js          Vorrat an Spuren, Funken und fliegenden Geschossen
     player.js              Figur, Bewegung, Zielen, Ablauf der Fähigkeiten
     monster.js             Sechs Modell-Bauarten und die Gegner-Zustandsmaschine
+    interactable.js        Modelle, Bedienung, Scene Director
     dummy.js               Trainingspuppen mit 0, 20 und 100 Rüstung
   ui/
     style.css              Oberfläche
@@ -149,6 +154,13 @@ möglichst vollständig ausgibt. Die „zu billig"-Regel — mehr als das Sechsf
 des gewählten Gegners auf dem Konto heißt neu würfeln — ist das Scharnier, an
 dem er vom Sparen ins Klotzen kippt.
 
+**Ein Item ist ein Dateneintrag, kein Sonderfall.** Kein Kampfcode kennt ein
+einzelnes Item. Ein Item ist ein Satz Hooks — `stats`, `onHit`, `onKill`,
+`onDamaged`, `onIncoming`, `onHealed`, `onInterval`, `damageMod` —, und
+`sim/items.js` ruft sie auf. Damit das bei sechs Schuss je Sekunde und vierzig
+Gegnern nicht teuer wird, sind die Hooks je Figur vorsortiert: wer kein
+`onHit` besitzt, taucht in der onHit-Liste gar nicht erst auf.
+
 **Fadenkreuz und Einschlag sind dieselbe Richtung.** Die Kamera bekommt ihre
 Ausrichtung direkt aus Gier und Nick, nicht über `lookAt` auf die Figur. Sonst
 laufen beide auseinander: die Kamera steht seitlich versetzt, und der Schuss
@@ -184,6 +196,15 @@ Director-Credits, aus denen auch Erfahrung und Gold folgen), eine der sechs
 `turret`). Geometrie muss keine geschrieben werden. `stages` steuert, auf
 welchen Stages er im Deck landen kann.
 
+**Neues Item** — Eintrag in `game/data/items.js`. Nur die Hooks angeben, die
+das Item braucht; Stufe, Stapelart und Beschreibung stehen daneben. Für Chancen
+immer `ROR.Items.roll(body, chance × proc)` benutzen — das berücksichtigt den
+Proc-Coefficient *und* das Glück aus dem 57 Leaf Clover.
+
+**Neues Objekt auf der Stage** — Eintrag in `game/data/interactables.js` mit
+`baseCost`, `directorCost` und `weight`, dazu ein Fall in `BUILDERS` und in
+`use()` in `game/entities/interactable.js`.
+
 **Neuen Buff** — Eintrag in `DEFS` in `game/sim/buffs.js`. `modify(body, out)`
 verändert Werte, `dot` teilt regelmäßig Schaden aus. Dass Buffs überhaupt auf
 Werte wirken, weiß `stats.js` nicht — `buffs.js` meldet sich über
@@ -206,6 +227,40 @@ python3 -m http.server 8792
 ```
 
 ---
+
+## Was Stufe 4 gebracht hat
+
+71 Items über sechs Stufen, dazu Kisten, Schreine, Drucker und Scrapper. Alle
+Wahrscheinlichkeiten und Stapelkurven sind gegen die Vorlage nachgemessen:
+
+| Geprüft | Soll | Ist |
+|---|---|---|
+| Kiste | 79.2 / 19.8 / 0.99 % | 79.32 / 19.67 / 1.00 (200 000 Züge) |
+| Große Kiste | 80 / 20 % | 80.14 / 19.86 |
+| Schrein des Zufalls | 45 / 36 / 9 / 9 / 1 % | 44.86 / 36.11 / 9.04 / 8.97 / 1.02 |
+| Soldier's Syringe ×5 | Angriffstempo 1.75 | 1.75 |
+| Alien Head ×2 | 0.75² = 0.5625 | 0.5625 |
+| Shaped Glass ×2 | Schaden ×4, Leben ×0.25 | 48 / 27.5 |
+| Tougher Times ×1 / ×5 / ×20 | 13.0 / 42.9 / 75.0 % | 12.7 / 43.0 / 75.7 |
+| Repulsion Armor Plate ×2 | 30 → 20, mindestens 1 | 20 / 1 |
+| Crowbar bei vollem / halbem Leben | 21 / 12 | 21 / 12 |
+| Proc-Coefficient 1 / 0.5 / 0.2 / 0 | 1600 / 800 / 320 / 0 | 1603 / 801 / 329 / 0 |
+| 57 Leaf Clover auf 5 % | 9.75 % | 9.59 % |
+
+**Der Proc-Coefficient zahlt sich hier aus.** Die Messreihe oben ist der Beleg:
+Auslösungen skalieren exakt linear mit dem Faktor des Treffers. Ohne ihn wäre
+jede Mehrfach-Waffe achtmal so stark wie eine einzelne.
+
+Ein simulierter Durchlauf über vier Minuten (Seed 31337): 63 Kills, 13 Items,
+Stufe 5, 16 von 18 Objekten benutzt, Kistenpreis von 25 auf 39 gestiegen. Genau
+die Form, die die Vorlage in ihrer ersten Stage hat.
+
+**Zwei bewusste Vereinfachungen.** Drucker und Scrapper haben kein
+Auswahlfenster: der Drucker frisst zuerst Schrott und sonst das häufigste Item
+seiner Stufe, der Scrapper zerlegt das häufigste billigste. Was passieren wird,
+steht in der Aufforderung, bevor man drückt. Und die Itemleiste zeigt
+Anfangsbuchstaben statt Symbolen — Symbole bräuchten entweder Bilddateien
+(unter `file://` verboten) oder eigens gezeichnete Icons; das steht in Stufe 9.
 
 ## Was Stufe 3 gebracht hat
 

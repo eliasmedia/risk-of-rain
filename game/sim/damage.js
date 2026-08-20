@@ -77,12 +77,37 @@
         dmg *= (FALLOFF[info.falloff] || FALLOFF.none)(info.distance);
       }
 
+      /* Item-Schadensfaktoren, die vom *Ziel* abhängen und deshalb nicht in
+         die Werte passen: Crowbar (volles Leben), Armor-Piercing Rounds
+         (Bosse), Focus Crystal (Nähe). Sie greifen vor dem kritischen Treffer,
+         damit ein Krit sie mitverdoppelt. */
+      if (a && a._hooks && a._hooks.damageMod.length) {
+        const dl = a._hooks.damageMod;
+        for (let i = 0; i < dl.length; i++) dmg *= dl[i].def.damageMod(a, dl[i].n, info, v);
+      }
+
       let crit = info.crit;
       if (crit === undefined && a && a.stats) crit = U.chaos.next() * 100 < a.stats.crit;
       if (crit) dmg *= (a && a.stats ? a.stats.critMult : 2);
 
       if (!info.ignoreArmor) dmg *= armorFactor(v.stats.armor);
       dmg *= v.stats.damageTaken;
+
+      /* Items des *Opfers*, die eingehenden Schaden abwehren: Tougher Times
+         blockt ganz, Repulsion Armor Plate zieht einen festen Betrag ab.
+         Beides läuft nach der Rüstung, damit die Reihenfolge der Vorlage
+         erhalten bleibt. */
+      if (v._hooks && v._hooks.onIncoming.length) {
+        const st = { amount: dmg, blocked: false };
+        const il = v._hooks.onIncoming;
+        for (let i = 0; i < il.length; i++) il[i].def.onIncoming(v, il[i].n, info, st);
+        if (st.blocked) {
+          result.blocked = true;
+          if (!info.silent) Damage.number(info.position || v.position, 'block', 'block');
+          return result;
+        }
+        dmg = st.amount;
+      }
       if (dmg < 0) dmg = 0;
 
       v.applyDamage(dmg);

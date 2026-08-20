@@ -3,8 +3,12 @@
    passiert — und sonst möglichst wenig.
 
    Reihenfolge der Aktualisierer (kleinere Zahl läuft früher):
-     -10 Eingabe einlesen        0 Spieler       10 Gegner
-      20 Geschosse              90 Kamera      100 Eingabeflanken verwerfen */
+     -10 Eingabe einlesen      0 Spieler        10 Gegner
+      20 Geschosse            30 Bodies        100 Eingabeflanken verwerfen
+
+   Die Geschosse laufen *nach* dem Spieler, damit ein in diesem Schritt
+   abgefeuerter Schuss auch in diesem Schritt fliegt; die Bodies laufen zuletzt,
+   damit Regeneration und Bufflaufzeit den bereits verrechneten Schaden sehen. */
 (function (ROR) {
   'use strict';
 
@@ -25,11 +29,20 @@
     newRun(seed) {
       Game.seed = seed === undefined ? Game.readSeed() : seed >>> 0;
 
+      ROR.Body.clear();
+      ROR.Dummy.clear();
+
       const theme = ROR.Data.stageByOrder(1)[0];
       Game.stage = ROR.Stage.load(theme, Game.seed);
+      ROR.Projectiles.init();
 
+      const def = ROR.Data.survivor('commando');
       const spawn = Game.stage.spawn;
-      Game.player = ROR.Player.create({ x: spawn.x, y: spawn.y + 0.5, z: spawn.z });
+      Game.player = ROR.Player.create(def, { x: spawn.x, y: spawn.y + 0.5, z: spawn.z });
+      ROR.HUD.buildSkills(def);
+
+      ROR.Dummy.placeNear(Game.stage, spawn);
+
       ROR.Camera.init(Game.player);
       ROR.Camera.yaw = Math.atan2(-spawn.x, -spawn.z);   // zur Inselmitte schauen
 
@@ -53,7 +66,6 @@
       ROR.HUD.init();
       Game.newRun();
 
-      /* Eingabe: Achsen zusammensetzen, ganz am Anfang des Schritts. */
       ROR.Engine.onUpdate(function () {
         ROR.Input.beginFrame();
         if (ROR.Input.pressed('debug')) ROR.HUD.toggleDebug();
@@ -61,6 +73,9 @@
       }, -10);
 
       ROR.Engine.onUpdate(function (dt) { Game.player.update(dt); }, 0);
+      ROR.Engine.onUpdate(function (dt) { ROR.Dummy.update(dt); }, 10);
+      ROR.Engine.onUpdate(function (dt) { ROR.Projectiles.update(dt); }, 20);
+      ROR.Engine.onUpdate(function (dt) { ROR.Body.updateAll(dt); }, 30);
 
       /* Flanken erst ganz am Ende verwerfen, damit sie jeder Schritt sieht —
          aber nur der erste. */
@@ -70,7 +85,7 @@
       ROR.Engine.onFrame(function (dt) {
         ROR.Camera.update(dt);
         Game.stage.followShadow(Game.player.position);
-        ROR.HUD.update(Game);
+        ROR.HUD.update(Game, dt);
         if (ROR.Input.isLocked) ROR.HUD.hideHint();
       });
 

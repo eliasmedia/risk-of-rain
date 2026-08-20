@@ -38,23 +38,26 @@
         drop: 18                               // wie tief es hinter der Küste abfällt
       },
 
+      /* Farbklima: entsättigtes Olivgrün statt Signalgrün, warmes Gestein,
+         blasser Dunst am Horizont. Der Dunst ist das eigentliche Merkmal der
+         Vorlage — Entferntes verliert dort früh an Sättigung und Kontrast. */
       palette: {
-        sky: 0x93bcd8, horizon: 0xcfe2ec,
-        fog: 0xcfe2ec, fogDensity: 0.0022,
-        sun: 0xfff0d2, sunIntensity: 2.2,
-        // Three rechnet seit r155 mit physikalischen Einheiten: 0.9 Umgebungslicht
-        // ließ jede sonnenabgewandte Fläche fast schwarz werden.
-        ambientSky: 0xb2d4e6, ambientGround: 0x55693b, ambientIntensity: 1.9,
-        grass: 0x69a044, grassDark: 0x35602a,
-        rock: 0x9a9280, rockDark: 0x545044,
-        dirt: 0x77694f,
-        sand: 0xc4b183, peak: 0xb9bda6, seabed: 0x2c4a56,
-        water: 0x2e6382,
-        trunk: 0x4a3a2a, leaf: 0x4f8438, leafAlt: 0x67a044
+        sky: 0x7ba2c2, horizon: 0xdcdfd2,
+        fog: 0xdcdfd2, fogDensity: 0.0033,
+        sun: 0xffe6bc, sunIntensity: 2.5,
+        // Three rechnet seit r155 mit physikalischen Einheiten: unter 1.5
+        // Umgebungslicht wird jede sonnenabgewandte Fläche fast schwarz.
+        ambientSky: 0xc0d2dc, ambientGround: 0x5d5c3c, ambientIntensity: 1.85,
+        grass: 0x77913f, grassDark: 0x415725,
+        rock: 0x9e937b, rockDark: 0x5a5245,
+        dirt: 0x7f6d4c,
+        sand: 0xc9b98c, peak: 0xbcbca6, seabed: 0x2d4550,
+        water: 0x36697d,
+        trunk: 0x4b3b2b, leaf: 0x4c6f2c, leafAlt: 0x648c38
       },
 
       props: { boulders: 120, trees: 115, pillars: 20, platforms: 16 },
-      sun: { azimuth: 2.2, elevation: 0.66 }
+      sun: { azimuth: 2.35, elevation: 0.40 }
     }
   ];
 

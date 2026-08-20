@@ -16,13 +16,14 @@
   const pivot = new THREE.Vector3();
   const dir = new THREE.Vector3();
   const tmp = new THREE.Vector3();
+  const euler = new THREE.Euler();
 
   const Cam = {
     yaw: 0,
     pitch: 0.28,
     distance: 9.5,
     minDistance: 1.6,
-    shoulder: 0.85,           // seitlicher Versatz, damit die Figur nicht die Sicht nimmt
+    shoulder: 0.62,           // seitlicher Versatz, damit die Figur nicht die Sicht nimmt
     pivotHeight: 1.55,
     target: null,             // Objekt mit .position
     baseFov: 70,
@@ -73,7 +74,15 @@
 
       const c = ROR.Engine.camera;
       c.position.copy(desired);
-      c.lookAt(Cam._pivotSmooth.x + tmp.x * 0.35, Cam._pivotSmooth.y, Cam._pivotSmooth.z + tmp.z * 0.35);
+      /* Ausrichtung direkt aus Gier und Nick, nicht über `lookAt`.
+         Zwei Gründe: erstens würde ein lookAt auf die Figur die Bildmitte
+         von `aim()` abweichen lassen — die Kamera steht seitlich versetzt,
+         und der Schuss ginge sichtbar am Fadenkreuz vorbei. Zweitens rechnet
+         `lookAt` mit der Position aus `matrixWorld`, also der des *vorigen*
+         Bildes; das allein waren schon gut drei Grad Fehler.
+         Reihenfolge YXZ und -pitch, damit die -Z-Achse genau auf `aim()` fällt. */
+      euler.set(-Cam.pitch, Cam.yaw, 0, 'YXZ');
+      c.quaternion.setFromEuler(euler);
 
       if (Math.abs(c.fov - Cam.fov) > 0.01) {
         c.fov = U.damp(c.fov, Cam.fov, 0.09, dt);

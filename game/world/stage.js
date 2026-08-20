@@ -212,9 +212,11 @@
         },
 
         /* Freie Strecke entlang eines Strahls — die Kamera zieht sich daran
-           heran, statt durch Felsen zu schneiden. */
-        clearance(origin, dir, maxDist) {
-          const stepLen = 0.3;
+           heran, statt durch Felsen zu schneiden. Geschosse nutzen dieselbe
+           Abfrage mit gröberer Schrittweite, weil sie über hundert Meter
+           laufen und ein halber Meter Ungenauigkeit dort nicht auffällt. */
+        clearance(origin, dir, maxDist, step) {
+          const stepLen = step || 0.3;
           for (let d = stepLen; d <= maxDist; d += stepLen) {
             const x = origin.x + dir.x * d;
             const y = origin.y + dir.y * d;

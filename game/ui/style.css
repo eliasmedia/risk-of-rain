@@ -1,10 +1,12 @@
 /* game/ui/style.css — Oberfläche.
-   Alles ist HTML über dem Canvas: schärfer als im 3D gezeichneter Text, und am
-   Handy skaliert es von selbst mit. Keine Schriftdateien — unter file:// wären
-   sie ohnehin blockiert, also Systemschrift mit weiter Laufweite. */
+   Alles ist HTML über dem Canvas: schärfer als im 3D gezeichneter Text, am
+   Handy skaliert es von selbst mit, und es braucht keine Texturen — die wären
+   unter file:// ohnehin blockiert. Keine Schriftdateien, also Systemschrift
+   mit weiter Laufweite. Die abgeschrägten Ecken sind die Kantensprache der
+   Vorlage und entstehen mit clip-path, nicht mit Bildern. */
 
 :root {
-  --hp:        #6fdc6f;
+  --hp:        #74d36a;
   --hp-low:    #e05545;
   --shield:    #7ec8ff;
   --gold:      #f2c14e;
@@ -13,6 +15,7 @@
   --panel:     rgba(10, 16, 22, 0.72);
   --edge:      rgba(150, 190, 215, 0.28);
   --ui:        600 13px/1.35 system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --bevel:     polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
 }
 
 * { box-sizing: border-box; }
@@ -35,31 +38,21 @@ html, body {
 
 /* ------------------------------------------------------------ Gesundheit */
 
-#vitals {
-  position: absolute; left: 22px; bottom: 22px; width: min(340px, 38vw);
-}
+#vitals { position: absolute; left: 22px; bottom: 22px; width: min(340px, 38vw); }
 
 #hpbar {
   position: relative; height: 26px;
-  background: var(--panel);
-  border: 1px solid var(--edge);
-  /* Abgeschrägte Ecken statt runder — dieselbe Kantensprache wie im Original. */
-  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
-  overflow: hidden;
+  background: var(--panel); border: 1px solid var(--edge);
+  clip-path: var(--bevel); overflow: hidden;
 }
 
-#hpfill {
-  position: absolute; inset: 1px auto 1px 1px;
-  width: 100%; background: var(--hp);
-  transition: width 0.12s linear, background-color 0.25s;
+#hpfill, #hplag, #shieldfill {
+  position: absolute; inset: 1px auto 1px 1px; width: 0;
 }
-
-/* Verzögerter Nachlauf: der Balken zeigt kurz, wie viel gerade weg ist. */
-#hplag {
-  position: absolute; inset: 1px auto 1px 1px;
-  width: 100%; background: rgba(255, 120, 100, 0.55);
-  transition: width 0.5s ease-out 0.15s;
-}
+/* Verzögerter Nachlauf: zeigt für einen Moment, wie viel gerade weg ist. */
+#hplag  { background: rgba(255, 120, 100, 0.55); transition: width 0.5s ease-out 0.15s; }
+#hpfill { background: var(--hp); transition: width 0.12s linear, background-color 0.25s; }
+#shieldfill { background: var(--shield); opacity: 0.75; transition: width 0.12s linear; }
 
 #hptext {
   position: absolute; inset: 0; display: flex;
@@ -72,23 +65,83 @@ html, body {
   margin-top: 5px; color: var(--ink-dim); font-size: 11px;
 }
 
+/* ------------------------------------------------------------ Fähigkeiten */
+
+#skills { position: absolute; right: 22px; bottom: 22px; display: flex; gap: 8px; }
+
+.skill {
+  position: relative; width: 58px; height: 58px;
+  background: var(--panel); border: 1px solid var(--edge);
+  clip-path: var(--bevel);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink-dim); transition: color 0.15s, border-color 0.15s;
+}
+.skill.ready { color: var(--tint); border-color: color-mix(in srgb, var(--tint) 55%, transparent); }
+.skill .key { font-size: 13px; letter-spacing: 0.06em; text-shadow: 0 1px 3px #000; }
+
+/* Der Kegel läuft rückwärts leer, während die Ladung nachwächst. */
+.skill .sweep {
+  position: absolute; inset: 0; --p: 0%;
+  background: conic-gradient(rgba(4, 8, 12, 0.78) var(--p), transparent 0);
+  pointer-events: none;
+}
+.skill .stock {
+  position: absolute; right: 5px; bottom: 3px;
+  font-size: 11px; color: var(--gold); text-shadow: 0 1px 2px #000;
+}
+
 /* ------------------------------------------------------------- Kopfzeile */
 
 #topbar {
   position: absolute; top: 16px; left: 0; right: 0;
-  display: flex; justify-content: center; gap: 26px;
+  display: flex; justify-content: center; align-items: center; gap: 26px;
   color: var(--ink); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
-
 #timer { font-size: 20px; letter-spacing: 0.12em; font-variant-numeric: tabular-nums; }
-#stagename { font-size: 13px; color: var(--ink-dim); align-self: center; letter-spacing: 0.18em; text-transform: uppercase; }
+#stagename { font-size: 13px; color: var(--ink-dim); letter-spacing: 0.18em; text-transform: uppercase; }
+#gold {
+  position: absolute; top: 16px; right: 22px;
+  font-size: 19px; color: var(--gold); letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+}
+
+/* ------------------------------------------------------------ Fadenkreuz */
+
+#crosshair {
+  position: absolute; left: 50%; top: 50%; width: 26px; height: 26px;
+  transform: translate(-50%, -50%); opacity: 0.75; transition: opacity 0.12s, transform 0.08s;
+}
+#crosshair i {
+  position: absolute; background: #eef4f7; box-shadow: 0 0 2px rgba(0, 0, 0, 0.9);
+}
+#crosshair i:nth-child(1) { left: 50%; top: 0;    width: 2px; height: 7px; margin-left: -1px; }
+#crosshair i:nth-child(2) { left: 50%; bottom: 0; width: 2px; height: 7px; margin-left: -1px; }
+#crosshair i:nth-child(3) { top: 50%; left: 0;    height: 2px; width: 7px; margin-top: -1px; }
+#crosshair i:nth-child(4) { top: 50%; right: 0;   height: 2px; width: 7px; margin-top: -1px; }
+#crosshair.firing { opacity: 1; transform: translate(-50%, -50%) scale(1.28); }
+
+/* --------------------------------------------------------- Schadenszahlen */
+
+#numbers { position: absolute; inset: 0; overflow: hidden; }
+.dmg {
+  position: absolute; left: 0; top: 0; opacity: 0;
+  transform: translate(-999px, -999px);
+  font: 800 17px/1 system-ui, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: 0.02em; white-space: nowrap;
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.6);
+  will-change: transform, opacity;
+}
+.dmg.hit   { color: #f4f8fa; }
+.dmg.crit  { color: #ffd24a; font-size: 24px; }
+.dmg.taken { color: #ff6b5c; }
+.dmg.block { color: #9fd4ff; font-size: 15px; }
 
 /* ---------------------------------------------------------------- Hinweis */
 
 #hint {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
   padding: 14px 22px; background: var(--panel); border: 1px solid var(--edge);
-  text-align: center; line-height: 1.7; pointer-events: none;
+  text-align: center; line-height: 1.75;
   clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
 }
 #hint b { color: var(--gold); letter-spacing: 0.08em; }
@@ -97,7 +150,7 @@ html, body {
 /* ---------------------------------------------------------------- Debug */
 
 #debug {
-  position: absolute; top: 12px; left: 12px;
+  position: absolute; top: 12px; left: 12px; margin: 0;
   padding: 8px 12px; background: rgba(0, 0, 0, 0.55);
   font: 500 12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   letter-spacing: 0; white-space: pre; color: #b7ffd0;
@@ -110,4 +163,26 @@ html, body {
   position: absolute; inset: 0; opacity: 0;
   background: radial-gradient(ellipse at center, transparent 45%, rgba(190, 30, 25, 0.75) 100%);
   transition: opacity 0.25s;
+}
+
+/* --------------------------------------------------------- Schmale Fenster */
+/* Unter 900 px überlappen Lebensbalken und Fähigkeiten sonst. Das ist nicht
+   nur eine Handy-Frage — ein halbiertes Browserfenster reicht dafür schon. */
+@media (max-width: 900px) {
+  #vitals { left: 12px; bottom: 12px; width: min(230px, 44vw); }
+  #hpbar { height: 22px; }
+  #hptext { font-size: 11px; }
+  #skills { right: 12px; bottom: 12px; gap: 5px; }
+  .skill { width: 44px; height: 44px; }
+  .skill .key { font-size: 11px; }
+  #timer { font-size: 17px; }
+  #stagename { display: none; }
+  #gold { top: 12px; right: 12px; font-size: 16px; }
+  .dmg { font-size: 15px; }
+  .dmg.crit { font-size: 20px; }
+}
+
+@media (max-height: 480px) {
+  #vitals, #skills { bottom: 8px; }
+  #topbar { top: 8px; }
 }

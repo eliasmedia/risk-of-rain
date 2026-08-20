@@ -131,6 +131,11 @@
     return out;
   }
 
+  /* Der Teleporter zählt als bedienbares Objekt wie jedes andere — dadurch
+     fühlen sich Aufforderung und Bedienung überall gleich an, obwohl er in
+     einer eigenen Datei lebt. */
+  const TELEPORT_PROXY = { isTeleporter: true, used: false, def: { name: 'Teleporter' } };
+
   const Interactables = {
     list: list,
     get focus() { return focus; },
@@ -239,6 +244,7 @@
 
     /* Text für die Aufforderung und ob sie erfüllbar ist. */
     prompt(o, body) {
+      if (o.isTeleporter) return ROR.Teleporter.prompt();
       const d = o.def;
       const p = ROR.Game.player;
       switch (d.kind) {
@@ -267,6 +273,7 @@
     },
 
     use(o, body) {
+      if (o.isTeleporter) return ROR.Teleporter.use();
       const d = o.def;
       const p = ROR.Game.player;
       const pos = o.model.position.clone();
@@ -381,6 +388,11 @@
         if (o.used) continue;
         const d2 = U.dist2(o.model.position.x, o.model.position.z, p.position.x, p.position.z);
         if (d2 < bd && Math.abs(o.model.position.y - p.position.y) < 4) { bd = d2; best = o; }
+      }
+      const tp = ROR.Teleporter;
+      if (tp && tp.parts && tp.prompt()) {
+        const d2 = U.dist2(tp.position.x, tp.position.z, p.position.x, p.position.z);
+        if (d2 < 49 && d2 < bd) best = TELEPORT_PROXY;
       }
       focus = best;
 

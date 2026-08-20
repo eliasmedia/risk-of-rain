@@ -168,6 +168,112 @@
             shot: { speed: 22, radius: 0.5, coefficient: 0.8, proc: 0.6, color: 0xff9a4a } }
     }),
 
+    /* ------------------------------------------------------------ Bosse */
+
+    /* Bosse haben ein `attacks`-Feld statt eines einzelnen Musters: die
+       Zustandsmaschine sucht sich daraus die erste Fähigkeit, die bereit ist
+       und deren Reichweite passt. Dadurch wirken sie nicht wie ein Gegner mit
+       mehr Leben, sondern haben einen erkennbaren Rhythmus. */
+
+    M({
+      id: 'stone_titan', name: 'Stone Titan', category: 'champion', isBoss: true,
+      health: 2100, damage: 40, armor: 20, moveSpeed: 5, cost: 600,
+      radius: 2.4, height: 8.0, stages: [1, 2, 3, 4, 5],
+      shape: { kind: 'golem', size: 3.6,
+               colors: { main: 0x8b8272, dark: 0x45403a, eye: 0x9fe8ff } },
+      ai: { kind: 'boss', keep: 22,
+        attacks: [
+          { id: 'stone_fist', type: 'slam', range: 30, windup: 1.5, cooldown: 10,
+            radius: 5.5, coefficient: 1.0, proc: 1, color: 0x9a8f7a },
+          { id: 'eye_laser', type: 'beam', range: 60, windup: 3.0, cooldown: 20,
+            ticks: 24, interval: 0.125, coefficient: 0.125, proc: 0.15, color: 0x9fe8ff },
+          { id: 'stone_construct', type: 'shot', range: 60, windup: 2.0, cooldown: 40, burst: 6,
+            shot: { speed: 60, radius: 0.45, coefficient: 0.30, proc: 1, color: 0xb0e8ff } }
+        ] }
+    }),
+
+    M({
+      id: 'beetle_queen', name: 'Beetle Queen', category: 'champion', isBoss: true,
+      health: 2100, damage: 25, armor: 20, moveSpeed: 6, cost: 600,
+      radius: 1.9, height: 4.2, stages: [1, 2, 3],
+      shape: { kind: 'quadruped', body: [3.4, 2.0, 2.4], head: 1.15, horns: true, tail: 0,
+               colors: { main: 0xa07a44, dark: 0x5f4526, eye: 0xffd06a } },
+      ai: { kind: 'boss', keep: 14,
+        attacks: [
+          { id: 'acid_shot', type: 'shot', range: 40, windup: 2.0, cooldown: 10, burst: 6,
+            spread: 0.14,
+            shot: { speed: 26, radius: 0.5, coefficient: 1.3, proc: 1, color: 0x9ad04a, gravity: 8,
+                    blast: { radius: 4, coefficient: 0.3, proc: 0 } } },
+          { id: 'summon_guards', type: 'summon', range: 60, windup: 1.5, cooldown: 28,
+            monster: 'beetle_guard', count: 2 }
+        ] }
+    }),
+
+    M({
+      id: 'wandering_vagrant', name: 'Wandering Vagrant', category: 'champion', isBoss: true,
+      health: 2100, damage: 6.5, armor: 15, moveSpeed: 6, cost: 600,
+      radius: 1.8, height: 4.0, flying: true, hoverHeight: 7.5, stages: [1, 2, 3, 4, 5],
+      shape: { kind: 'orb', size: 1.7, shards: 10, ring: true,
+               colors: { main: 0x9fd8ff, glow: 0xe8f6ff, dark: 0x3a5a78 } },
+      ai: { kind: 'boss', keep: 24,
+        attacks: [
+          { id: 'orb_volley', type: 'shot', range: 70, windup: 2.0, cooldown: 10, burst: 6,
+            spread: 0.05,
+            shot: { speed: 40, radius: 0.4, coefficient: 4.0, proc: 1, color: 0xbfe8ff } },
+          { id: 'homing_bomb', type: 'shot', range: 70, windup: 2.0, cooldown: 12, burst: 1,
+            homing: true,
+            shot: { speed: 12, radius: 0.9, coefficient: 6.0, proc: 1, color: 0x8fd6ff,
+                    blast: { radius: 15, coefficient: 1.0, proc: 0 } } },
+          /* Die Supernova zündet erst unter einem Viertel Leben — genau dann,
+             wenn man glaubt, es geschafft zu haben. */
+          { id: 'supernova', type: 'slam', range: 90, windup: 4.0, cooldown: 15,
+            atSelf: true, belowHealth: 0.25,
+            radius: 26, coefficient: 20, proc: 3, color: 0xdff2ff }
+        ] }
+    }),
+
+    M({
+      id: 'magma_worm', name: 'Magma Worm', category: 'champion', isBoss: true,
+      health: 2400, damage: 10, armor: 15, moveSpeed: 20, cost: 2000,
+      radius: 1.6, height: 3.0, stages: [2, 3, 4, 5],
+      shape: { kind: 'worm', size: 1.5, segments: 9,
+               colors: { main: 0x8a2a18, dark: 0x3a1410, glow: 0xff8a30, eye: 0xffd070 } },
+      /* Der Wurm greift nicht an — er *ist* der Angriff. Berührung tut weh,
+         und er ist schneller als der Spieler. */
+      contact: { coefficient: 3.0, proc: 1, cooldown: 1.2, burn: 2.0 },
+      ai: { kind: 'boss', keep: 0,
+        attacks: [
+          { id: 'fireballs', type: 'shot', range: 45, windup: 0.8, cooldown: 5, burst: 5,
+            spread: 0.25,
+            shot: { speed: 20, radius: 0.6, coefficient: 1.0, proc: 1, color: 0xff7a20, gravity: 9,
+                    blast: { radius: 7, coefficient: 0.4, proc: 0 } } }
+        ] }
+    }),
+
+    M({
+      id: 'clay_dunestrider', name: 'Clay Dunestrider', category: 'champion', isBoss: true,
+      health: 2100, damage: 20, armor: 20, moveSpeed: 9, cost: 600,
+      radius: 1.7, height: 4.4, stages: [2, 3, 4, 5],
+      shape: { kind: 'biped', size: 2.6, pot: true,
+               colors: { main: 0xa4552f, dark: 0x4c2313, eye: 0xffb060 } },
+      ai: { kind: 'boss', keep: 16,
+        attacks: [
+          { id: 'pot_barrage', type: 'shot', range: 45, windup: 1.6, cooldown: 10, burst: 11,
+            spread: 0.10,
+            shot: { speed: 50, radius: 0.42, coefficient: 1.0, proc: 1, color: 0xd9743c,
+                    blast: { radius: 5, coefficient: 0.25, proc: 0 } } },
+          { id: 'tar_balls', type: 'shot', range: 40, windup: 1.4, cooldown: 20, burst: 3,
+            homing: true,
+            shot: { speed: 18, radius: 0.7, coefficient: 2.0, proc: 1, color: 0x3a2a20,
+                    blast: { radius: 8, coefficient: 0.6, proc: 0 } } },
+          /* Recover: er pflanzt sich ein und saugt Leben. Wer stehen bleibt,
+             füttert ihn — das ist der Moment, in dem man weglaufen muss. */
+          { id: 'recover', type: 'drain', range: 50, windup: 1.0, cooldown: 60,
+            duration: 8, interval: 0.333, radius: 50, nearRadius: 10,
+            coefficient: 0.0333, nearCoefficient: 0.333, armorBonus: 200 }
+        ] }
+    }),
+
     M({
       id: 'greater_wisp', name: 'Greater Wisp',
       health: 750, damage: 15, moveSpeed: 7, cost: 200, category: 'miniboss',

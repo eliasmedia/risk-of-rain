@@ -177,7 +177,12 @@
       }
     },
 
-    clear() { all.length = 0; }
+    clear() { all.length = 0; },
+
+    /* Beim Stagewechsel bleibt der Spieler, alles andere geht. */
+    clearExcept(keep) {
+      for (let i = all.length - 1; i >= 0; i--) if (all[i] !== keep) all.splice(i, 1);
+    }
   };
 
   ROR.Body = Body;

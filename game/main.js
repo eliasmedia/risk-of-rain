@@ -4,8 +4,8 @@
 
    Reihenfolge der Aktualisierer (kleinere Zahl läuft früher):
      -10 Eingabe    -5 Schwierigkeit    0 Spieler    5 Director
-      10 Gegner     15 Interactables   18 Beute    20 Geschosse
-      30 Bodies    100 Eingabeflanken verwerfen
+      10 Gegner     15 Interactables   16 Teleporter   18 Beute
+      20 Geschosse  30 Bodies         100 Eingabeflanken verwerfen
 
    Die Schwierigkeit läuft ganz vorn, damit der Director im selben Schritt mit
    dem aktuellen Koeffizienten rechnet. Die Geschosse laufen *nach* Spieler und
@@ -19,6 +19,10 @@
     player: null,
     stage: null,
     seed: 0,
+    stageOrder: 1,
+    loop: 0,
+    stagesCleared: 0,
+    mountainShrines: 0,
     started: false,
 
     /* Ein Seed aus der Adresszeile macht eine Welt reproduzierbar —
@@ -41,40 +45,79 @@
     newRun(seed) {
       Game.seed = seed === undefined ? Game.readSeed() : seed >>> 0;
       Game.over = false;
+      Game.stageOrder = 1;
+      Game.loop = 0;
+      Game.stagesCleared = 0;
 
-      ROR.Monsters.clear();
-      ROR.Dummy.clear();
-      ROR.Interactables.clear();
-      ROR.Loot.clear();
       ROR.Body.clear();
       ROR.Difficulty.reset(Game.difficultyFromUrl());
 
-      const theme = ROR.Data.stageByOrder(1)[0];
-      Game.stage = ROR.Stage.load(theme, Game.seed);
-      ROR.Projectiles.init();
-
       const def = ROR.Data.survivor('commando');
-      const spawn = Game.stage.spawn;
-      Game.player = ROR.Player.create(def, { x: spawn.x, y: spawn.y + 0.5, z: spawn.z });
+      Game.player = null;
+      Game.buildWorld(1, Game.seed);
+
+      Game.player = ROR.Player.create(def, {
+        x: Game.stage.spawn.x, y: Game.stage.spawn.y + 0.5, z: Game.stage.spawn.z
+      });
       Game.player.onLevelUp = function (lvl) { ROR.HUD.toast('Stufe ' + lvl); };
       Game.player.onDeath = function () { endRun(); };
       ROR.HUD.buildSkills(def);
       ROR.HUD.setDead(false);
 
-      if (Game.wantsDummies()) ROR.Dummy.placeNear(Game.stage, spawn);
-      ROR.Director.beginStage(theme.order, Game.seed);
-      ROR.Loot.init();
-      const anzahl = ROR.Interactables.populate(Game.stage, theme.order, Game.seed);
-      ROR.Items.rebuild(Game.player.body);
-      ROR.Items.stageStart(Game.player.body);
-      Game.mountainShrines = 0;
-
-      ROR.Camera.init(Game.player);
-      ROR.Camera.yaw = Math.atan2(-spawn.x, -spawn.z);   // zur Inselmitte schauen
-
+      Game.afterStage();
       ROR.Engine.time = 0;
-      console.log('[ROR] Stage »' + theme.name + '«, Seed ' + Game.seed
-                + ', ' + ROR.Difficulty.mode.name + ', ' + anzahl + ' Objekte');
+    },
+
+    /* Baut Gelände, Objekte und Gegnerdeck neu auf. Der Spieler bleibt, wenn
+       es ihn schon gibt — genau das unterscheidet einen Stagewechsel von
+       einem neuen Durchlauf. */
+    buildWorld(order, seed) {
+      ROR.Monsters.clear();
+      ROR.Dummy.clear();
+      ROR.Interactables.clear();
+      ROR.Loot.clear();
+      ROR.Teleporter.clear();
+      if (Game.player) ROR.Body.clearExcept(Game.player.body);
+
+      const themen = ROR.Data.stageByOrder(order);
+      const theme = themen[(seed >>> 3) % themen.length];
+      Game.stage = ROR.Stage.load(theme, seed);
+      ROR.Projectiles.init();
+      ROR.Loot.init();
+      ROR.Director.beginStage(order, seed);
+      Game.mountainShrines = 0;
+      const anzahl = ROR.Interactables.populate(Game.stage, order, seed);
+      ROR.Teleporter.place(Game.stage, seed);
+
+      console.log('[ROR] Stage ' + order + ' »' + theme.name + '«, Seed ' + seed
+                + ', Loop ' + Game.loop + ', ' + anzahl + ' Objekte');
+    },
+
+    /* Alles, was nach dem Aufbau am Spieler passieren muss. */
+    afterStage() {
+      const p = Game.player;
+      p.position.set(Game.stage.spawn.x, Game.stage.spawn.y + 0.5, Game.stage.spawn.z);
+      p.velocity.set(0, 0, 0);
+      p.body.position = p.object.position;
+      if (ROR.Body.all.indexOf(p.body) < 0) ROR.Body.all.push(p.body);
+      ROR.Items.rebuild(p.body);
+      ROR.Items.stageStart(p.body);
+      ROR.Camera.init(p);
+      ROR.Camera.yaw = Math.atan2(-(Game.stage.spawn.x), -(Game.stage.spawn.z));
+      if (Game.wantsDummies()) ROR.Dummy.placeNear(Game.stage, Game.stage.spawn);
+      ROR.HUD.stageBanner(Game.stage.theme, Game.loop);
+    },
+
+    /* Der Sprung ins nächste Environment. Hier springt auch der
+       Schwierigkeitskoeffizient um den Faktor 1.15. */
+    nextStage() {
+      Game.stagesCleared++;
+      ROR.Difficulty.advanceStage();
+      Game.stageOrder++;
+      if (Game.stageOrder > 5) { Game.stageOrder = 1; Game.loop++; }
+      const seed = (Game.seed + Game.stagesCleared * 0x9e3779b9) >>> 0;
+      Game.buildWorld(Game.stageOrder, seed);
+      Game.afterStage();
     },
 
     boot() {
@@ -106,6 +149,7 @@
       ROR.Engine.onUpdate(function (dt) { ROR.Monsters.update(dt); }, 10);
       ROR.Engine.onUpdate(function (dt) { ROR.Dummy.update(dt); }, 12);
       ROR.Engine.onUpdate(function (dt) { ROR.Interactables.update(dt); }, 15);
+      ROR.Engine.onUpdate(function (dt) { ROR.Teleporter.update(dt); }, 16);
       ROR.Engine.onUpdate(function (dt) { ROR.Loot.update(dt); }, 18);
       ROR.Engine.onUpdate(function (dt) { ROR.Projectiles.update(dt); }, 20);
       ROR.Engine.onUpdate(function (dt) { ROR.Body.updateAll(dt); }, 30);

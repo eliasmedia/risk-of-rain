@@ -42,7 +42,9 @@
        'hint', 'debug', 'vignette', 'skills', 'numbers', 'crosshair',
        'levelout', 'survivorname', 'gold', 'diffbar', 'difffill', 'diffname',
        'target', 'targetname', 'targetfill', 'toast', 'dead',
-       'itembar', 'prompt', 'pickup', 'equipslot', 'equipsweep', 'equipname'
+       'itembar', 'prompt', 'pickup', 'equipslot', 'equipsweep', 'equipname',
+       'bossbar', 'bossname', 'bossfill', 'tpwrap', 'tpfill', 'tptext',
+       'tpmark', 'banner', 'bannersub'
       ].forEach((id) => { el[id] = document.getElementById(id); });
 
       const pool = el.numbers;
@@ -85,6 +87,76 @@
     },
 
     setDead(on) { el.dead.classList.toggle('hidden', !on); },
+
+    /* Stageschild beim Betreten — der Moment, in dem man weiß, wo man ist. */
+    stageBanner(theme, loop) {
+      el.banner.textContent = theme.name;
+      el.bannersub.textContent = theme.subtitle + (loop > 0 ? '  ·  Loop ' + loop : '');
+      el.banner.parentNode.className = 'show';
+      clearTimeout(HUD._bannerTimer);
+      HUD._bannerTimer = setTimeout(function () {
+        el.banner.parentNode.className = '';
+      }, 2600);
+    },
+
+    /* Bossleiste: mehrere Bosse teilen sich einen Balken, sonst stapeln sich
+       bei drei Bergschreinen drei Leisten übereinander. */
+    updateBoss() {
+      let leben = 0, max = 0, name = '', anzahl = 0;
+      const l = ROR.Monsters.list;
+      for (let i = 0; i < l.length; i++) {
+        const b = l[i].body;
+        if (!b.isBoss || !b.alive) continue;
+        leben += b.health + b.shield;
+        max += b.stats.maxHealth;
+        name = b.name;
+        anzahl++;
+      }
+      if (!anzahl) { el.bossbar.className = ''; return; }
+      el.bossbar.className = 'show';
+      el.bossfill.style.width = (U.clamp(leben / max, 0, 1) * 100).toFixed(1) + '%';
+      set(el.bossname, anzahl > 1 ? name + '  ×' + anzahl : name);
+    },
+
+    /* Teleporter: Ladebalken und ein Wegweiser, der am Bildrand klebt,
+       solange er nicht im Bild ist. */
+    updateTeleporter(p) {
+      const T = ROR.Teleporter;
+      if (!T || !T.parts) { el.tpwrap.className = ''; el.tpmark.className = ''; return; }
+
+      const zeigen = T.state !== 'used';
+      el.tpwrap.className = zeigen ? 'show' : '';
+      if (zeigen) {
+        el.tpfill.style.width = (T.charge * 100).toFixed(1) + '%';
+        const txt = T.state === 'idle' ? 'Teleporter  ·  ' + Math.round(T.distance) + ' m'
+          : T.state === 'charging'
+            ? (T.inRange ? 'lädt  ' + Math.round(T.charge * 100) + ' %'
+                         : 'ZURÜCK IN DEN UMKREIS  ·  ' + Math.round(T.distance) + ' m')
+          : T.state === 'waiting' ? 'Boss besiegen'
+          : 'bereit';
+        set(el.tptext, txt);
+        el.tpwrap.classList.toggle('warn', T.state === 'charging' && !T.inRange);
+        el.tpwrap.classList.toggle('done', T.state === 'ready');
+      }
+
+      _v.copy(T.position).setY(T.position.y + 3);
+      _v.project(ROR.Engine.camera);
+      const hinten = _v.z > 1;
+      let x = (_v.x * 0.5 + 0.5) * innerWidth;
+      let y = (-_v.y * 0.5 + 0.5) * innerHeight;
+      if (hinten) { x = innerWidth - x; y = innerHeight - y; }
+      /* Unten und oben mehr Abstand halten: dort liegen Lebensbalken,
+         Fähigkeiten und die Kopfzeile, und der Wegweiser klebte sonst auf
+         den Knöpfen. */
+      const rand = 44, oben = 108, unten = 132;
+      const ausserhalb = hinten || x < rand || x > innerWidth - rand
+                                || y < oben || y > innerHeight - unten;
+      x = U.clamp(x, rand, innerWidth - rand);
+      y = U.clamp(y, oben, innerHeight - unten);
+      el.tpmark.className = 'show' + (ausserhalb ? ' edge' : '');
+      el.tpmark.style.transform = 'translate(' + (x | 0) + 'px,' + (y | 0) + 'px) translate(-50%,-50%)';
+      set(el.tpmark, ausserhalb ? Math.round(T.distance) + ' m' : '◇');
+    },
 
     /* Aufsammelmeldung: Name und Wirkung, damit man ein unbekanntes Item
        nicht erst im Logbuch nachschlagen muss. */
@@ -245,6 +317,8 @@
 
       HUD.updateTarget(p);
       HUD.updateItems(b);
+      HUD.updateBoss();
+      HUD.updateTeleporter(p);
 
       /* Aufforderung am nächsten bedienbaren Objekt. */
       const f = ROR.Interactables && ROR.Interactables.focus;
@@ -285,6 +359,9 @@
           'items    ' + ROR.Items.total(b) + '   glück ' + ROR.Items.luck(b)
             + '   drops ' + ROR.Loot.pending,
           'bodies   ' + ROR.Body.all.length + '   buffs ' + b.buffs.length,
+          'stage    ' + game.stageOrder + '/5   loop ' + game.loop
+            + '   teleporter ' + ROR.Teleporter.state
+            + ' ' + Math.round(ROR.Teleporter.charge * 100) + '%',
           'seed     ' + (game.stage ? game.stage.seed : '-')
         ].join('\n'));
       }

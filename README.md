@@ -8,7 +8,8 @@ Build-Schritt, keine Internetverbindung, keine einzige Bild- oder Tondatei.
 
 ## Aktueller Stand
 
-**Stufe 4 abgeschlossen** — Welt, Bewegung, Kampf, Gegner, Kurve, Items und Beute.
+**Stufe 5 abgeschlossen** — ein Durchlauf ist spielbar: fünf Stages, Teleporter,
+Bosse und Loop.
 
 | Stufe | Inhalt | Status |
 |---|---|---|
@@ -16,12 +17,13 @@ Build-Schritt, keine Internetverbindung, keine einzige Bild- oder Tondatei.
 | 2 | Kampf: Werte, Schadenspipeline mit Proc-Coefficient, Commando mit vier Skills | ✅ fertig |
 | 3 | 14 Gegner, Combat Director mit Credit-System, Schwierigkeitskoeffizient | ✅ fertig |
 | 4 | 71 Items mit Stapelverhalten, Kisten, Schreine, 3D-Drucker | ✅ fertig |
-| 5 | Teleporter-Event, fünf Bosse, fünf Stages, Loop | offen |
+| 5 | Teleporter-Event, fünf Bosse, fünf Stages, Loop | ✅ fertig |
 | 6 | Huntress, Engineer, MUL-T, Artificer, Mercenary **+ Charakterdesign aufwerten** | offen |
 | 7 | Elite-Affixe, Ausrüstung, Drohnen, Bazaar, Mithrix | offen |
 | 8 | Menüs, Freischaltungen, Logbuch, Spielstand | offen |
 | 9 | Prozedurale Musik, Partikel, Trefferfeedback | offen |
 | 10 | Touch-Steuerung fürs Handy | offen |
+| 11 | Grafik-Überarbeitung: alle Modelle, Gelände-Detail, Materialien | offen |
 
 ## Steuerung
 
@@ -90,15 +92,16 @@ game/
     items.js               Inventar, Auslöser, Stapelkurven, Glück
     loot.js                Beutetabellen, Item-Kugeln, Aufsammeln
   data/
-    stages.js              Stage-Themen: Gelände, Farben, Bewuchs (reine Daten)
+    stages.js              Fünf Stage-Themen: Gelände, Farben, Bewuchs (reine Daten)
     survivors.js           Figuren: Grundwerte, Aussehen, vier Fähigkeiten
-    monsters.js            14 Gegner: Werte, Director-Kosten, Bauart, Verhalten
+    monsters.js            14 Gegner und 5 Bosse: Werte, Kosten, Bauart, Verhalten
     items.js               71 Items als Hook-Sätze
     interactables.js       Kisten, Schreine, Drucker: Preise, Gewichte, Budget
   world/
     terrain.js             Höhenfunktion, Geometrie, Vertexfarben, Abfragen
     props.js               Felsen, Bäume, Monolithen, schwebende Plattformen
     stage.js               Aufbau, Licht, Himmel, alle Kollisionsabfragen
+    teleporter.js          Das Ereignis: Laden, Bosswelle, Belohnung, Portal
   entities/
     projectile.js          Vorrat an Spuren, Funken und fliegenden Geschossen
     player.js              Figur, Bewegung, Zielen, Ablauf der Fähigkeiten
@@ -154,6 +157,18 @@ möglichst vollständig ausgibt. Die „zu billig"-Regel — mehr als das Sechsf
 des gewählten Gegners auf dem Konto heißt neu würfeln — ist das Scharnier, an
 dem er vom Sparen ins Klotzen kippt.
 
+**Der Teleporter ist der Konflikt, nicht nur ein Ausgang.** Er lädt 90 Sekunden,
+aber nur, solange man im Umkreis von 60 m bleibt — genau dort, wo gleichzeitig
+ein Boss und der verstärkte Nachschub des Directors auf einen zulaufen. Ohne
+diese Bedingung wäre er ein Knopf; mit ihr ist er die Stelle, an der ein
+Durchlauf kippt.
+
+**Bosse haben `attacks` statt eines Musters.** Die Zustandsmaschine sucht sich
+die erste Fähigkeit, die bereit ist und deren Reichweite passt. Dadurch wirken
+sie nicht wie ein Gegner mit mehr Leben, sondern haben einen erkennbaren
+Rhythmus: der Stone Titan wechselt zwischen Faust, Augenlaser und Steinsalve,
+der Clay Dunestrider pflanzt sich ein und saugt Leben, solange man stehen bleibt.
+
 **Ein Item ist ein Dateneintrag, kein Sonderfall.** Kein Kampfcode kennt ein
 einzelnes Item. Ein Item ist ein Satz Hooks — `stats`, `onHit`, `onKill`,
 `onDamaged`, `onIncoming`, `onHealed`, `onInterval`, `damageMod` —, und
@@ -205,6 +220,16 @@ Proc-Coefficient *und* das Glück aus dem 57 Leaf Clover.
 `baseCost`, `directorCost` und `weight`, dazu ein Fall in `BUILDERS` und in
 `use()` in `game/entities/interactable.js`.
 
+**Neue Stage** — Eintrag in `game/data/stages.js` mit `order`. Kommen mehrere
+Themen auf denselben Platz, wird beim Betreten eines davon gezogen. Das
+„Meer" ist nur eine eingefärbte Ebene: in den Abyssal Depths ist es Lava, in
+Sky Meadow sind es Wolken.
+
+**Neuen Boss** — wie ein Gegner, aber mit `category: 'champion'`, `isBoss: true`
+und einem `attacks`-Feld. Angriffsarten: `shot`, `slam`, `beam`, `summon`,
+`drain`. `belowHealth` macht eine Fähigkeit zur letzten Karte, die erst unter
+einem Lebensanteil gespielt wird.
+
 **Neuen Buff** — Eintrag in `DEFS` in `game/sim/buffs.js`. `modify(body, out)`
 verändert Werte, `dot` teilt regelmäßig Schaden aus. Dass Buffs überhaupt auf
 Werte wirken, weiß `stats.js` nicht — `buffs.js` meldet sich über
@@ -227,6 +252,30 @@ python3 -m http.server 8792
 ```
 
 ---
+
+## Was Stufe 5 gebracht hat
+
+Ab hier ist es ein Durchlauf und keine Sandkiste mehr. Fünf Stages mit eigenem
+Klima, das Teleporter-Ereignis, fünf Bosse und der Loop.
+
+| Geprüft | Soll | Ist |
+|---|---|---|
+| Teleporter-Ladung außerhalb des Umkreises | 0 % | 0 % |
+| … fünf Sekunden innerhalb | 5.6 % | 5.6 % |
+| Stagesprung des Koeffizienten | ×1.15 | ×1.15 (sieben Wechsel in Folge) |
+| Stage-Reihenfolge und Loop | 1→2→3→4→5→1, Loop +1 | wie erwartet |
+| Objekte je Stage (Budget 220 / 320 / 400 / 520) | mehr pro Stage | 14–19 / 22–24 / 32 / 34 |
+| Stone Titan auf Stufe 3 | 3360 Leben, 56 Schaden | 3360 / 56 |
+| Alle fünf Bosse | Modell, Werte, Angriffe | gebaut, alle greifen an |
+| Teleporter-Entfernung vom Start | weit genug für einen Weg | 79–118 m |
+
+Ein simulierter Durchlauf: Titanic Plains in 93 Sekunden geräumt — Teleporter
+gefunden, aktiviert, Beetle Queen besiegt, Portal genommen. Items, Stufe und
+Gold gehen mit auf die nächste Stage, der Koeffizient springt auf 1.33.
+
+Unterwegs korrigiert: der Lichtstrahl des Teleporters ist ein Wegweiser für die
+Ferne — aus der Nähe stand man hinter einem neunzig Meter hohen Vorhang. Er
+blendet sich jetzt unter zwölf Metern aus.
 
 ## Was Stufe 4 gebracht hat
 

@@ -276,9 +276,47 @@
     return root;
   }
 
+  /* Wurm: Kopf plus eine Kette von Gliedern, jedes am vorigen aufgehängt.
+     Die Welle entsteht in der Animation aus einer Phasenverschiebung je
+     Glied — das ist billiger und lesbarer als eine Wegaufzeichnung. */
+  function buildWorm(s) {
+    const root = new THREE.Group();
+    const c = s.colors;
+    const mMain = mat(c.main), mDark = mat(c.dark);
+    const S = s.size;
+    const core = joint(root, 0, S * 1.15, 0, 'core');
+
+    add(core, BOX(S * 1.25, S * 1.05, S * 1.6), mMain, 0, 0, -S * 0.35);
+    add(core, BOX(S * 1.45, S * 0.3, S * 0.5), mDark, 0, S * 0.4, -S * 0.7);
+    for (let k = -1; k <= 1; k += 2) {
+      const kiefer = add(core, BOX(S * 0.22, S * 0.7, S * 0.8), mDark,
+                         k * S * 0.55, -S * 0.15, -S * 1.1);
+      kiefer.rotation.z = -k * 0.3;
+    }
+    const glut = new THREE.Mesh(
+      new THREE.IcosahedronGeometry(S * 0.42, 1),
+      new THREE.MeshBasicMaterial({ color: c.glow, transparent: true, opacity: 0.85,
+                                    depthWrite: false, blending: THREE.AdditiveBlending })
+    );
+    glut.position.set(0, 0, -S * 0.9);
+    glut.userData.role = 'glow';
+    core.add(glut);
+
+    let eltern = core;
+    for (let i = 0; i < s.segments; i++) {
+      const seg = joint(eltern, 0, 0, S * 1.05, 'seg' + i);
+      const w = S * (1.1 - i * 0.075);
+      add(seg, BOX(w, w, S * 1.0), mMain, 0, 0, S * 0.5);
+      add(seg, BOX(w * 1.2, w * 0.22, S * 0.24), mDark, 0, w * 0.4, S * 0.15);
+      eltern = seg;
+    }
+    return root;
+  }
+
   const BUILDERS = {
     quadruped: buildQuadruped, orb: buildOrb, jelly: buildJelly,
-    biped: buildBiped, golem: buildGolem, contraption: buildContraption, fungus: buildFungus
+    biped: buildBiped, golem: buildGolem, contraption: buildContraption,
+    fungus: buildFungus, worm: buildWorm
   };
 
   /* Vorlage je Gegnerart, danach nur noch klonen. */
@@ -338,6 +376,15 @@
         deathFx: 0,
         hoverOffset: U.chaos.range(-1.5, 1.5)
       };
+
+      body.isBoss = !!def.isBoss;
+      if (def.ai.attacks) {
+        m.atkCd = {};
+        for (let i = 0; i < def.ai.attacks.length; i++) {
+          // Gestaffelt starten, sonst feuert ein Boss beim Erscheinen alles auf einmal.
+          m.atkCd[def.ai.attacks[i].id] = U.chaos.range(0.5, 3);
+        }
+      }
 
       body.onDeath = function () {
         m.deathFx = 0.7;
@@ -461,6 +508,40 @@
       if (m.timer <= 0) { m.state = 'chase'; m.cooldown = ai.cooldown; }
       animate(m, dt, 3);
       return;
+    } else if (!stunned && m.state === 'beam') {
+      // Dauerstrahl: tickt, bis die Schüsse aufgebraucht sind.
+      m.beamLeft -= dt;
+      if (m.beamLeft <= 0) {
+        m.beamLeft += m.attack.interval;
+        m.beamTicks--;
+        beamTick(m, p);
+        if (m.beamTicks <= 0) { m.state = 'chase'; m.cooldown = 0.8; }
+      }
+      animate(m, dt, 0);
+      return;
+    } else if (!stunned && m.state === 'drain') {
+      m.drainLeft -= dt;
+      m.drainTick -= dt;
+      if (m.drainTick <= 0) { m.drainTick += m.attack.interval; drainTick(m, p); }
+      if (m.drainLeft <= 0) {
+        m.state = 'chase'; m.cooldown = 1.2;
+        m.body.def = m.def;                    // Rüstungsbonus wieder weg
+        m.body.drainArmor = 0; m.body.statsDirty = true;
+      }
+      animate(m, dt, 0);
+      return;
+    } else if (!stunned && ai.kind === 'boss' && m.state !== 'windup') {
+      for (const id in m.atkCd) m.atkCd[id] -= dt;
+      if (m.cooldown <= 0 && canSee(m, p, dist)) {
+        for (let i = 0; i < ai.attacks.length; i++) {
+          const a = ai.attacks[i];
+          if (m.atkCd[a.id] > 0 || dist > a.range) continue;
+          if (a.belowHealth && m.body.healthFraction > a.belowHealth) continue;
+          m.state = 'windup'; m.timer = a.windup; m.pending = 'boss'; m.attack = a;
+          m.atkCd[a.id] = a.cooldown;
+          break;
+        }
+      }
     } else if (!stunned && m.cooldown <= 0 && canSee(m, p, dist)) {
       let pending = null;
       if (ai.kind === 'charger') { if (dist <= ai.range) pending = 'charge'; }
@@ -485,6 +566,23 @@
     } else if (!def.flying) {
       m.velocity.x *= 0.85; m.velocity.z *= 0.85;
       groundMove(m, dt, 0, stage);
+    }
+
+    /* Berührungsschaden: der Wurm greift nicht an, er rennt einen um. */
+    if (def.contact) {
+      m._contactCd = (m._contactCd || 0) - dt;
+      if (m._contactCd <= 0 && dist < m.body.radius + 2.2) {
+        m._contactCd = def.contact.cooldown;
+        ROR.Damage.deal({
+          attacker: m.body, victim: p.body,
+          coefficient: def.contact.coefficient, proc: def.contact.proc,
+          position: p.position.clone().setY(p.position.y + 1.2)
+        });
+        if (def.contact.burn) {
+          ROR.Buffs.applyDot(p.body, 'burn', m.body,
+            m.body.stats.damage * def.contact.burn, 3);
+        }
+      }
     }
 
     // Immer zum Spieler schauen; das Modell blickt entlang -Z.
@@ -634,6 +732,8 @@
       return;
     }
 
+    if (m.pending === 'boss') { bossAttack(m, p, from); return; }
+
     if (!ai.shot) return;
 
     // Vorhalten: auf die Stelle zielen, an der der Spieler sein wird.
@@ -671,6 +771,113 @@
     }
   }
 
+  /* -------------------------------------------------------- Bossangriffe */
+
+  function aimAt(m, p, from, out, gravity, speed) {
+    const lead = speed ? Math.hypot(p.position.x - from.x, p.position.z - from.z) / speed : 0;
+    return out.set(
+      p.position.x + (p.velocity ? p.velocity.x : 0) * lead * 0.6 - from.x,
+      p.position.y + 1.0 + (gravity ? gravity * lead * lead * 0.5 : 0) - from.y,
+      p.position.z + (p.velocity ? p.velocity.z : 0) * lead * 0.6 - from.z
+    ).normalize();
+  }
+
+  function bossAttack(m, p, from) {
+    const a = m.attack;
+    m.cooldown = 0.6;
+
+    if (a.type === 'shot') {
+      aimAt(m, p, from, _aim, a.shot.gravity, a.shot.speed);
+      for (let i = 0; i < (a.burst || 1); i++) {
+        const d = _aim.clone();
+        if (a.spread) {
+          d.x += U.chaos.range(-a.spread, a.spread);
+          d.y += U.chaos.range(-a.spread * 0.6, a.spread * 0.6);
+          d.z += U.chaos.range(-a.spread, a.spread);
+          d.normalize();
+        }
+        ROR.Projectiles.spawn({
+          attacker: m.body, team: m.body.team, origin: from, dir: d,
+          speed: a.shot.speed, life: 6, radius: a.shot.radius,
+          coefficient: a.shot.coefficient, proc: a.shot.proc,
+          gravity: a.shot.gravity || 0, color: a.shot.color,
+          homing: a.homing ? p.body : null, turn: 3,
+          explode: a.shot.blast || null
+        });
+      }
+      return;
+    }
+
+    if (a.type === 'slam') {
+      // Am eigenen Ort (Supernova) oder dort, wo der Spieler stand.
+      const ziel = a.atSelf ? m.model.position.clone()
+                            : p.position.clone().setY(p.position.y + 1);
+      ROR.Damage.explode({
+        attacker: m.body, team: m.body.team, position: ziel,
+        radius: a.radius, coefficient: a.coefficient, proc: a.proc
+      });
+      ROR.Projectiles.spark(ziel, a.color || 0xffc98a, a.radius * 0.6);
+      return;
+    }
+
+    if (a.type === 'beam') {
+      m.state = 'beam';
+      m.beamTicks = a.ticks;
+      m.beamLeft = a.interval;
+      return;
+    }
+
+    if (a.type === 'summon') {
+      for (let i = 0; i < a.count; i++) {
+        const def = ROR.Data.monster(a.monster);
+        if (!def) continue;
+        const ang = U.chaos.next() * U.TAU;
+        const pos = m.model.position.clone();
+        pos.x += Math.cos(ang) * 5; pos.z += Math.sin(ang) * 5;
+        pos.y = ROR.Stage.current.terrain.heightAt(pos.x, pos.z);
+        Monsters.spawn(def, m.body.level, pos);
+      }
+      return;
+    }
+
+    if (a.type === 'drain') {
+      m.state = 'drain';
+      m.drainLeft = a.duration;
+      m.drainTick = a.interval;
+      m.body.drainArmor = a.armorBonus;
+      m.body.statsDirty = true;
+      return;
+    }
+  }
+
+  function beamTick(m, p) {
+    const a = m.attack;
+    _w.set(m.model.position.x, m.model.position.y + m.def.height * 0.72, m.model.position.z);
+    aimAt(m, p, _w, _aim, 0, 0);
+    ROR.Projectiles.bullet({
+      attacker: m.body, team: m.body.team, origin: _w, dir: _aim,
+      coefficient: a.coefficient, proc: a.proc, range: a.range + 10,
+      tracerColor: a.color, sparkColor: a.color
+    });
+  }
+
+  function drainTick(m, p) {
+    const a = m.attack;
+    const d = m.model.position.distanceTo(p.position);
+    if (d > a.radius) return;
+    const koeff = d < a.nearRadius ? a.nearCoefficient : a.coefficient;
+    const r = ROR.Damage.deal({
+      attacker: m.body, victim: p.body, coefficient: koeff, proc: 0,
+      position: p.position.clone().setY(p.position.y + 1.2)
+    });
+    // Er heilt sich um genau das, was er nimmt.
+    if (r && r.amount > 0) m.body.heal(r.amount);
+    _w.set(m.model.position.x, m.model.position.y + m.def.height * 0.5, m.model.position.z);
+    _aim.set(p.position.x - _w.x, p.position.y + 1 - _w.y, p.position.z - _w.z);
+    const len = _aim.length();
+    ROR.Projectiles.tracer(_w, _aim.divideScalar(len), len, 0xd9743c);
+  }
+
   /* ----------------------------------------------------------- Animation */
 
   function animate(m, dt, stride) {
@@ -686,6 +893,16 @@
     if (parts.wing0) { parts.wing0.rotation.z = Math.sin(m.walkPhase * 4) * 0.5; }
     if (parts.wing1) { parts.wing1.rotation.z = -Math.sin(m.walkPhase * 4) * 0.5; }
     if (parts.ring) parts.ring.rotation.y += dt * 1.4;
+
+    // Wurmglieder laufen phasenverschoben — daraus wird die Welle.
+    if (m.def.shape.kind === 'worm') {
+      for (let i = 0; i < m.def.shape.segments; i++) {
+        const seg = parts['seg' + i];
+        if (!seg) continue;
+        seg.rotation.y = Math.sin(m.walkPhase * 1.6 - i * 0.55) * 0.34;
+        seg.rotation.x = Math.sin(m.walkPhase * 1.2 - i * 0.4) * 0.16;
+      }
+    }
 
     if (m.def.flying && parts.core) {
       parts.core.position.y = (m.def.shape.size || 1) * 1.6 + Math.sin(m.walkPhase * 0.8) * 0.18;
@@ -707,6 +924,12 @@
       parts.core.position.z = Math.sin(k * 30) * 0.05;
     } else if (parts.core) parts.core.position.z = 0;
   }
+
+  /* Der Rüstungsbonus während „Recover" läuft über die Wertekette, damit die
+     Schadensformel unverändert bleibt. */
+  ROR.Stats.addModifier(function (body, out) {
+    if (body.drainArmor) out.armor += body.drainArmor;
+  });
 
   ROR.Monsters = Monsters;
 })(window.ROR);

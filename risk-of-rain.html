@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Risk of Rain — HTML Edition</title>
+<link rel="stylesheet" href="game/ui/style.css">
+</head>
+<body>
+
+<canvas id="gl"></canvas>
+
+<div id="ui">
+
+  <div id="topbar">
+    <span id="timer">0:00</span>
+    <span id="stagename"></span>
+  </div>
+
+  <div id="vitals">
+    <div id="hpbar">
+      <i id="hplag"></i>
+      <i id="hpfill"></i>
+      <span id="hptext">110 / 110</span>
+    </div>
+    <div class="sub"><span>Commando</span><span id="levelout">Stufe 1</span></div>
+  </div>
+
+  <div id="vignette"></div>
+  <pre id="debug" class="hidden"></pre>
+
+  <div id="hint">
+    <b>Klicken zum Spielen</b><br>
+    <b>W A S D</b> laufen &nbsp;·&nbsp; <b>Maus</b> umsehen &nbsp;·&nbsp; <b>Leertaste</b> springen<br>
+    <b>Strg</b> sprinten &nbsp;·&nbsp; <b>M</b> Pause &nbsp;·&nbsp; <b>F3</b> Technikanzeige
+  </div>
+
+</div>
+
+<!-- Die Reihenfolge ist die Abhängigkeitsreihenfolge. Neue Dateien hier eintragen. -->
+<script src="game/lib/three.min.js"></script>
+<script src="game/core/util.js"></script>
+<script src="game/core/input.js"></script>
+<script src="game/core/engine.js"></script>
+<script src="game/core/camera.js"></script>
+<script src="game/data/stages.js"></script>
+<script src="game/world/terrain.js"></script>
+<script src="game/world/props.js"></script>
+<script src="game/world/stage.js"></script>
+<script src="game/entities/player.js"></script>
+<script src="game/ui/hud.js"></script>
+<script src="game/main.js"></script>
+
+</body>
+</html>

@@ -199,7 +199,13 @@
          treffen — dadurch sieht man sie fliegen und kann sie zuordnen. */
       s.homing = opts.homing || null;
       s.turn = opts.turn || 7;
+      /* Abpraller: das Laser Glaive springt von Gegner zu Gegner und wird
+         dabei staerker. `hit` merkt sich, wen es schon erwischt hat. */
+      s.bounces = opts.bounces || 0;
+      s.bounceRange = opts.bounceRange || 25;
+      s.bounceGrowth = opts.bounceGrowth || 0;
       s.explode = opts.explode || null;
+      s.onHit = opts.onHit || null;   // z. B. Brand anlegen
       s.travelled = 0;
       s.hit.length = 0;
       s.mesh.position.copy(opts.origin);
@@ -234,6 +240,15 @@
       for (let i = 0; i < shots.length; i++) {
         const s = shots[i];
         if (!s.active) continue;
+
+        /* Bubble Shield: was von aussen kommt, zerschellt daran. Der Schild
+           haelt buchstaeblich alles ab — das ist sein ganzer Zweck. */
+        if (s.team !== ROR.Body.PLAYER && ROR.Deployables
+            && ROR.Deployables.blocks(s.mesh.position)) {
+          Projectiles.spark(s.mesh.position, 0x8fd6ff, 0.8);
+          finish(s, false);
+          continue;
+        }
 
         s.life -= dt;
         if (s.life <= 0) { finish(s, false); continue; }
@@ -271,7 +286,24 @@
             proc: s.proc, position: _p.clone()
           });
           s.hit.push(b);
+          if (s.onHit) s.onHit(b, _p);
           Projectiles.spark(_p, 0xffc98a, 0.7);
+
+          if (s.bounces > 0) {
+            const naechst = Projectiles.enemiesInRange(b.position, s.bounceRange, s.team, 8)
+              .find(function (e) { return s.hit.indexOf(e) < 0; });
+            if (naechst) {
+              s.bounces--;
+              s.coefficient *= 1 + s.bounceGrowth;
+              s.mesh.position.copy(_p);
+              s.dir.set(naechst.position.x - _p.x,
+                        naechst.position.y + naechst.height * 0.5 - _p.y,
+                        naechst.position.z - _p.z).normalize();
+              s.homing = naechst;
+              done = true;
+              break;
+            }
+          }
           if (!s.pierce) { finish(s, true, _p); done = true; break; }
         }
         if (done) continue;

@@ -170,7 +170,7 @@
 
         _walkPhase: 0, _coyote: 0, _jumpBuffer: 0, _airTime: 0,
         _lastFallSpeed: 0, _landTimer: 0, _aimTimer: 0,
-        _gunKick: 0, _dive: 0, _diveDir: new THREE.Vector3(),
+        _gunKick: 0, _dash: null, _combo: 0, _pending: [],
         _jumpsLeft: 1,
         hurtFlash: 0,
 
@@ -180,15 +180,66 @@
 
         recoil(amount) { p._gunKick = Math.min(1.4, p._gunKick + amount); },
 
+        /* Etwas gleich, aber nicht sofort tun — der zweite Streich von
+           Whirlwind, der Nachschlag einer Kombination. */
+        after(sekunden, fn) { p._pending.push({ t: sekunden, fn: fn }); },
+
+        /* MUL-T trägt zwei Primärwaffen und schaltet zwischen ihnen um.
+           Der Platz bleibt derselbe, nur die Definition wechselt. */
+        swapPrimary() {
+          const alt = p.def.skills.primaryAlt;
+          if (!alt) return;
+          const st = p.skills.primary;
+          st.def = (st.def === p.def.skills.primary) ? alt : p.def.skills.primary;
+          st.interval = 0;
+          ROR.HUD.refreshSkill('primary', st.def);
+          ROR.HUD.toast(st.def.name);
+        },
+
         beginFlight(seconds) { p._flight = seconds; },
 
-        startDive() {
-          p._dive = DIVE_TIME;
-          // Rollt in Laufrichtung; wer steht, rollt nach vorn.
+        /* Ein Satz nach vorn. Die Rolle des Commando, der Ansturm von MUL-T
+           und der Sprung der Mercenary sind derselbe Vorgang mit anderen
+           Zahlen — Dauer, Tempo, Unverwundbarkeit und ob er wehtut. */
+        startDash(o) {
+          o = o || {};
           const len = Math.hypot(p.velocity.x, p.velocity.z);
-          if (len > 0.5) p._diveDir.set(p.velocity.x / len, 0, p.velocity.z / len);
-          else ROR.Camera.forward(p._diveDir);
-          body.invulnerable = Math.max(body.invulnerable, DIVE_IFRAMES);
+          const dir = new THREE.Vector3();
+          if (o.towardAim) ROR.Camera.forward(dir);
+          else if (len > 0.5) dir.set(p.velocity.x / len, 0, p.velocity.z / len);
+          else ROR.Camera.forward(dir);
+
+          p._dash = {
+            total: o.time || DIVE_TIME,
+            left: o.time || DIVE_TIME,
+            speed: o.speed || DIVE_SPEED,
+            dir: dir,
+            damage: o.damage || null,
+            radius: o.radius || 2.6,
+            hit: [],
+            slot: o.slot || null,
+            resetOnHit: !!o.resetOnHit,
+            pose: o.pose || 'roll'
+          };
+          if (o.iframes) body.invulnerable = Math.max(body.invulnerable, o.iframes);
+          if (o.armor) { body.dashArmor = o.armor; body.statsDirty = true; }
+        },
+
+        startDive() { p.startDash({ time: DIVE_TIME, iframes: DIVE_IFRAMES }); },
+
+        /* Eviscerate: an den nächsten Gegner heften und unangreifbar bleiben. */
+        latchTo(ziel, dt) {
+          if (!ziel) return;
+          const d = new THREE.Vector3(ziel.position.x - p.position.x, 0,
+                                      ziel.position.z - p.position.z);
+          const len = d.length();
+          if (len > 2.2) {
+            d.divideScalar(len);
+            p.position.x += d.x * Math.min(len - 2.0, 40 * dt);
+            p.position.z += d.z * Math.min(len - 2.0, 40 * dt);
+          }
+          p.position.y = Math.max(p.position.y, ziel.position.y + 0.6);
+          p.velocity.set(0, 0, 0);
         },
 
         addExp(amount) {
@@ -217,6 +268,23 @@
     const stage = ROR.Stage.current;
     camPos.copy(ROR.Engine.camera.position);
     ROR.Camera.aim(aimDir);
+
+    /* Manche Figuren zielen nicht selbst: die Huntress sucht sich das nächste
+       Ziel im Umkreis und trifft es, egal wohin das Fadenkreuz zeigt. Das ist
+       ihr ganzes Wesen — sie kämpft, während sie ausweicht. */
+    if (p.def.autoTarget) {
+      const ziel = ROR.Projectiles.nearestEnemy(p.position, p.def.autoTarget, p.body.team);
+      if (ziel) {
+        const f = p.facing, cf = Math.cos(f), sf = Math.sin(f);
+        muzzle.set(p.position.x + 0.34 * cf + (-0.55) * sf,
+                   p.position.y + 1.24,
+                   p.position.z - 0.34 * sf + (-0.55) * cf);
+        target.set(ziel.position.x, ziel.position.y + ziel.height * 0.55, ziel.position.z);
+        shotDir.copy(target).sub(muzzle).normalize();
+        return { player: p, body: p.body, origin: muzzle, dir: shotDir,
+                 target: target, lockedOn: ziel };
+      }
+    }
 
     const wall = stage ? stage.clearance(camPos, aimDir, AIM_RANGE, 0.6) : AIM_RANGE;
     const hit = ROR.Body.raycast(camPos, aimDir, Math.min(AIM_RANGE, wall), p.body.team);
@@ -281,6 +349,29 @@
           d.fire(aimContext(p));
           if (d.cancelsSprint !== false) { p._aimTimer = 0.45; p.sprinting = false; }
         }
+      } else if (d.mode === 'charge') {
+        /* Halten lädt auf, Loslassen feuert. Wie stark, entscheidet die
+           Ladung — bei Engineer die Zahl der Granaten, bei Artificer die
+           Wucht der Bombe. */
+        if (inp.down(slot) && st.charges > 0) {
+          st.charging = Math.min(1, (st.charging || 0) + dt / d.chargeTime);
+          p._aimTimer = 0.45;
+          p.sprinting = false;
+        } else if (st.charging > 0) {
+          const menge = st.charging;
+          st.charging = 0;
+          if (st.charges === st.maxCharges) st.cooldown = d.cooldown;
+          st.charges--;
+          d.fire(aimContext(p), menge);
+          p._aimTimer = 0.45;
+        }
+      } else if (d.mode === 'swap') {
+        if (inp.pressed(slot) && st.cooldown <= 0) {
+          st.cooldown = d.cooldown;
+          d.fire({ player: p, body: p.body });
+        }
+        // Wechselfähigkeiten haben keine Ladungen, nur eine kurze Sperre.
+        if (st.cooldown > 0) st.cooldown -= dt;
       } else if (d.mode === 'stance') {
         if (st.stance > 0) {
           st.stance -= dt;
@@ -339,11 +430,36 @@
     updateSkills(p, dt);
     ROR.Items.updateEquipment(p.body, dt, inp.pressed('equipment'));
 
-    if (p._dive > 0) {
-      // Während der Rolle zählt nur die Rollrichtung.
-      p._dive -= dt;
-      p.velocity.x = p._diveDir.x * S.moveSpeed * DIVE_SPEED;
-      p.velocity.z = p._diveDir.z * S.moveSpeed * DIVE_SPEED;
+    if (p._dash) {
+      const g = p._dash;
+      g.left -= dt;
+      p.velocity.x = g.dir.x * S.moveSpeed * g.speed;
+      p.velocity.z = g.dir.z * S.moveSpeed * g.speed;
+
+      /* Ein Sprintangriff, der wehtut, trifft jeden Gegner höchstens einmal —
+         sonst würde ein einziger Satz durch eine Gruppe alles auslöschen. */
+      if (g.damage) {
+        const treffer = ROR.Projectiles.enemiesInRange(p.position, g.radius, p.body.team, 8);
+        for (let i = 0; i < treffer.length; i++) {
+          if (g.hit.indexOf(treffer[i]) >= 0) continue;
+          g.hit.push(treffer[i]);
+          ROR.Damage.deal({
+            attacker: p.body, victim: treffer[i],
+            coefficient: g.damage.coefficient, proc: g.damage.proc,
+            position: treffer[i].center(new THREE.Vector3())
+          });
+          // Blinding Assault erneuert sich an jedem Treffer.
+          if (g.resetOnHit && g.slot) {
+            const st = p.skills[g.slot];
+            if (st.charges < st.maxCharges) st.charges++;
+          }
+        }
+      }
+
+      if (g.left <= 0) {
+        p._dash = null;
+        if (p.body.dashArmor) { p.body.dashArmor = 0; p.body.statsDirty = true; }
+      }
     } else {
       const accel = p.grounded ? ACCEL_GROUND : ACCEL_AIR;
       const vx = p.velocity.x, vz = p.velocity.z;
@@ -415,6 +531,11 @@
       p._lastFallSpeed = 0;
     }
 
+    for (let i = p._pending.length - 1; i >= 0; i--) {
+      p._pending[i].t -= dt;
+      if (p._pending[i].t <= 0) { p._pending[i].fn(); p._pending.splice(i, 1); }
+    }
+
     p._aimTimer = Math.max(0, p._aimTimer - dt);
     p.hurtFlash = Math.max(0, p.hurtFlash - dt);
     animate(p, dt);
@@ -482,9 +603,9 @@
     const swing = Math.sin(p._walkPhase) * stride;
     const swing2 = Math.sin(p._walkPhase + Math.PI) * stride;
 
-    if (p._dive > 0) {
+    if (p._dash) {
       // Rolle: zusammengekauert und um die eigene Achse.
-      const t = 1 - p._dive / DIVE_TIME;
+      const t = 1 - p._dash.left / Math.max(0.01, p._dash.left + 0.0001) + (1 - p._dash.left);
       // Vorwärtsüberschlag: der Kopf muss nach -Z wandern, das ist eine
       // *negative* Drehung um X. Mit positiver rollte die Figur rückwärts,
       // während sie sich vorwärts bewegte.
@@ -517,7 +638,7 @@
     }
 
     /* Der Waffenarm hebt sich beim Zielen und wird vom Rückstoß geworfen. */
-    if (p._dive <= 0) {
+    if (!p._dash) {
       const aiming = p._aimTimer > 0;
       // +1.45 rad bringt den hängenden Arm auf Waagerechte nach vorn.
       // Der Rückstoß hebt die Mündung, dreht also *weiter* in dieselbe Richtung.

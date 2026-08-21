@@ -19,7 +19,7 @@ Bosse und Loop.
 | 4 | 71 Items mit Stapelverhalten, Kisten, Schreine, 3D-Drucker | ✅ fertig |
 | 5 | Teleporter-Event, fünf Bosse, fünf Stages, Loop | ✅ fertig |
 | 6a | Startbildschirm, Figurenauswahl, 14 Artefakte | ✅ fertig |
-| 6b | Huntress, Engineer, MUL-T, Artificer, Mercenary | offen |
+| 6b | Huntress, Engineer, MUL-T, Artificer, Mercenary | ✅ fertig |
 | 6c | Charakterdesign aufwerten, Item-Modelle am Körper | offen |
 | 7 | Elite-Affixe, Ausrüstung, Drohnen, Bazaar, Mithrix | offen |
 | 8 | Menüs, Freischaltungen, Logbuch, Spielstand | offen |
@@ -96,7 +96,7 @@ game/
     loot.js                Beutetabellen, Item-Kugeln, Aufsammeln
   data/
     stages.js              Fünf Stage-Themen: Gelände, Farben, Bewuchs (reine Daten)
-    survivors.js           Figuren: Grundwerte, Aussehen, vier Fähigkeiten
+    survivors.js           Sechs Figuren: Grundwerte, Aussehen, vier Fähigkeiten
     monsters.js            14 Gegner und 5 Bosse: Werte, Kosten, Bauart, Verhalten
     items.js               71 Items als Hook-Sätze
     interactables.js       Kisten, Schreine, Drucker: Preise, Gewichte, Budget
@@ -110,6 +110,7 @@ game/
     player.js              Figur, Bewegung, Zielen, Ablauf der Fähigkeiten
     monster.js             Sechs Modell-Bauarten und die Gegner-Zustandsmaschine
     interactable.js        Modelle, Bedienung, Scene Director
+    deployable.js          Türme, Minen, Schildkuppel, Wirkbereiche
     dummy.js               Trainingspuppen mit 0, 20 und 100 Rüstung
   ui/
     style.css              Oberfläche
@@ -273,6 +274,30 @@ Ohne `--push` wird nur kopiert. Liegt das Website-Repo woanders, hilft
 `ROR_WEB=/pfad/zum/repo ./deploy.sh`.
 
 ---
+
+## Was Stufe 6b gebracht hat
+
+Alle sechs Figuren, jede mit eigener Spielweise statt anderer Zahlen:
+
+| Figur | Werte | Was sie ausmacht | DPS im Prüfstand |
+|---|---|---|---|
+| Commando | 110 · 12 | Allrounder, alles auf Reichweite | 102 |
+| Huntress | 90 · 12 | **Zielt nicht selbst** — trifft alles in 60 m, muss aber nah ran | 83 |
+| Engineer | 130 · 14 | Stellt Türme, Minen und eine undurchdringliche Kuppel auf | 72 |
+| MUL-T | 200 · 11 · 12 Rüstung | Trägt **zwei Primärwaffen** und schaltet um | 95 |
+| Artificer | 110 · 12 | Aufladbare Bombe, Eiswand, dreisekündiger Flammenstrahl | 77 |
+| Mercenary | 110 · 12 · 20 Rüstung | Nahkampf, zwei Sprünge, dreifacher Satz mit Rückgabe bei Treffer | 74 |
+
+Dafür kamen vier neue Mechaniken dazu, die es vorher nicht gab: **Aufladen**
+(halten und loslassen), **Waffenwechsel** auf demselben Platz, ein
+verallgemeinerter **Sprintangriff** (Rolle, Ansturm und Sprung sind derselbe
+Vorgang mit anderen Zahlen) und **Aufstellbares** — Türme erben Leben, Schaden
+*und damit alle Items* ihres Erbauers, genau wie in der Vorlage.
+
+Ein echter Fehler dabei gefunden: **der Nahkampf maß bis zum Mittelpunkt des
+Gegners.** An einem Stone Titan stand man damit mitten in ihm drin und traf
+nichts, weil sein Mittelpunkt weiter weg liegt als jede Klinge reicht. Jetzt
+wird bis zur Hülle gemessen — die Mercenary ging dadurch von 16 auf 74 DPS.
 
 ## Was Stufe 6a gebracht hat
 

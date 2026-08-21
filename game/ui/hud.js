@@ -77,6 +77,15 @@
       set(el.survivorname, def.name);
     },
 
+    /* Einzelnes Feld neu beschriften — MUL-T wechselt seine Primärwaffe. */
+    refreshSkill(slot, def) {
+      const ui = skillEls[slot];
+      if (!ui) return;
+      ui.wrap.querySelector('.key').textContent = def.glyph;
+      ui.wrap.style.setProperty('--tint', '#' + def.color.toString(16).padStart(6, '0'));
+      ui.wrap.title = def.name + ' — ' + def.desc;
+    },
+
     hideHint() { el.hint.classList.add('hidden'); },
 
     /* Kurze Einblendung in der Bildmitte — Stufenaufstieg, Stageschild. */

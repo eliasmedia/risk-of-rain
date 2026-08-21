@@ -113,6 +113,7 @@
       ROR.Dummy.clear();
       ROR.Interactables.clear();
       ROR.Loot.clear();
+      ROR.Deployables.clear();
       ROR.Teleporter.clear();
       if (Game.player) ROR.Body.clearExcept(Game.player.body);
 
@@ -121,6 +122,7 @@
       Game.stage = ROR.Stage.load(theme, seed);
       ROR.Projectiles.init();
       ROR.Loot.init();
+      ROR.Deployables.init();
       ROR.Director.beginStage(order, seed);
       Game.mountainShrines = 0;
       const anzahl = ROR.Interactables.populate(Game.stage, order, seed);
@@ -206,6 +208,7 @@
       ROR.Engine.onUpdate(function (dt) { ROR.Interactables.update(dt); }, 15);
       ROR.Engine.onUpdate(function (dt) { ROR.Teleporter.update(dt); }, 16);
       ROR.Engine.onUpdate(function (dt) { ROR.Loot.update(dt); }, 18);
+      ROR.Engine.onUpdate(function (dt) { ROR.Deployables.update(dt); }, 19);
       ROR.Engine.onUpdate(function (dt) { ROR.Projectiles.update(dt); }, 20);
       ROR.Engine.onUpdate(function (dt) { ROR.Body.updateAll(dt); }, 30);
 

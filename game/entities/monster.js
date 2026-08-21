@@ -939,6 +939,7 @@
      Schadensformel unverändert bleibt. */
   ROR.Stats.addModifier(function (body, out) {
     if (body.drainArmor) out.armor += body.drainArmor;
+    if (body.dashArmor) out.armor += body.dashArmor;
   });
 
   ROR.Monsters = Monsters;

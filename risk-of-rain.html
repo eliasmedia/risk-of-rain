@@ -47,10 +47,10 @@
   <div id="crosshair"><i></i><i></i><i></i><i></i></div>
 
   <div id="vitals">
+    <div id="shieldbar"><i id="shieldfill"></i><span id="shieldtext"></span></div>
     <div id="hpbar">
       <i id="hplag"></i>
       <i id="hpfill"></i>
-      <i id="shieldfill"></i>
       <span id="hptext">110 / 110</span>
     </div>
     <div class="sub"><span id="survivorname">Commando</span><span id="levelout">Stufe 1</span></div>
@@ -72,7 +72,7 @@
   <div id="toast"></div>
   <div id="dead" class="hidden">
     <b>GESTORBEN</b>
-    <span>Enter drücken für einen neuen Versuch</span>
+    <span>Enter — neuer Versuch mit denselben Einstellungen &nbsp;·&nbsp; M — zurück ins Menü</span>
   </div>
   <div id="vignette"></div>
   <pre id="debug" class="hidden"></pre>
@@ -88,6 +88,9 @@
 
 </div>
 
+<div id="menu" class="hidden"></div>
+<div id="chooser"></div>
+
 <!-- Die Reihenfolge ist die Abhängigkeitsreihenfolge. Neue Dateien hier eintragen. -->
 <script src="game/lib/three.min.js"></script>
 <script src="game/core/util.js"></script>
@@ -96,6 +99,7 @@
 <script src="game/core/camera.js"></script>
 <script src="game/sim/difficulty.js"></script>
 <script src="game/sim/stats.js"></script>
+<script src="game/sim/artifacts.js"></script>
 <script src="game/sim/buffs.js"></script>
 <script src="game/sim/body.js"></script>
 <script src="game/sim/damage.js"></script>
@@ -117,6 +121,7 @@
 <script src="game/sim/loot.js"></script>
 <script src="game/sim/director.js"></script>
 <script src="game/ui/hud.js"></script>
+<script src="game/ui/menus.js"></script>
 <script src="game/main.js"></script>
 
 </body>

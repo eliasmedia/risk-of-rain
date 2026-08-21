@@ -42,17 +42,22 @@
       return m ? m[1] : 'rainstorm';
     },
 
-    newRun(seed) {
-      Game.seed = seed === undefined ? Game.readSeed() : seed >>> 0;
+    /* cfg: {survivor, difficulty, seed} — alles optional. Ohne cfg gelten
+       die Vorgaben aus der Adresszeile, damit ?seed= und ?schwer= weiter
+       funktionieren. */
+    newRun(cfg) {
+      cfg = cfg || {};
+      Game.config = cfg;
+      Game.seed = cfg.seed === undefined ? Game.readSeed() : cfg.seed >>> 0;
       Game.over = false;
       Game.stageOrder = 1;
       Game.loop = 0;
       Game.stagesCleared = 0;
 
       ROR.Body.clear();
-      ROR.Difficulty.reset(Game.difficultyFromUrl());
+      ROR.Difficulty.reset(cfg.difficulty || Game.difficultyFromUrl());
 
-      const def = ROR.Data.survivor('commando');
+      const def = ROR.Data.survivor(cfg.survivor || 'commando');
       Game.player = null;
       Game.buildWorld(1, Game.seed);
 
@@ -64,8 +69,40 @@
       ROR.HUD.buildSkills(def);
       ROR.HUD.setDead(false);
 
+      ROR.Artifacts.runStart(Game.player);
       Game.afterStage();
       ROR.Engine.time = 0;
+    },
+
+    /* Artefakt Metamorphosis: die Figur wird getauscht, alles Gesammelte
+       bleibt. Deshalb wird nicht neu angefangen, sondern nur das Modell
+       ersetzt und der Besitz umgehängt. */
+    switchSurvivor(def) {
+      const alt = Game.player;
+      if (!alt || alt.def.id === def.id) return;
+      const merk = {
+        items: alt.body.items, equipment: alt.body.equipment,
+        level: alt.body.level, exp: alt.exp, gold: alt.gold,
+        anteil: alt.body.healthFraction,
+        pos: alt.position.clone()
+      };
+      ROR.Engine.scene.remove(alt.object);
+      alt.body.remove();
+
+      Game.player = ROR.Player.create(def, { x: merk.pos.x, y: merk.pos.y, z: merk.pos.z });
+      const b = Game.player.body;
+      b.items = merk.items;
+      b.equipment = merk.equipment;
+      Game.player.exp = merk.exp;
+      Game.player.gold = merk.gold;
+      Game.player.onLevelUp = function (lvl) { ROR.HUD.toast('Stufe ' + lvl); };
+      Game.player.onDeath = function () { endRun(); };
+      ROR.Items.rebuild(b);
+      b.setLevel(merk.level);
+      b.health = b.stats.maxHealth * merk.anteil;
+      ROR.HUD.buildSkills(def);
+      ROR.Camera.init(Game.player);
+      ROR.HUD.toast('Du bist jetzt ' + def.name);
     },
 
     /* Baut Gelände, Objekte und Gegnerdeck neu auf. Der Spieler bleibt, wenn
@@ -102,7 +139,8 @@
       if (ROR.Body.all.indexOf(p.body) < 0) ROR.Body.all.push(p.body);
       ROR.Items.rebuild(p.body);
       ROR.Items.stageStart(p.body);
-      ROR.Camera.init(p);
+      ROR.Artifacts.stageStart(p);
+      ROR.Camera.init(Game.player);
       ROR.Camera.yaw = Math.atan2(-(Game.stage.spawn.x), -(Game.stage.spawn.z));
       if (Game.wantsDummies()) ROR.Dummy.placeNear(Game.stage, Game.stage.spawn);
       ROR.HUD.stageBanner(Game.stage.theme, Game.loop);
@@ -111,6 +149,19 @@
     /* Der Sprung ins nächste Environment. Hier springt auch der
        Schwierigkeitskoeffizient um den Faktor 1.15. */
     nextStage() {
+      /* Beim Verlassen einer Stage wird das Guthaben in Erfahrung umgewandelt.
+         Genau das hält die Wirtschaft in Bewegung: drüben fängt man wieder bei
+         null an und muss erst sammeln, statt mit einem Berg Gold anzukommen und
+         die halbe Stage auf einen Schlag leerzukaufen. Der Goldregen des
+         Teleporters ist deshalb dazu da, *noch auf dieser Stage* ausgegeben zu
+         werden. */
+      const rest = Math.floor(Game.player.gold);
+      if (rest > 0) {
+        Game.player.gold = 0;
+        Game.player.addExp(rest);
+        ROR.HUD.toast(rest + ' Gold  →  Erfahrung', 'gold');
+      }
+
       Game.stagesCleared++;
       ROR.Difficulty.advanceStage();
       Game.stageOrder++;
@@ -134,13 +185,17 @@
 
       ROR.Input.init(canvas);
       ROR.HUD.init();
+      ROR.Menus.init();
+      // Ein Durchlauf wird erst gebaut, wenn im Menü gestartet wird.
       Game.newRun();
+      ROR.Menus.show();
 
       ROR.Engine.onUpdate(function () {
         ROR.Input.beginFrame();
         if (ROR.Input.pressed('debug')) ROR.HUD.toggleDebug();
         if (ROR.Input.pressed('pause')) togglePause();
-        if (Game.over && ROR.Input.key('Enter')) Game.newRun();
+        if (Game.over && ROR.Input.key('Enter')) Game.newRun(Game.config);
+        if (Game.over && ROR.Input.pressed('pause')) { ROR.HUD.setDead(false); ROR.Menus.show(); }
       }, -10);
 
       ROR.Engine.onUpdate(function (dt) { if (!Game.over) ROR.Difficulty.update(dt); }, -5);
@@ -180,6 +235,7 @@
   }
 
   function togglePause() {
+    if (ROR.Menus.open || ROR.Menus.choosing) return;
     const p = !ROR.Engine.isPaused;
     ROR.Engine.setPaused(p);
     if (p) { ROR.Input.unlock(); ROR.HUD.showHint(); }

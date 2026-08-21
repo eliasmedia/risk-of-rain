@@ -386,10 +386,20 @@
         }
       }
 
+      /* Evolution: Gegner sammeln mit jeder Stage ein weißes Item mehr. */
+      const evo = ROR.Artifacts.monsterItems();
+      if (evo > 0) {
+        const pool = ROR.Items.ofTier('common');
+        for (let i = 0; i < evo && pool.length; i++) {
+          ROR.Items.give(body, U.chaos.pick(pool).id, 1);
+        }
+      }
+
       body.onDeath = function () {
         m.deathFx = 0.7;
         m.state = 'dead';
         Monsters.reward(m);
+        ROR.Artifacts.onMonsterDeath(m);
       };
 
       model.scale.setScalar(0.01);

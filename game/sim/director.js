@@ -66,14 +66,19 @@
        dieselbe Mischung zu zeigen. */
     beginStage(stageOrder, seed) {
       const rng = U.Rng((seed >>> 0) ^ 0xc0ffee);
+      const A = ROR.Artifacts;
       const pick = (cat, keep) => {
-        const all = ROR.Data.monstersFor(stageOrder, cat);
+        // Dissonance hebt die Stagezugehörigkeit auf: alles kann überall kommen.
+        const all = A.ignoresStageList()
+          ? ROR.Data.Monsters.filter((m) => m.category === cat)
+          : ROR.Data.monstersFor(stageOrder, cat);
         rng.shuffle(all);
         return all.slice(0, Math.min(keep, all.length));
       };
       Director.decks.basic = pick('basic', 4);
       Director.decks.miniboss = pick('miniboss', 2);
       Director.decks.champion = pick('champion', 1);
+      A.shapeDeck(Director.decks, rng);
 
       Director.directors = [
         makeDirector({ name: 'fast', creditMultiplier: 0.75, spendMin: 0.7, spendMax: 2.2, startCredits: 40 }),
@@ -91,7 +96,7 @@
 
       const coeff = ROR.Difficulty.coeff;
       const players = ROR.Difficulty.playerCount;
-      const rate = (1 + 0.4 * coeff) * (players + 1) / 2;
+      const rate = (1 + 0.4 * coeff) * (players + 1) / 2 * ROR.Artifacts.creditMult();
 
       for (let i = 0; i < Director.directors.length; i++) {
         const d = Director.directors[i];

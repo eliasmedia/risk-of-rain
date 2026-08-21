@@ -18,7 +18,9 @@ Bosse und Loop.
 | 3 | 14 Gegner, Combat Director mit Credit-System, Schwierigkeitskoeffizient | ✅ fertig |
 | 4 | 71 Items mit Stapelverhalten, Kisten, Schreine, 3D-Drucker | ✅ fertig |
 | 5 | Teleporter-Event, fünf Bosse, fünf Stages, Loop | ✅ fertig |
-| 6 | Huntress, Engineer, MUL-T, Artificer, Mercenary **+ Charakterdesign aufwerten** | offen |
+| 6a | Startbildschirm, Figurenauswahl, 14 Artefakte | ✅ fertig |
+| 6b | Huntress, Engineer, MUL-T, Artificer, Mercenary | offen |
+| 6c | Charakterdesign aufwerten, Item-Modelle am Körper | offen |
 | 7 | Elite-Affixe, Ausrüstung, Drohnen, Bazaar, Mithrix | offen |
 | 8 | Menüs, Freischaltungen, Logbuch, Spielstand | offen |
 | 9 | Prozedurale Musik, Partikel, Trefferfeedback | offen |
@@ -84,6 +86,7 @@ game/
     engine.js              Renderer, Szene, Hauptschleife mit festem Takt
   sim/
     difficulty.js          Der Koeffizient, an dem alles hängt
+    artifacts.js           Regeln, die man vor dem Start ein- und ausschaltet
     stats.js               Grundwerte + Stufe + Items + Buffs → Endwerte
     buffs.js               Zeitlich begrenzte Zustände, Schaden über Zeit
     body.js                Alles, was Schaden nehmen kann; Trefferkapsel, Strahlen
@@ -111,6 +114,7 @@ game/
   ui/
     style.css              Oberfläche
     hud.js                 Balken, Fähigkeiten, Schadenszahlen, Technikanzeige
+    menus.js               Startbildschirm, Figuren- und Artefaktauswahl
   main.js                  Verdrahtung und Reihenfolge der Aktualisierer
 ```
 
@@ -269,6 +273,46 @@ Ohne `--push` wird nur kopiert. Liegt das Website-Repo woanders, hilft
 `ROR_WEB=/pfad/zum/repo ./deploy.sh`.
 
 ---
+
+## Was Stufe 6a gebracht hat
+
+Ein Startbildschirm mit Figurenauswahl, Regenstärke, Seed-Feld und **14
+Artefakten**. Ein Artefakt ist keine Verstärkung, sondern eine Änderung der
+Spielregeln — und genau deshalb fragen die betroffenen Stellen gezielt nach
+(`ROR.Artifacts.on('swarms')`) statt über ein allgemeines Hookregister zu
+laufen: bei vierzehn Artefakten ist beim Lesen sofort klar, wer worauf reagiert.
+
+Alle sind von Anfang an verfügbar; Freischaltungen kommen mit Stufe 8. *Honor*
+und *Vengeance* stehen in der Liste, sind aber gesperrt — sie brauchen Elites
+beziehungsweise den Doppelgänger aus Stufe 7.
+
+| Artefakt geprüft | Wirkung | Ergebnis |
+|---|---|---|
+| Glass | ×5 Schaden, ×0.1 Leben | 60 Schaden, 11 Leben |
+| Sacrifice | keine Kisten, Gegner lassen fallen | 0 Kisten, 5.3 % Fundrate aus 400 Kills |
+| Swarms | doppelter Zufluss, halbes Gegnerleben | 2×, Beetle 40 statt 80 |
+| Kin | eine Gegnerart je Stage | Deck auf eine Art reduziert |
+| Dissonance | Gegner aller Stages | Imp und Brass Contraption auf Stage 1 |
+| Frailty | Sturz doppelt und tödlich | tötet; ohne Artefakt bleibt 1 Leben |
+| Chaos | Eigenbeschuss | eigene Explosion trifft |
+| Command | Auswahl statt Zufall | drei Vorschläge, Spiel hält an |
+| Rebirth + Enigma | Dio's und zufällige Ausrüstung | beides beim Start da |
+
+Dazu drei Korrekturen aus der Rückmeldung:
+
+* **Gold wird beim Stagewechsel zu Erfahrung.** Das hält die Wirtschaft in
+  Bewegung — drüben fängt man wieder bei null an, statt mit einem Berg Gold
+  anzukommen. Der Goldregen des Teleporters ist deshalb dazu da, *noch auf
+  dieser Stage* ausgegeben zu werden.
+* **Der Schild hat eine eigene Leiste über dem Lebensbalken.** Im Balken selbst
+  war nicht zu erkennen, ob die blaue Fläche Schild oder fehlendes Leben ist.
+* **Der Schild lädt sich überhaupt erst auf.** `maxShield` gab es, aber nichts
+  füllte ihn je — jeder Schildpunkt war ein Einwegartikel. Jetzt lädt er nach
+  sieben ungestörten Sekunden in zwei Sekunden voll.
+
+> Die Artefaktwerte stammen aus vorhandener Kenntnis der Vorlage; der
+> Wiki-Abruf war bei diesem Schritt nicht verfügbar. Sie sind beim nächsten
+> Durchgang gegenzuprüfen.
 
 ## Was Stufe 5 gebracht hat
 

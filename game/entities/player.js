@@ -409,7 +409,7 @@
     // Die Grenze liegt knapp unter dem Wasserspiegel, nicht am Kartenboden —
     // sonst könnte man auf dem Meeresgrund um die ganze Insel spazieren.
     if (p.position.y < stage.terrain.seaLevel - 3) {
-      nonLethal(p, p.body.stats.maxHealth * 0.1);
+      nonLethal(p, p.body.stats.maxHealth * 0.1 * ROR.Artifacts.fallDamageMult());
       p.position.set(p.spawn.x, p.spawn.y + 1, p.spawn.z);
       p.velocity.set(0, 0, 0);
       p._lastFallSpeed = 0;
@@ -449,7 +449,15 @@
       ROR.Projectiles.spark(p.position.clone(), 0xffd070, (6 + 4 * heads) * 0.5);
       return;
     }
-    if (speed > FALL_DAMAGE_SPEED) nonLethal(p, p.body.stats.maxHealth * 0.1);
+    if (speed > FALL_DAMAGE_SPEED) {
+      const menge = p.body.stats.maxHealth * 0.1 * ROR.Artifacts.fallDamageMult();
+      // Frailty macht den Sturz tödlich — sonst bleibt immer ein Punkt übrig.
+      if (ROR.Artifacts.fallIsLethal()) {
+        ROR.Damage.deal({ victim: p.body, flat: menge, ignoreArmor: true,
+                          type: 'environment', proc: 0, crit: false,
+                          position: p.position.clone().setY(p.position.y + 1) });
+      } else nonLethal(p, menge);
+    }
   }
 
   /* ----------------------------------------------------------- Animation */

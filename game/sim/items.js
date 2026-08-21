@@ -171,6 +171,12 @@
         if (e.charges === e.maxCharges) e.cooldown = e.def.cooldown * (e.cdScale || 1);
         e.charges--;
         e.def.use(body);
+        // Enigma tauscht die Ausrüstung nach jedem Einsatz aus.
+        if (ROR.Artifacts.on('enigma')) {
+          const rest = { cooldown: e.cooldown, charges: e.charges, maxCharges: e.maxCharges };
+          ROR.Artifacts.rollEnigma(body);
+          Object.assign(body.equipment, rest);
+        }
       }
     }
   };

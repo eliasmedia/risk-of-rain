@@ -38,7 +38,8 @@
     debugVisible: false,
 
     init() {
-      ['hpbar', 'hpfill', 'hplag', 'hptext', 'shieldfill', 'timer', 'stagename',
+      ['hpbar', 'hpfill', 'hplag', 'hptext', 'shieldbar', 'shieldfill', 'shieldtext',
+       'timer', 'stagename',
        'hint', 'debug', 'vignette', 'skills', 'numbers', 'crosshair',
        'levelout', 'survivorname', 'gold', 'diffbar', 'difffill', 'diffname',
        'target', 'targetname', 'targetfill', 'toast', 'dead',
@@ -283,7 +284,16 @@
       el.hpfill.style.width = (frac * 100) + '%';
       el.hplag.style.width = (frac * 100) + '%';
       el.hpfill.style.background = frac < 0.28 ? 'var(--hp-low)' : 'var(--hp)';
-      el.shieldfill.style.width = (U.clamp(b.shield / S.maxHealth, 0, 1) * 100) + '%';
+      /* Schild und Barriere teilen sich die Leiste darüber. Barriere zerfällt
+         von selbst, deshalb wird sie mitgezählt statt versteckt. */
+      const schutz = b.shield + b.barrier;
+      const zeigen = schutz > 0.5 || S.maxShield > 0;
+      el.shieldbar.classList.toggle('show', zeigen);
+      if (zeigen) {
+        const bezug = Math.max(S.maxShield, schutz, 1);
+        el.shieldfill.style.width = (U.clamp(schutz / bezug, 0, 1) * 100) + '%';
+        set(el.shieldtext, Math.ceil(schutz) + (b.barrier > 0.5 ? ' schild + barriere' : ' schild'));
+      }
       set(el.hptext, Math.ceil(b.health) + ' / ' + Math.round(S.maxHealth));
       set(el.levelout, 'Stufe ' + b.level);
       set(el.gold, '$' + Math.floor(p.gold));

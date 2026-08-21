@@ -133,7 +133,9 @@
     /* Flächenschaden. `proc` sollte hier klein sein — im Original tragen
        Explosionen bewusst wenig zur Auslösekette bei. */
     explode(opts) {
-      const found = ROR.Body.enemiesNear(opts.position, opts.radius, opts.team, []);
+      // Chaos: Explosionen unterscheiden nicht mehr zwischen Freund und Feind.
+      const team = ROR.Artifacts && ROR.Artifacts.friendlyFire() ? null : opts.team;
+      const found = ROR.Body.enemiesNear(opts.position, opts.radius, team, []);
       for (let i = 0; i < found.length; i++) {
         Damage.deal({
           attacker: opts.attacker, victim: found[i],

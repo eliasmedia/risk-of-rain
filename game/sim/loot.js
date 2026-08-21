@@ -99,7 +99,21 @@
       return def;
     },
 
+    /* Mit dem Artefakt Command wird aus dem Fund eine Entscheidung: das Spiel
+       hält an und bietet drei Items derselben Stufe an. Ohne das Artefakt
+       geht es direkt durch. */
     give(body, def) {
+      if (ROR.Artifacts.on('command') && body.team === ROR.Body.PLAYER
+          && ROR.Menus && !def.scrap) {
+        ROR.Menus.chooseItem(def.tier, function (gewaehlt) {
+          Loot.grant(body, gewaehlt || def);
+        });
+        return;
+      }
+      Loot.grant(body, def);
+    },
+
+    grant(body, def) {
       if (def.tier === 'equipment') ROR.Items.equip(body, def.id);
       else ROR.Items.give(body, def.id, 1);
       ROR.HUD && ROR.HUD.itemToast(def);

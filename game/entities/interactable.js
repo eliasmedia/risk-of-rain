@@ -187,7 +187,9 @@
       let guard = 400;
 
       while (budget > 0 && guard-- > 0) {
-        const bezahlbar = defs.filter((d) => d.directorCost <= budget);
+        const bezahlbar = defs.filter(function (d) {
+          return d.directorCost <= budget && ROR.Artifacts.allowsInteractable(d);
+        });
         if (!bezahlbar.length) break;
         const def = rng.weighted(bezahlbar);
         const spot = stage.terrain.findSpot(rng, {

@@ -46,13 +46,32 @@ html, body {
   clip-path: var(--bevel); overflow: hidden;
 }
 
-#hpfill, #hplag, #shieldfill {
+#hpfill, #hplag {
   position: absolute; inset: 1px auto 1px 1px; width: 0;
 }
 /* Verzögerter Nachlauf: zeigt für einen Moment, wie viel gerade weg ist. */
 #hplag  { background: rgba(255, 120, 100, 0.55); transition: width 0.5s ease-out 0.15s; }
 #hpfill { background: var(--hp); transition: width 0.12s linear, background-color 0.25s; }
-#shieldfill { background: var(--shield); opacity: 0.75; transition: width 0.12s linear; }
+
+/* Schild liegt als eigene Leiste *über* dem Leben, nicht darin. Im Balken
+   selbst wäre nicht zu erkennen, ob die blaue Fläche Schild oder fehlendes
+   Leben ist — und genau das muss man im Kampf auf einen Blick sehen. */
+#shieldbar {
+  position: relative; height: 9px; margin-bottom: 3px;
+  background: rgba(8, 14, 20, 0.6); border: 1px solid rgba(126, 200, 255, 0.32);
+  overflow: hidden; display: none;
+  clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 5px 100%, 0 calc(100% - 5px));
+}
+#shieldbar.show { display: block; }
+#shieldfill {
+  position: absolute; inset: 1px auto 1px 1px; width: 0;
+  background: linear-gradient(90deg, #5aa8e0, var(--shield));
+  transition: width 0.12s linear;
+}
+#shieldtext {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 9px; letter-spacing: 0.1em; color: #eaf6ff; text-shadow: 0 1px 2px #000;
+}
 
 #hptext {
   position: absolute; inset: 0; display: flex;
@@ -399,6 +418,8 @@ html, body {
   #vitals { left: 12px; bottom: 12px; width: min(230px, 44vw); }
   #hpbar { height: 22px; }
   #hptext { font-size: 11px; }
+  #shieldbar { height: 7px; }
+  #shieldtext { font-size: 8px; }
   #skills { right: 12px; bottom: 12px; gap: 5px; }
   .skill { width: 44px; height: 44px; }
   .skill .key { font-size: 11px; }
@@ -422,4 +443,161 @@ html, body {
 @media (max-height: 480px) {
   #vitals, #skills { bottom: 8px; }
   #topbar { top: 8px; }
+}
+
+/* =========================================================== Startbildschirm */
+
+/* Das Menü liegt über allem und fängt im Gegensatz zum HUD auch Klicks ab.
+   Gescrollt wird innerhalb, damit die Artefaktliste auch auf kleinen
+   Fenstern vollständig erreichbar bleibt. */
+#menu {
+  position: fixed; inset: 0; z-index: 20; overflow-y: auto;
+  background: radial-gradient(ellipse at 50% 0%, #16222e 0%, #070b10 70%);
+  display: flex; justify-content: center;
+  font: var(--ui); letter-spacing: 0.04em;
+}
+#menu.hidden { display: none; }
+.menu-innen { width: min(1080px, 92vw); padding: 42px 0 60px; }
+
+#menu h1 {
+  margin: 0; text-align: center;
+  font: 200 clamp(34px, 7vw, 68px)/1 system-ui, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: 0.3em; color: var(--ink); text-indent: 0.3em;
+}
+#menu h1 span { color: var(--gold); font-style: italic; letter-spacing: 0.1em; }
+#menu .unter {
+  margin: 10px 0 34px; text-align: center; color: var(--ink-dim);
+  letter-spacing: 0.42em; font-size: 11px; text-transform: uppercase;
+}
+#menu h2 {
+  margin: 30px 0 12px; font: 600 12px/1 system-ui, sans-serif;
+  letter-spacing: 0.28em; text-transform: uppercase; color: var(--ink-dim);
+  border-bottom: 1px solid var(--edge); padding-bottom: 9px;
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+#menu h2 small { font-size: 11px; letter-spacing: 0.14em; color: var(--gold); }
+#menu .notiz { margin: -4px 0 12px; color: var(--ink-dim); font-size: 11px; line-height: 1.6; }
+
+.reihe { display: flex; flex-wrap: wrap; gap: 10px; }
+.reihe.schmal .stufe { flex: 1 1 150px; }
+
+/* ------------------------------------------------------------ Figurenkarte */
+
+#menu .card {
+  flex: 1 1 200px; min-width: 176px; padding: 16px 14px 14px;
+  background: rgba(14, 22, 30, 0.8); border: 1px solid var(--edge);
+  color: var(--ink); text-align: center; cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, transform 0.12s;
+  clip-path: var(--bevel); font: inherit;
+}
+#menu .card:hover { background: rgba(24, 36, 48, 0.9); transform: translateY(-2px); }
+#menu .card.an { border-color: var(--gold); background: rgba(40, 34, 18, 0.75); }
+#menu .card b { display: block; font-size: 15px; letter-spacing: 0.12em; }
+#menu .card em {
+  display: block; font-style: normal; font-size: 11px;
+  color: var(--ink-dim); margin: 3px 0 9px;
+}
+#menu .card .werte { display: block; font-size: 11px; color: var(--ink-dim); }
+#menu .card .skills { display: flex; justify-content: center; gap: 5px; margin-top: 10px; }
+#menu .card .skills i {
+  width: 30px; height: 24px; display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--c); color: var(--c); font-style: normal; font-size: 10px;
+}
+
+/* Eine angedeutete Figur aus reinem CSS — kein Bild, keine Datei. */
+#menu .silhouette {
+  display: block; width: 34px; height: 52px; margin: 0 auto 10px; position: relative;
+}
+#menu .silhouette::before {
+  content: ''; position: absolute; left: 7px; top: 14px; width: 20px; height: 26px;
+  background: var(--coat); clip-path: polygon(12% 0, 88% 0, 100% 100%, 0 100%);
+}
+#menu .silhouette::after {
+  content: ''; position: absolute; left: 10px; top: 0; width: 14px; height: 14px;
+  background: var(--skin); box-shadow: 0 5px 0 -1px var(--visor);
+}
+
+/* --------------------------------------------------------- Schwierigkeit */
+
+#menu .stufe {
+  padding: 12px 14px; background: rgba(14, 22, 30, 0.8);
+  border: 1px solid var(--edge); color: var(--ink); cursor: pointer;
+  clip-path: var(--bevel); font: inherit; text-align: left;
+}
+#menu .stufe.an { border-color: var(--gold); color: var(--gold); }
+#menu .stufe b { display: block; letter-spacing: 0.14em; }
+#menu .stufe span { font-size: 11px; color: var(--ink-dim); }
+
+/* -------------------------------------------------------------- Artefakte */
+
+.artefakte {
+  display: grid; gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+}
+.artefakt {
+  padding: 11px 12px; background: rgba(14, 22, 30, 0.8);
+  border: 1px solid var(--edge); color: var(--ink); cursor: pointer;
+  text-align: left; font: inherit; transition: border-color 0.15s, background 0.15s;
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+}
+.artefakt:hover { background: rgba(24, 36, 48, 0.9); }
+.artefakt.an { border-color: #b48cff; background: rgba(38, 26, 56, 0.85); }
+.artefakt i {
+  float: right; font-style: normal; font-size: 17px; color: var(--ink-dim); line-height: 1;
+}
+.artefakt.an i { color: #c9aaff; }
+.artefakt b { display: block; letter-spacing: 0.12em; font-size: 12px; margin-bottom: 4px; }
+.artefakt span { display: block; font-size: 11px; color: var(--ink-dim); line-height: 1.55; }
+.artefakt u { display: block; margin-top: 5px; color: var(--gold); text-decoration: none; font-size: 10px; }
+.artefakt.gesperrt { opacity: 0.42; cursor: default; }
+
+/* ------------------------------------------------------------------- Fuß */
+
+#menu .fuss { display: flex; gap: 10px; margin-top: 30px; flex-wrap: wrap; }
+#menu .seed {
+  flex: 1 1 180px; padding: 13px 14px; font: inherit;
+  background: rgba(8, 14, 20, 0.9); border: 1px solid var(--edge);
+  color: var(--ink); letter-spacing: 0.1em;
+}
+#menu .seed::placeholder { color: #5c6b76; }
+#menu .start {
+  flex: 2 1 260px; padding: 14px 22px; font: inherit; font-size: 14px;
+  letter-spacing: 0.2em; text-transform: uppercase; cursor: pointer;
+  background: var(--gold); color: #10161c; border: none; font-weight: 700;
+  clip-path: var(--bevel);
+}
+#menu .start:hover { background: #ffd76a; }
+#menu .hinweis {
+  margin-top: 26px; text-align: center; color: var(--ink-dim);
+  font-size: 11px; line-height: 1.9;
+}
+#menu .hinweis b { color: var(--gold); }
+
+/* ------------------------------------------------------- Command-Auswahl */
+
+#chooser {
+  position: fixed; inset: 0; z-index: 25; display: none;
+  align-items: center; justify-content: center; flex-direction: column;
+  background: rgba(6, 10, 14, 0.82); backdrop-filter: blur(3px);
+  font: var(--ui);
+}
+#chooser.show { display: flex; }
+#chooser h3 {
+  margin: 0 0 18px; font: 600 12px/1 system-ui, sans-serif;
+  letter-spacing: 0.32em; color: var(--ink-dim);
+}
+#chooser .reihe { width: min(880px, 92vw); }
+#chooser .wahl {
+  flex: 1 1 240px; padding: 18px 16px; cursor: pointer; font: inherit;
+  background: rgba(14, 22, 30, 0.94); border: 1px solid var(--c); color: var(--ink);
+  text-align: left; clip-path: var(--bevel); transition: transform 0.12s, background 0.15s;
+}
+#chooser .wahl:hover { transform: translateY(-3px); background: rgba(26, 38, 50, 0.96); }
+#chooser .wahl b { display: block; color: var(--c); font-size: 14px; letter-spacing: 0.1em; margin-bottom: 6px; }
+#chooser .wahl span { font-size: 11px; color: var(--ink-dim); line-height: 1.6; }
+
+@media (max-width: 900px) {
+  .menu-innen { padding: 26px 0 40px; }
+  #menu .card { flex: 1 1 46%; min-width: 0; }
+  .artefakte { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 }

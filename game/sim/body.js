@@ -102,6 +102,15 @@
           b.hitFlash = Math.max(0, b.hitFlash - dt);
           if (b.barrier > 0) b.barrier = Math.max(0, b.barrier - b.stats.maxHealth * 0.033 * dt);
           if (b.stats.regen > 0 && b.health < b.stats.maxHealth) b.heal(b.stats.regen * dt);
+
+          /* Schild lädt sich nach sieben ungestörten Sekunden in zwei Sekunden
+             wieder auf — dieselbe Regel gilt in der Vorlage für den Personal
+             Shield Generator wie für Transcendence. Ohne sie wäre jeder
+             Schildpunkt ein Einwegartikel. */
+          if (b.shield > b.stats.maxShield) b.shield = b.stats.maxShield;
+          if (b.stats.maxShield > 0 && b.shield < b.stats.maxShield && b.outOfCombat > 7) {
+            b.shield = Math.min(b.stats.maxShield, b.shield + b.stats.maxShield * dt / 2);
+          }
         },
 
         remove() {
@@ -123,7 +132,9 @@
       const r2 = radius * radius;
       for (let i = 0; i < all.length; i++) {
         const b = all[i];
-        if (!b.alive || b.team === team || b.team === Body.NEUTRAL) continue;
+        // team === null heißt: alles zählt als Feind (Artefakt Chaos).
+        if (!b.alive) continue;
+        if (team !== null && (b.team === team || b.team === Body.NEUTRAL)) continue;
         const dx = b.position.x - pos.x, dz = b.position.z - pos.z;
         const dy = b.position.y + b.height * 0.5 - pos.y;
         if (dx * dx + dy * dy + dz * dz <= r2) out.push(b);

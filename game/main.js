@@ -101,6 +101,7 @@
       b.setLevel(merk.level);
       b.health = b.stats.maxHealth * merk.anteil;
       ROR.HUD.buildSkills(def);
+      ROR.Attire.refresh(Game.player);
       ROR.Camera.init(Game.player);
       ROR.HUD.toast('Du bist jetzt ' + def.name);
     },
@@ -140,6 +141,7 @@
       p.body.position = p.object.position;
       if (ROR.Body.all.indexOf(p.body) < 0) ROR.Body.all.push(p.body);
       ROR.Items.rebuild(p.body);
+      ROR.Attire.refresh(p);
       ROR.Items.stageStart(p.body);
       ROR.Artifacts.stageStart(p);
       ROR.Camera.init(Game.player);
@@ -208,6 +210,7 @@
       ROR.Engine.onUpdate(function (dt) { ROR.Interactables.update(dt); }, 15);
       ROR.Engine.onUpdate(function (dt) { ROR.Teleporter.update(dt); }, 16);
       ROR.Engine.onUpdate(function (dt) { ROR.Loot.update(dt); }, 18);
+      ROR.Engine.onUpdate(function (dt) { ROR.Attire.update(dt); }, 25);
       ROR.Engine.onUpdate(function (dt) { ROR.Deployables.update(dt); }, 19);
       ROR.Engine.onUpdate(function (dt) { ROR.Projectiles.update(dt); }, 20);
       ROR.Engine.onUpdate(function (dt) { ROR.Body.updateAll(dt); }, 30);

@@ -20,7 +20,7 @@ Bosse und Loop.
 | 5 | Teleporter-Event, fünf Bosse, fünf Stages, Loop | ✅ fertig |
 | 6a | Startbildschirm, Figurenauswahl, 14 Artefakte | ✅ fertig |
 | 6b | Huntress, Engineer, MUL-T, Artificer, Mercenary | ✅ fertig |
-| 6c | Charakterdesign aufwerten, Item-Modelle am Körper | offen |
+| 6c | Charakterdesign aufwerten, Item-Modelle am Körper | ✅ fertig |
 | 7 | Elite-Affixe, Ausrüstung, Drohnen, Bazaar, Mithrix | offen |
 | 8 | Menüs, Freischaltungen, Logbuch, Spielstand | offen |
 | 9 | Prozedurale Musik, Partikel, Trefferfeedback | offen |
@@ -100,6 +100,7 @@ game/
     monsters.js            14 Gegner und 5 Bosse: Werte, Kosten, Bauart, Verhalten
     items.js               71 Items als Hook-Sätze
     interactables.js       Kisten, Schreine, Drucker: Preise, Gewichte, Budget
+    itemmodels.js          Wie ein Item am Körper aussieht und wo es hängt
   world/
     terrain.js             Höhenfunktion, Geometrie, Vertexfarben, Abfragen
     props.js               Felsen, Bäume, Monolithen, schwebende Plattformen
@@ -110,6 +111,8 @@ game/
     player.js              Figur, Bewegung, Zielen, Ablauf der Fähigkeiten
     monster.js             Sechs Modell-Bauarten und die Gegner-Zustandsmaschine
     interactable.js        Modelle, Bedienung, Scene Director
+    survivormodel.js       Der Figurenbau: Silhouetten aus verjüngten Körpern
+    attire.js              Items am Körper, Stapeln, Kisten-Enthüllung
     deployable.js          Türme, Minen, Schildkuppel, Wirkbereiche
     dummy.js               Trainingspuppen mit 0, 20 und 100 Rüstung
   ui/
@@ -274,6 +277,39 @@ Ohne `--push` wird nur kopiert. Liegt das Website-Repo woanders, hilft
 `ROR_WEB=/pfad/zum/repo ./deploy.sh`.
 
 ---
+
+## Was Stufe 6c gebracht hat
+
+**Die Figuren sehen nicht mehr aus wie Minecraft Steve.** Das Mittel dazu sind
+*verjüngte Körper* statt Quader — ein Prisma mit vier bis acht Seiten, oben und
+unten verschieden breit. Das kostet nicht mehr als ein Kasten, ergibt aber
+Schultern, Taillen und Helme statt Kisten. Jede Silhouette erzählt ihre
+Spielweise:
+
+| Figur | Woran man sie erkennt |
+|---|---|
+| Commando | Mantel mit Schößen, Mütze, Schal — der Soldat von der Stange |
+| Huntress | Schmal, Kapuze ohne Gesicht, Umhang, Zopf, Glaive-Scheibe |
+| Engineer | Breite Brustplatte, Helm mit Lampe, Werkzeuggurt, Rucksack |
+| MUL-T | **Kein Kopf**, ein Sensorbalken auf einem Fahrgestell, zwei Drucktanks, Stelzen |
+| Artificer | Bodenlanger Mantel, **keine sichtbaren Beine**, Schubdüsen, Stab mit Kern |
+| Mercenary | Wespentaille, glatter Visierschädel, Energieklinge |
+
+**Items hängen sichtbar am Körper und stapeln.** Drei Brechstangen sind drei
+Brechstangen auf dem Rücken. 62 Items haben ein eigenes Modell mit
+Befestigungspunkt (Rücken, Schulter, Brust, Gürtel, Kopf, kreisend); der Rest
+bekommt eine Marke in der Farbe seiner Stufe, damit *jedes* Item sichtbar ist.
+Gedeckelt bei fünf Stück je Item und 46 insgesamt — sonst verschwindet die
+Figur im Loop unter hundert Brechstangen. Seltenes wird zuerst gezeigt.
+
+**Die Kisten-Enthüllung.** Das Item steigt aus der Kiste auf, dreht sich einen
+Moment in Augenhöhe — lange genug, dass man es erkennt — und springt dann im
+Bogen auf die Figur. Gemessen: aufsteigen 0.45 s, schweben bis 1.1 s, Flug und
+Aufnahme bei 1.25 s, und im selben Moment erscheint der Anbau am Körper.
+
+Der Anbau wird nur neu gebaut, wenn sich das Inventar wirklich geändert hat —
+bei sechzig Bildern je Sekunde wäre ein Neuaufbau je Bild sonst die teuerste
+Stelle im Spiel.
 
 ## Was Stufe 6b gebracht hat
 

@@ -41,93 +41,13 @@
 
   const SLOTS = ['primary', 'secondary', 'utility', 'special'];
 
-  function box(w, h, d, color) {
-    const m = new THREE.Mesh(
-      new THREE.BoxGeometry(w, h, d),
-      new THREE.MeshLambertMaterial({ color: color, flatShading: true })
-    );
-    m.castShadow = true;
-    return m;
-  }
-
-  /* Ein Gelenk als leere Gruppe am Drehpunkt, das Kästchen hängt darunter.
-     So dreht der Oberschenkel um die Hüfte und nicht um seine Mitte. */
-  function limb(parent, x, y, z) {
-    const g = new THREE.Group();
-    g.position.set(x, y, z);
-    parent.add(g);
-    return g;
-  }
-
-  function buildBody(c) {
-    const root = new THREE.Group();
-
-    const hips = limb(root, 0, 0.92, 0);
-    const torso = box(0.52, 0.62, 0.32, c.coat);
-    torso.position.y = 0.31;
-    hips.add(torso);
-
-    const chest = box(0.58, 0.26, 0.36, c.coatDark);
-    chest.position.y = 0.72;
-    hips.add(chest);
-
-    const neck = limb(hips, 0, 0.86, 0);
-    const head = box(0.30, 0.30, 0.30, c.skin);
-    head.position.y = 0.15;
-    neck.add(head);
-    const visor = box(0.32, 0.10, 0.06, c.visor);
-    visor.position.set(0, 0.17, -0.15);
-    neck.add(visor);
-    const cap = box(0.34, 0.12, 0.34, c.coatDark);
-    cap.position.y = 0.33;
-    neck.add(cap);
-
-    const arms = [];
-    for (let s = -1; s <= 1; s += 2) {
-      const shoulder = limb(hips, s * 0.36, 0.70, 0);
-      const upper = box(0.16, 0.34, 0.16, c.coat);
-      upper.position.y = -0.17;
-      shoulder.add(upper);
-      const elbow = limb(shoulder, 0, -0.34, 0);
-      const fore = box(0.14, 0.32, 0.14, c.skin);
-      fore.position.y = -0.16;
-      elbow.add(fore);
-      arms.push({ shoulder, elbow, side: s });
-    }
-
-    const gun = box(0.11, 0.13, 0.34, c.metal);
-    gun.position.set(0, -0.34, -0.10);
-    arms[1].elbow.add(gun);
-    const flash = new THREE.Mesh(
-      new THREE.IcosahedronGeometry(0.16, 0),
-      new THREE.MeshBasicMaterial({ color: 0xffe6a0, transparent: true, opacity: 0,
-                                    depthWrite: false, blending: THREE.AdditiveBlending })
-    );
-    flash.position.set(0, -0.34, -0.30);
-    arms[1].elbow.add(flash);
-
-    const legs = [];
-    for (let s = -1; s <= 1; s += 2) {
-      const hip = limb(hips, s * 0.15, 0.02, 0);
-      const thigh = box(0.19, 0.44, 0.19, c.pants);
-      thigh.position.y = -0.22;
-      hip.add(thigh);
-      const knee = limb(hip, 0, -0.44, 0);
-      const shin = box(0.17, 0.42, 0.17, c.pants);
-      shin.position.y = -0.21;
-      knee.add(shin);
-      const foot = box(0.19, 0.10, 0.30, c.boots);
-      foot.position.set(0, -0.44, -0.05);
-      knee.add(foot);
-      legs.push({ hip, knee, side: s });
-    }
-
-    return { root, hips, neck, arms, legs, gun, flash };
-  }
+  /* Das Modell selbst entsteht in entities/survivormodel.js — dort steht,
+     woraus sich die Silhouette einer Figur zusammensetzt. Hier bleibt nur,
+     was sich bewegt. */
 
   ROR.Player = {
     create(def, spawn) {
-      const model = buildBody(def.colors);
+      const model = ROR.SurvivorModel.build(def);
       model.root.position.set(spawn.x, spawn.y, spawn.z);
       ROR.Engine.scene.add(model.root);
 

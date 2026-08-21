@@ -74,6 +74,7 @@
       if (!def) return null;
       body.items[id] = (body.items[id] || 0) + (n || 1);
       rebuild(body);
+      if (ROR.Attire && body.team === ROR.Body.PLAYER) ROR.Attire.markDirty();
       body.statsDirty = true;
       ROR.Stats.recompute(body);
       body.statsDirty = false;
@@ -87,6 +88,7 @@
       body.items[id] -= taken;
       if (body.items[id] <= 0) delete body.items[id];
       rebuild(body);
+      if (ROR.Attire && body.team === ROR.Body.PLAYER) ROR.Attire.markDirty();
       body.statsDirty = true;
       return taken;
     },

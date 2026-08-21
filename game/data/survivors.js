@@ -79,6 +79,9 @@
     moveSpeed: 7, crit: 1, jumpCount: 1,
     radius: 0.42, height: 1.85,
 
+    /* Mantel mit Schößen, Mütze und Schal: der Soldat von der Stange. */
+    build: { torso: 'coat', head: 'cap', weapon: 'pistol', legs: 'normal', width: 1.0 },
+
     colors: {
       coat: 0x39485c, coatDark: 0x2a3648, skin: 0xc79a72,
       visor: 0x8fd6e8, pants: 0x4a4335, boots: 0x2b2723, metal: 0x6a6f75
@@ -169,6 +172,11 @@
        nah heran, und genau daraus entsteht ihr Spiel. */
     autoTarget: 60,
 
+    /* Schmal, Kapuze, Umhang, kein Gesicht. Alles an ihr sagt: leicht und
+       schnell — und dass sie im Nahbereich nichts zu verlieren hat. */
+    build: { torso: 'light', head: 'hood', back: 'cape', weapon: 'glaive',
+             legs: 'normal', width: 0.86, scale: 0.97 },
+
     colors: { coat: 0x2f4f4a, coatDark: 0x1e3733, skin: 0xd6a878,
               visor: 0x7cf0c0, pants: 0x3a3c44, boots: 0x22242a, metal: 0x8a9aa4 },
 
@@ -244,6 +252,11 @@
     armor: 0,    armorPerLevel: 0,
     moveSpeed: 7, crit: 1, jumpCount: 1,
     radius: 0.44, height: 1.85,
+
+    /* Breit, Brustplatte, Werkzeuggurt, Rucksack mit Turmteilen. Er sieht
+       aus, als könnte er etwas hinstellen — und genau das tut er. */
+    build: { torso: 'armour', head: 'helmet', back: 'backpack', weapon: 'gauntlet',
+             legs: 'normal', width: 1.2, pads: true, gauntlets: true },
 
     colors: { coat: 0xb4772e, coatDark: 0x6f471a, skin: 0xc79a72,
               visor: 0xffd98a, pants: 0x40444a, boots: 0x2a2c30, metal: 0x8a8f95 },
@@ -321,6 +334,13 @@
     armor: 12,   armorPerLevel: 0,
     moveSpeed: 7, crit: 1, jumpCount: 1,
     radius: 0.5, height: 1.95,
+
+    /* Kein Kopf, sondern ein Sensorbalken auf einem Fahrgestell. Zwei
+       Drucktanks hinten, Stelzen mit breiter Standfläche: eine Maschine,
+       die zwei Werkzeuge gleichzeitig trägt. */
+    build: { torso: 'chassis', head: 'sensor', back: 'tanks', weapon: 'nailgun',
+             legs: 'treads', width: 1.32, pads: true, gauntlets: true,
+             shoulder: 0.42, neckHeight: 0.82 },
 
     colors: { coat: 0xc23a2a, coatDark: 0x7a2018, skin: 0x9aa2a8,
               visor: 0xffe066, pants: 0x5a5f66, boots: 0x2c2f34, metal: 0xa8b0b8 },
@@ -418,6 +438,11 @@
     moveSpeed: 7, crit: 1, jumpCount: 1,
     radius: 0.4, height: 1.8,
 
+    /* Mantel bis zum Boden, keine sichtbaren Beine, Schubdüsen im Rücken
+       und ein Stab mit Kern: sie steht nicht, sie schwebt. */
+    build: { torso: 'robe', head: 'mask', back: 'jets', weapon: 'wand',
+             legs: 'hover', width: 0.9 },
+
     colors: { coat: 0x8e3f7a, coatDark: 0x561f4a, skin: 0xd6a878,
               visor: 0xffb0e8, pants: 0x3c3350, boots: 0x241e30, metal: 0xc0a8d8 },
 
@@ -503,6 +528,11 @@
     armor: 20,   armorPerLevel: 0,
     moveSpeed: 7, crit: 1, jumpCount: 2,
     radius: 0.4, height: 1.85,
+
+    /* Wespentaille, glatter Visierschädel, Energieklinge. Kein Gramm zu
+       viel — die Silhouette einer Figur, die nie stehen bleibt. */
+    build: { torso: 'sleek', head: 'visor', weapon: 'sword',
+             legs: 'normal', width: 0.94, pads: true },
 
     colors: { coat: 0xd8dde2, coatDark: 0x9aa4ae, skin: 0xd6a878,
               visor: 0xff5a6a, pants: 0x2e3238, boots: 0x1c1f23, metal: 0xbfe8ff },

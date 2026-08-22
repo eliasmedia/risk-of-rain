@@ -225,6 +225,11 @@
 
       ROR.Save.load();
       ROR.Input.init(canvas);
+      // Klang startet erst bei der ersten Eingabe — vorher lässt der Browser
+      // ihn ohnehin nicht zu.
+      ['pointerdown', 'keydown'].forEach(function (e) {
+        addEventListener(e, function () { ROR.Audio.start(); }, { once: false });
+      });
       ROR.HUD.init();
       ROR.Menus.init();
       // Ein Durchlauf wird erst gebaut, wenn im Menü gestartet wird.
@@ -289,6 +294,7 @@
   }
 
   function beende(sieg) {
+    ROR.Audio.spiel(sieg ? 'sieg' : 'tod');
     ROR.Director.stop();
     ROR.Input.unlock();
     const b = bilanz(sieg);

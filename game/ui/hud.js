@@ -326,7 +326,10 @@
         set(ui.stock, st.maxCharges > 1 ? String(st.charges) : '');
       }
 
-      el.vignette.style.opacity = p.hurtFlash ? String(U.clamp(p.hurtFlash * 2.6, 0, 0.85)) : '0';
+      /* Das Trefferrot liegt jetzt im Bild-Shader, nicht mehr als CSS-Ebene
+         darüber — dadurch liegt es unter dem Korn und wirkt wie Teil des Bildes. */
+      if (ROR.PostFX) ROR.PostFX.schaden = U.clamp(p.hurtFlash * 2.2, 0, 0.9);
+      el.vignette.style.opacity = '0';
       el.crosshair.classList.toggle('firing', p._aimTimer > 0);
 
       /* Schwierigkeitsbalken: derselbe Wert, den auch der Director und die

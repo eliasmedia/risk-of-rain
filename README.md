@@ -23,7 +23,7 @@ Bosse und Loop.
 | 6c | Charakterdesign aufwerten, Item-Modelle am Körper | ✅ fertig |
 | 7 | Elite-Affixe, Ausrüstung, Drohnen, Bazaar, Mithrix | ✅ fertig |
 | 8 | Menüs, Freischaltungen, Logbuch, Spielstand | ✅ fertig |
-| 9 | Prozedurale Musik, Partikel, Trefferfeedback | offen |
+| 9 | Bildnachbearbeitung, prozedurale Musik, Trefferfeedback | ✅ fertig |
 | 10 | Touch-Steuerung fürs Handy | offen |
 | 11 | Grafik-Überarbeitung: alle Modelle, Gelände-Detail, Materialien | offen |
 
@@ -278,6 +278,41 @@ Ohne `--push` wird nur kopiert. Liegt das Website-Repo woanders, hilft
 `ROR_WEB=/pfad/zum/repo ./deploy.sh`.
 
 ---
+
+## Was Stufe 9 gebracht hat
+
+**Bildnachbearbeitung.** Three.js bringt dafür einen `EffectComposer` mit —
+der liegt aber unter `examples/` und ist nur als ES-Modul zu haben, also unter
+`file://` unbrauchbar. Deshalb von Hand mit den Mitteln des Kerns: zwei
+Renderziele, ein Helligkeitsauszug, zwei getrennte Unschärfedurchgänge und ein
+Vollbild-Shader für Leuchten, Vignette, Farbgraduierung und Korn. Jede Stage
+bringt ihre eigene Stimmung mit (`grade` in der Palette).
+
+Die Reihenfolge ist dabei der ganze Punkt — und ich hatte sie erst falsch:
+
+1. Szene **ohne** Tonwertkurve in ein Halbfloat-Ziel, damit Werte über 1.0
+   erhalten bleiben. Nur die leuchten später wirklich.
+2. Helligkeitsauszug und Unschärfe auf halber Auflösung.
+3. Leuchten **vor** der Tonwertkurve addieren.
+4. Sättigung, Kontrast und Farbhauch **danach**.
+
+Punkt 4 war zuerst falsch herum. Kontrast rechnet um 0.5 herum, und das ist
+ein *Anzeige*wert — in linearem Licht liegt Mittelgrau bei 0.18. Alles Dunkle
+rutschte dadurch ins Negative, und die Lava der Abyssal Depths kam **türkis**
+heraus. Dazu: die echte sRGB-Kurve statt `pow(1/2.2)`, weil der Unterschied
+genau in den Tiefen sitzt und dort über „stimmungsvoll" oder „schwarz"
+entscheidet.
+
+**Klang, vollständig im Code erzeugt** — keine einzige Tondatei. Dreizehn
+Effekte aus Hüllkurven auf Oszillatoren und Rauschen. Die Musik hat Bass,
+Fläche, Arpeggio und Puls; **Tempo und Schichtzahl hängen am
+Schwierigkeitskoeffizienten**. Das ist derselbe Wert, den auch der Balken
+zeigt: man hört, wie spät es ist, bevor man hinsieht. Bei *Easy* laufen nur
+Bass und Fläche, ab *Very Hard* hämmert das Arpeggio.
+
+**Erschütterung** nach dem *Anteil* des verlorenen Lebens, nicht nach der
+rohen Zahl — sonst rüttelte ein Kratzer spät im Lauf genauso wie ein Treffer
+in der ersten Minute.
 
 ## Was Stufe 8 gebracht hat
 

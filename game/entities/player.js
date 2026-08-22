@@ -167,6 +167,7 @@
           const want = ROR.Stats.levelFromExp(p.exp);
           if (want !== body.level) {
             body.setLevel(want);
+            ROR.Audio.spiel('stufe');
             p.onLevelUp && p.onLevelUp(want);
           }
         },
@@ -401,6 +402,7 @@
     if (p._jumpBuffer > 0 && (p._coyote > 0 || p._jumpsLeft > 0)) {
       if (p._coyote <= 0) p._jumpsLeft--;
       p.velocity.y = JUMP_VELOCITY * Math.sqrt(S.jumpPower || 1);
+      ROR.Audio.spiel('sprung');
       p._jumpBuffer = 0;
       p._coyote = 0;
       p.grounded = false;

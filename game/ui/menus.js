@@ -130,6 +130,14 @@
       root.scrollTop = 0;
     });
     schalterZeile.appendChild(schalter);
+
+    const ton = el('button', 'kippe' + (ROR.Audio.an ? ' an' : ''));
+    ton.innerHTML = '<i></i><b>Ton</b><span>Musik wächst mit dem Schwierigkeitsgrad</span>';
+    ton.addEventListener('click', function () {
+      ROR.Audio.setAn(!ROR.Audio.an);
+      ton.classList.toggle('an', ROR.Audio.an);
+    });
+    schalterZeile.appendChild(ton);
     innen.appendChild(schalterZeile);
 
     const fuss = el('div', 'fuss');

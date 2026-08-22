@@ -42,6 +42,7 @@
          blasser Dunst am Horizont. Der Dunst ist das eigentliche Merkmal der
          Vorlage — Entferntes verliert dort früh an Sättigung und Kontrast. */
       palette: {
+        grade: { saettigung: 0.94, kontrast: 1.05, leuchten: 0.75, vignette: 0.40, hauch: 0x203040 },
         sky: 0x7ba2c2, horizon: 0xdcdfd2,
         fog: 0xdcdfd2, fogDensity: 0.0033,
         sun: 0xffe6bc, sunIntensity: 2.5,
@@ -86,6 +87,7 @@
       },
 
       palette: {
+        grade: { saettigung: 0.92, kontrast: 1.06, leuchten: 0.72, vignette: 0.38, hauch: 0x2a2418 },
         sky: 0x9fb4c8, horizon: 0xf0e2c4,
         fog: 0xf0e2c4, fogDensity: 0.0031,
         sun: 0xfff0cc, sunIntensity: 2.7,
@@ -129,6 +131,7 @@
       },
 
       palette: {
+        grade: { saettigung: 0.88, kontrast: 1.08, leuchten: 0.85, vignette: 0.46, hauch: 0x1c2836 },
         sky: 0x6b86a4, horizon: 0xd6dee6,
         fog: 0xd6dee6, fogDensity: 0.0044,
         sun: 0xdce8f6, sunIntensity: 1.9,
@@ -173,6 +176,7 @@
       },
 
       palette: {
+        grade: { saettigung: 1.06, kontrast: 1.04, leuchten: 1.20, vignette: 0.44, hauch: 0x3a1a10, belichtung: 1.5 },
         sky: 0x140c10, horizon: 0x502218,
         fog: 0x3a1a14, fogDensity: 0.0044,
         sun: 0xff9a50, sunIntensity: 2.0,
@@ -216,6 +220,7 @@
       },
 
       palette: {
+        grade: { saettigung: 1.02, kontrast: 1.03, leuchten: 1.00, vignette: 0.36, hauch: 0x2a1c38 },
         sky: 0x6a5a9c, horizon: 0xf0c8d8,
         fog: 0xf0c8d8, fogDensity: 0.0030,
         sun: 0xffd8c0, sunIntensity: 2.3,
@@ -253,6 +258,7 @@
         drop: 34
       },
       palette: {
+        grade: { saettigung: 1.08, kontrast: 1.04, leuchten: 1.30, vignette: 0.48, hauch: 0x241844, belichtung: 1.2 },
         sky: 0x2a1f4a, horizon: 0x8f6ac0,
         fog: 0x6a4c9a, fogDensity: 0.0060,
         sun: 0xffd0f0, sunIntensity: 1.9,
@@ -286,6 +292,7 @@
         drop: 30
       },
       palette: {
+        grade: { saettigung: 0.80, kontrast: 1.06, leuchten: 1.10, vignette: 0.52, hauch: 0x14182a, belichtung: 1.25 },
         sky: 0x0a0a12, horizon: 0x3a3a56,
         fog: 0x2a2a40, fogDensity: 0.0040,
         sun: 0xf0f0ff, sunIntensity: 2.2,

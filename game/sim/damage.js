@@ -118,6 +118,14 @@
       if (!info.silent) {
         const p = info.position || v.center(_pos);
         Damage.number(p, Math.round(dmg), v.team === ROR.Body.PLAYER ? 'taken' : (crit ? 'crit' : 'hit'));
+        if (v.team === ROR.Body.PLAYER) {
+          ROR.Audio.spiel('schaden');
+          // Erschütterung nach Anteil des Lebens, nicht nach roher Zahl —
+          // sonst rüttelt ein Kratzer spät im Lauf genauso wie ein Treffer früh.
+          ROR.Camera.addShake(U.clamp(dmg / v.stats.maxHealth, 0, 0.5) * 1.6);
+        } else if (info.type !== 'dot') {
+          ROR.Audio.spiel(crit ? 'krit' : 'treffer');
+        }
       }
       if (v.onDamaged) v.onDamaged(v, info, result);
 
@@ -133,6 +141,7 @@
     /* Flächenschaden. `proc` sollte hier klein sein — im Original tragen
        Explosionen bewusst wenig zur Auslösekette bei. */
     explode(opts) {
+      ROR.Audio.spiel('explosion');
       // Chaos: Explosionen unterscheiden nicht mehr zwischen Freund und Feind.
       const team = ROR.Artifacts && ROR.Artifacts.friendlyFire() ? null : opts.team;
       const found = ROR.Body.enemiesNear(opts.position, opts.radius, team, []);

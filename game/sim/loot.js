@@ -181,6 +181,7 @@
           d.mesh.position.y += Math.sin(k * Math.PI) * 1.1;
           d.mesh.scale.setScalar(1 - k * 0.55);
           if (k >= 1) {
+            ROR.Audio.spiel('aufsammeln');
             Loot.give(p.body, d.def);
             ROR.Projectiles.spark(ziel, TIER_COLOR[d.def.tier] || 0xffffff, 1.4);
             group.remove(d.mesh);

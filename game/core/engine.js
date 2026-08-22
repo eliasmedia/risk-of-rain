@@ -51,6 +51,7 @@
       Engine.scene = scene;
       Engine.camera = camera;
 
+      if (ROR.PostFX) ROR.PostFX.init(renderer);
       addEventListener('resize', Engine.resize);
       // Kommt der Bildschirm aus dem Hintergrund zurück, wäre der erste
       // Zeitschritt sonst mehrere Sekunden groß.
@@ -64,6 +65,7 @@
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
+      if (ROR.PostFX) ROR.PostFX.resize();
     },
 
     /* Kleinere `order` läuft früher. Eingabe -1, Spieler 0, Gegner 10,
@@ -119,7 +121,8 @@
     }
 
     if (frameCallback) frameCallback(elapsed);
-    renderer.render(scene, camera);
+    if (ROR.PostFX && ROR.PostFX.enabled) ROR.PostFX.render(scene, camera, elapsed);
+    else renderer.render(scene, camera);
 
     // Bildrate über eine halbe Sekunde mitteln, sonst flackert die Anzeige.
     fpsAccum += elapsed; fpsFrames++;

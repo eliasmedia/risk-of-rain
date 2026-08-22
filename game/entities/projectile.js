@@ -114,6 +114,7 @@
       }
 
       Projectiles.tracer(_o, _d, dist, opts.tracerColor || 0xffe9a8);
+      ROR.Audio.spiel('schuss');
       return hit;
     },
 

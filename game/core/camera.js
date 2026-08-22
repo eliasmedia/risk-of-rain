@@ -81,7 +81,16 @@
          `lookAt` mit der Position aus `matrixWorld`, also der des *vorigen*
          Bildes; das allein waren schon gut drei Grad Fehler.
          Reihenfolge YXZ und -pitch, damit die -Z-Achse genau auf `aim()` fällt. */
-      euler.set(-Cam.pitch, Cam.yaw, 0, 'YXZ');
+      let ruckX = 0, ruckY = 0, ruckZ = 0;
+      if (Cam.shake > 0.001) {
+        const t = ROR.Engine.time * 47;
+        const k = Cam.shake * Cam.shake * 0.06;
+        ruckX = Math.sin(t * 1.7) * k;
+        ruckY = Math.sin(t * 2.3 + 1.1) * k;
+        ruckZ = Math.sin(t * 1.3 + 2.2) * k * 1.6;
+        Cam.shake = U.damp(Cam.shake, 0, 0.09, dt);
+      }
+      euler.set(-Cam.pitch + ruckX, Cam.yaw + ruckY, ruckZ, 'YXZ');
       c.quaternion.setFromEuler(euler);
 
       if (Math.abs(c.fov - Cam.fov) > 0.01) {
@@ -89,6 +98,11 @@
         c.updateProjectionMatrix();
       }
     },
+
+    /* Erschütterung: ein kurzer Stoß, der weich ausläuft. Sie sitzt in der
+       Kamera und nicht im Bild, damit sie mit der Blickrichtung mitgeht. */
+    shake: 0,
+    addShake(menge) { Cam.shake = Math.min(1.4, Cam.shake + menge); },
 
     /* Sichtfeld weiten — beim Sprinten, damit Tempo spürbar wird. */
     setFovBoost(extra) { Cam.fov = Cam.baseFov + extra; },

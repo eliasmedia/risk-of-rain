@@ -184,6 +184,8 @@
       }
 
       ROR.Director.gift((120 + 90 * ROR.Difficulty.coeff) * (1 + schreine));
+      ROR.Audio.spiel('boss');
+      ROR.Camera.addShake(0.9);
       ROR.HUD.toast(bossDef.name + ' erwacht', 'bad');
       return true;
     },
@@ -243,6 +245,7 @@
       // Goldregen: das Guthaben für die nächste Stage.
       const gold = 25 * Math.pow(ROR.Difficulty.coeff, 1.25) * (2 + schreine);
       ROR.Game.player.gold += gold;
+      ROR.Audio.spiel('teleport');
       ROR.HUD.toast('Teleporter bereit  ·  +$' + Math.floor(gold), 'gold');
       ROR.Projectiles.spark(pos.clone().setY(pos.y + 2.6), 0x8fffa8, 5);
     },

@@ -691,7 +691,8 @@ html, body {
   color: var(--gold); letter-spacing: 0.04em;
 }
 
-#menu .schalter { margin-top: 22px; }
+#menu .schalter { margin-top: 22px; display: flex; gap: 8px; flex-wrap: wrap; }
+#menu .schalter .kippe { flex: 1 1 300px; }
 #menu .kippe {
   width: 100%; text-align: left; padding: 12px 14px; cursor: pointer; font: inherit;
   background: rgba(14, 22, 30, 0.8); border: 1px solid var(--edge); color: var(--ink-dim);

@@ -437,6 +437,7 @@
         }
       }
       if (o.used) o.lid = 1;
+      ROR.Audio.spiel('kiste');
       return true;
     },
 

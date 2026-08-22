@@ -45,7 +45,7 @@
        'target', 'targetname', 'targetfill', 'toast', 'dead',
        'itembar', 'prompt', 'pickup', 'equipslot', 'equipsweep', 'equipname',
        'bossbar', 'bossname', 'bossfill', 'tpwrap', 'tpfill', 'tptext',
-       'tpmark', 'banner', 'bannersub'
+       'tpmark', 'banner', 'bannersub', 'victory', 'lunar'
       ].forEach((id) => { el[id] = document.getElementById(id); });
 
       const pool = el.numbers;
@@ -97,6 +97,7 @@
     },
 
     setDead(on) { el.dead.classList.toggle('hidden', !on); },
+    setVictory(on) { el.victory.classList.toggle('hidden', !on); },
 
     /* Stageschild beim Betreten — der Moment, in dem man weiß, wo man ist. */
     stageBanner(theme, loop) {
@@ -306,6 +307,8 @@
       set(el.hptext, Math.ceil(b.health) + ' / ' + Math.round(S.maxHealth));
       set(el.levelout, 'Stufe ' + b.level);
       set(el.gold, '$' + Math.floor(p.gold));
+      el.lunar.style.display = game.lunarCoins > 0 ? '' : 'none';
+      set(el.lunar, '☾ ' + game.lunarCoins);
 
       set(el.timer, mmss(ROR.Engine.time));
       set(el.stagename, game.stage ? game.stage.theme.name : '');

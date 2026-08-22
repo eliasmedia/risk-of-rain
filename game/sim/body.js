@@ -53,7 +53,10 @@
            aber höchstens ein Anteil der Höchstgesundheit je Sekunde. */
         heal(amount) {
           if (!b.alive) return 0;
-          let want = amount * (b.stats.healMult || 1);
+          /* Nicht `|| 1` — Malachite setzt healMult bewusst auf 0, und ein
+             Oder-Rückfall hätte die Heilblockade stillschweigend aufgehoben. */
+          const faktor = b.stats.healMult === undefined ? 1 : b.stats.healMult;
+          let want = amount * faktor;
           if (b.stats.healCap > 0) {
             const grenze = b.stats.maxHealth * b.stats.healCap * ROR.Engine.step;
             want = Math.min(want, grenze);

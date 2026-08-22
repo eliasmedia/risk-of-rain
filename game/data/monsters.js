@@ -274,6 +274,34 @@
         ] }
     }),
 
+    /* Das Ende des Laufs. Drei Abschnitte über `belowHealth`: erst Hammer,
+       dann Säulen und Kugeln, zuletzt der Diebstahl. Dafür brauchte es keine
+       neue Maschinerie — die Bossfähigkeiten reichen aus. */
+    M({
+      id: 'mithrix', name: 'Mithrix', category: 'champion', isBoss: true, isFinal: true,
+      health: 12000, damage: 40, armor: 20, moveSpeed: 9, cost: 6000,
+      radius: 1.6, height: 4.6, stages: [6],
+      shape: { kind: 'biped', size: 2.4, horns: true, claws: true,
+               colors: { main: 0xe8e4d8, dark: 0x6a6458, eye: 0xffd070 } },
+      ai: { kind: 'boss', keep: 6,
+        attacks: [
+          { id: 'hammer', type: 'slam', range: 9, windup: 1.0, cooldown: 3.5,
+            radius: 8, coefficient: 2.0, proc: 1, color: 0xffd070 },
+          { id: 'leap', type: 'slam', range: 40, minRange: 12, windup: 1.4, cooldown: 8,
+            radius: 12, coefficient: 3.0, proc: 1, color: 0xffe0a0 },
+          { id: 'pillars', type: 'summon_zone', range: 60, windup: 1.2, cooldown: 14,
+            belowHealth: 0.75, count: 5, radius: 6, life: 5, coefficient: 1.2 },
+          { id: 'orbs', type: 'shot', range: 60, windup: 1.0, cooldown: 6,
+            belowHealth: 0.75, burst: 5, spread: 0.09,
+            shot: { speed: 26, radius: 0.7, coefficient: 1.6, proc: 1, color: 0xfff0c0,
+                    blast: { radius: 6, coefficient: 0.6, proc: 0 } } },
+          /* Der Diebstahl: er nimmt einem die Items ab. Sie kommen mit seinem
+             Tod zurück — das ist der Moment, auf den der ganze Kampf zuläuft. */
+          { id: 'steal', type: 'steal', range: 70, windup: 2.0, cooldown: 999,
+            belowHealth: 0.35 }
+        ] }
+    }),
+
     M({
       id: 'greater_wisp', name: 'Greater Wisp',
       health: 750, damage: 15, moveSpeed: 7, cost: 200, category: 'miniboss',

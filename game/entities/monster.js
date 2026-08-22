@@ -347,9 +347,10 @@
        im Loop irgendwann hunderte Gegner gleichzeitig stellen. */
     cap: 34,
 
-    spawn(def, level, position) {
+    spawn(def, level, position, affix) {
       if (list.length >= Monsters.cap) return null;
 
+      let m0_huelle = null;
       const model = template(def).clone(true);
       model.position.copy(position);
       ROR.Engine.scene.add(model);
@@ -374,10 +375,35 @@
         walkPhase: U.chaos.range(0, 6.28),
         spawnFx: 1,          // wächst beim Erscheinen aus dem Nichts
         deathFx: 0,
-        hoverOffset: U.chaos.range(-1.5, 1.5)
+        hoverOffset: U.chaos.range(-1.5, 1.5),
+        affix: affix || null,
+        huelle: null
       };
 
       body.isBoss = !!def.isBoss;
+
+      /* Elite: derselbe Gegner, nur mit einer zusätzlichen Regel und einer
+         Hülle, an der man ihn von weitem erkennt. */
+      if (affix) {
+        body.elite = affix;
+        body.name = affix.name + ' ' + body.name;
+        ROR.Stats.recompute(body);
+        body.health = body.stats.maxHealth;
+        if (affix.shieldInsteadOfHealth) {
+          body.shield = body.stats.maxShield;
+          body.health = body.stats.maxHealth;
+        }
+        const huelle = new THREE.Mesh(
+          new THREE.IcosahedronGeometry(1, 1),
+          new THREE.MeshBasicMaterial({ color: affix.glow, transparent: true, opacity: 0.17,
+                                        depthWrite: false, side: THREE.BackSide,
+                                        blending: THREE.AdditiveBlending })
+        );
+        huelle.scale.setScalar(Math.max(def.radius * 2.2, def.height * 0.75));
+        huelle.position.y = def.height * 0.5;
+        model.add(huelle);
+        m0_huelle = huelle;
+      }
       if (def.ai.attacks) {
         m.atkCd = {};
         for (let i = 0; i < def.ai.attacks.length; i++) {
@@ -398,10 +424,21 @@
       body.onDeath = function () {
         m.deathFx = 0.7;
         m.state = 'dead';
+        // Gestohlenes kehrt zurück.
+        if (m.gestohlen) {
+          const p2 = ROR.Game.player;
+          for (const id in m.gestohlen) ROR.Items.give(p2.body, id, m.gestohlen[id]);
+          ROR.Attire.refresh(p2);
+          ROR.HUD.toast('Du hast deine Items zurück', 'gold');
+          m.gestohlen = null;
+        }
+        if (def.isFinal && ROR.Game.onVictory) ROR.Game.onVictory();
+        if (m.affix && m.affix.onDeath) m.affix.onDeath(m);
         Monsters.reward(m);
         ROR.Artifacts.onMonsterDeath(m);
       };
 
+      m.huelle = m0_huelle;
       model.scale.setScalar(0.01);
       ROR.Projectiles.spark(position, def.shape.colors.glow || def.shape.colors.eye || 0xffffff, 1.6);
       list.push(m);
@@ -417,9 +454,15 @@
     reward(m) {
       const p = ROR.Game && ROR.Game.player;
       if (!p) return;
-      const xp = ROR.Difficulty.coeff * (m.def.cost) * Monsters.rewardMultiplier;
+      const aufschlag = m.affix ? m.affix.cost : 1;
+      const xp = ROR.Difficulty.coeff * (m.def.cost * aufschlag) * Monsters.rewardMultiplier;
       p.addExp(xp);
       p.gold += xp * 2;
+      // Mondmünzen fallen selten — sie sind die Währung des Bazaars.
+      if (U.chaos.next() < 0.012) {
+        ROR.Game.lunarCoins++;
+        ROR.HUD.toast('Mondmünze gefunden', 'gold');
+      }
     },
 
     /* Verbündeter aus einem Item (Queen's Gland). Er ist derselbe Gegner,
@@ -476,6 +519,12 @@
         if (m.spawnFx > 0) {
           m.spawnFx -= dt * 4;
           m.model.scale.setScalar(U.clamp(1 - m.spawnFx, 0.01, 1));
+        }
+        if (m.affix) {
+          if (m.affix.onInterval) m.affix.onInterval(m, dt);
+          if (m.huelle) {
+            m.huelle.material.opacity = 0.13 + Math.sin(ROR.Engine.time * 3 + m.walkPhase) * 0.05;
+          }
         }
         step(m, dt);
       }
@@ -837,6 +886,42 @@
       return;
     }
 
+    if (a.type === 'summon_zone') {
+      // Säulen um den Spieler herum: man muss sich bewegen.
+      const p2 = ROR.Game.player;
+      for (let i = 0; i < a.count; i++) {
+        const w = (i / a.count) * U.TAU + U.chaos.next();
+        const d2 = U.chaos.range(4, 14);
+        const x = p2.position.x + Math.cos(w) * d2;
+        const z = p2.position.z + Math.sin(w) * d2;
+        ROR.Deployables.spawn('zone', m.body,
+          new THREE.Vector3(x, ROR.Stage.current.terrain.heightAt(x, z), z),
+          { radius: a.radius, life: a.life, interval: 0.4,
+            coefficient: a.coefficient, proc: 0.2, color: 0xffd070 });
+      }
+      return;
+    }
+
+    if (a.type === 'steal') {
+      /* Er nimmt dem Spieler alles ab und wird selbst stärker. Beim Tod
+         gibt er es zurück — deshalb wird nur umgehängt, nicht gelöscht. */
+      const p2 = ROR.Game.player;
+      m.gestohlen = {};
+      for (const id in p2.body.items) {
+        const def = ROR.Items.def(id);
+        if (!def || def.scrap) continue;
+        m.gestohlen[id] = p2.body.items[id];
+      }
+      for (const id in m.gestohlen) {
+        ROR.Items.take(p2.body, id, m.gestohlen[id]);
+        ROR.Items.give(m.body, id, m.gestohlen[id]);
+      }
+      ROR.Attire.refresh(p2);
+      ROR.HUD.toast('Mithrix hat deine Items genommen', 'bad');
+      ROR.Projectiles.spark(at2(p2.position), 0xffd070, 6);
+      return;
+    }
+
     if (a.type === 'summon') {
       for (let i = 0; i < a.count; i++) {
         const def = ROR.Data.monster(a.monster);
@@ -859,6 +944,8 @@
       return;
     }
   }
+
+  function at2(v) { return v.clone().setY(v.y + 1.2); }
 
   function beamTick(m, p) {
     const a = m.attack;
@@ -940,6 +1027,25 @@
   ROR.Stats.addModifier(function (body, out) {
     if (body.drainArmor) out.armor += body.drainArmor;
     if (body.dashArmor) out.armor += body.dashArmor;
+    const e = body.elite;
+    if (!e) return;
+    out.maxHealth *= e.health;
+    out.damage *= e.damage;
+    /* Overloading trägt sein Leben als Schild: dieselbe Menge, aber sie lädt
+       sich wieder auf, wenn man ihn in Ruhe lässt. */
+    if (e.shieldInsteadOfHealth) {
+      out.maxShield += out.maxHealth * 0.5;
+      out.maxHealth *= 0.5;
+    }
+  });
+
+  /* Trefferwirkung der Affixe — hängt am Angreifer, gilt daher für jede
+     Gegnerart, ohne dass eine davon etwas davon wissen muss. */
+  ROR.Damage.addOnHit(function (info, result, proc) {
+    const a = info.attacker;
+    if (!a || !a.elite || !a.elite.onHit || proc <= 0 || !result.amount) return;
+    const m = { body: a, model: { position: a.position }, def: a.def };
+    a.elite.onHit(m, info.victim);
   });
 
   ROR.Monsters = Monsters;

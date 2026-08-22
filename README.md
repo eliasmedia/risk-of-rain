@@ -21,7 +21,7 @@ Bosse und Loop.
 | 6a | Startbildschirm, Figurenauswahl, 14 Artefakte | ✅ fertig |
 | 6b | Huntress, Engineer, MUL-T, Artificer, Mercenary | ✅ fertig |
 | 6c | Charakterdesign aufwerten, Item-Modelle am Körper | ✅ fertig |
-| 7 | Elite-Affixe, Ausrüstung, Drohnen, Bazaar, Mithrix | offen |
+| 7 | Elite-Affixe, Ausrüstung, Drohnen, Bazaar, Mithrix | ✅ fertig |
 | 8 | Menüs, Freischaltungen, Logbuch, Spielstand | offen |
 | 9 | Prozedurale Musik, Partikel, Trefferfeedback | offen |
 | 10 | Touch-Steuerung fürs Handy | offen |
@@ -97,7 +97,8 @@ game/
   data/
     stages.js              Fünf Stage-Themen: Gelände, Farben, Bewuchs (reine Daten)
     survivors.js           Sechs Figuren: Grundwerte, Aussehen, vier Fähigkeiten
-    monsters.js            14 Gegner und 5 Bosse: Werte, Kosten, Bauart, Verhalten
+    monsters.js            14 Gegner, 5 Bosse und Mithrix
+    elites.js              Fünf Affixe: Werte, Kosten, Sonderregel
     items.js               71 Items als Hook-Sätze
     interactables.js       Kisten, Schreine, Drucker: Preise, Gewichte, Budget
     itemmodels.js          Wie ein Item am Körper aussieht und wo es hängt
@@ -277,6 +278,48 @@ Ohne `--push` wird nur kopiert. Liegt das Website-Repo woanders, hilft
 `ROR_WEB=/pfad/zum/repo ./deploy.sh`.
 
 ---
+
+## Was Stufe 7 gebracht hat
+
+**Elite-Affixe.** Derselbe Gegner, nur mit einer zusätzlichen Regel und einer
+Hülle, an der man ihn von weitem erkennt. Der Director entscheidet über den
+Preis: Stufe 1 kostet das Sechsfache, Stufe 2 das Sechsunddreißigfache — er
+kauft im Loop also nicht *mehr* Gegner, sondern *bessere*.
+
+| Affix | Stufe | Leben · Schaden | Regel |
+|---|---|---|---|
+| Blazing | 1 | ×4 · ×2 | setzt in Brand, hinterlässt eine Feuerspur |
+| Overloading | 1 | ×4 · ×2 | trägt Schild statt Leben, schlägt mit Blitzen |
+| Glacial | 1 | ×4 · ×2 | verlangsamt, zerspringt beim Tod |
+| Malachite | 2 | ×18 · ×6 | **blockiert Heilung**, speit Stachelkugeln |
+| Celestine | 2 | ×18 · ×6 | heilt seine Gruppe, blinzelt aus dem Beschuss |
+
+Damit sind auch die letzten beiden Artefakte spielbar: **Honor** (nur noch
+Elites) und **Vengeance** (ein Doppelgänger mit deinen Items je Stage).
+
+**Sechs weitere Ausrüstungen** (jetzt zwölf), **Drohnen** zum Kaufen, die
+neben einem herfliegen und mitschießen oder heilen, und der **Bazaar Between
+Time**: über den Newt-Altar erreichbar, Mondkapseln gegen Mondmünzen,
+Reinigungsbecken zum Ablegen eines Lunar-Items.
+
+**Mithrix auf Commencement** als Ende des Laufs — drei Abschnitte über
+`belowHealth`: Hammer, dann Säulen und Kugeln, zuletzt der **Diebstahl**. Er
+nimmt einem alle Items ab und wird selbst stärker; mit seinem Tod kommen sie
+zurück. Nach Sky Meadow führt das Portal im ersten Durchgang dorthin, danach
+in den Loop.
+
+Zwei Fehler dabei gefunden:
+
+* **`healMult = 0` wurde durch einen `|| 1`-Rückfall aufgehoben.** Malachites
+  Heilblockade war damit wirkungslos — und dieselbe Zeile hätte auch jedes
+  künftige Item mit Faktor 0 stillschweigend entschärft.
+* **Der Bazaar behielt die Stage-Nummer seiner Herkunft.** Dadurch bekam er
+  einen normalen Teleporter statt des Ausgangs.
+
+Gemessen: Blazing Beetle 320 Leben und 24 Schaden (×4/×2), Malachite 1440
+(×18); der Director wählt bei 4000 Credits Malachite und bei 400 noch gar
+keinen Affix; Mithrix stiehlt sechs Items und gibt sie beim Tod zurück; der
+Weg Stage 3 → Bazaar → Stage 4 und Sky Meadow → Commencement → Loop 1 stimmt.
 
 ## Was Stufe 6c gebracht hat
 

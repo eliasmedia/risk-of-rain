@@ -30,9 +30,12 @@
   /* Kostenfaktor der Elite-Stufen. Elites selbst kommen in Stufe 7; die
      Struktur steht hier schon, weil der Director sonst später neu geschrieben
      werden müsste. */
-  const ELITE_TIERS = [
-    { tier: 0, costMult: 1 }
-  ];
+  function eliteStufen() {
+    const aus = [{ tier: 0, costMult: 1, affixes: null }];
+    aus.push({ tier: 1, costMult: 6, affixes: ROR.Data.elitesOfTier(1) });
+    aus.push({ tier: 2, costMult: 36, affixes: ROR.Data.elitesOfTier(2) });
+    return aus;
+  }
 
   const MAX_PER_WAVE = 5;
 
@@ -46,7 +49,7 @@
       nextSpend: opts.spendMin,
       /* Läuft eine Welle, bleiben Karte und Elite-Stufe erhalten. */
       card: null,
-      tier: ELITE_TIERS[0],
+      tier: null,
       waveLeft: 0,
       lastSuccess: false
     };
@@ -120,7 +123,8 @@
     debugLine() {
       if (!Director.active) return 'director  aus';
       return Director.directors.map(function (d) {
-        return d.name + ' ' + d.credits.toFixed(0) + 'c';
+        return d.name + ' ' + d.credits.toFixed(0) + 'c'
+             + (d.affix ? '/' + d.affix.id.slice(0, 4) : '');
       }).join('  ') + '   gegner ' + ROR.Monsters.list.length + '/' + ROR.Monsters.cap;
     }
   };
@@ -161,13 +165,32 @@
       for (let tries = 0; tries < 6; tries++) {
         card = chooseCard(d.credits);
         if (!card) break;
-        // „Zu billig": lieber sparen, solange es überhaupt etwas Teureres gibt.
+        /* „Zu billig": lieber sparen, solange es überhaupt etwas Teureres
+           gibt. Der Vergleich läuft gegen den Preis einer Elite-Stufe — das
+           ist der Punkt, an dem der Director vom Sparen ins Klotzen kippt. */
         const tooCheap = d.credits > 6 * card.cost && card.cost < priciest.cost;
         if (!tooCheap) break;
       }
       if (!card) { d.lastSuccess = false; return; }
       d.card = card;
-      d.tier = ELITE_TIERS[0];
+
+      /* Elite-Stufe: die höchste, die sich der Director gerade leisten kann.
+         Genau daraus entsteht die Eskalation — er kauft nicht mehr Gegner,
+         sondern *bessere*. Das Artefakt Honor erzwingt mindestens Stufe 1. */
+      const stufen = eliteStufen();
+      const ehre = ROR.Artifacts.on('honor');
+      d.tier = stufen[0];
+      for (let i = stufen.length - 1; i >= 0; i--) {
+        const s = stufen[i];
+        if (!s.affixes && ehre) continue;
+        if (card.cost * s.costMult <= d.credits) { d.tier = s; break; }
+      }
+      if (ehre && !d.tier.affixes) {
+        // Bei Honor lieber gar nichts stellen als etwas Gewöhnliches.
+        d.lastSuccess = false;
+        return;
+      }
+      d.affix = d.tier.affixes ? U.chaos.pick(d.tier.affixes) : null;
       d.waveLeft = MAX_PER_WAVE;
     }
 
@@ -177,7 +200,7 @@
     const spot = findSpawnPoint(player, d.card);
     if (!spot) { d.lastSuccess = false; return; }
 
-    const m = ROR.Monsters.spawn(d.card, ROR.Difficulty.spawnLevel, spot);
+    const m = ROR.Monsters.spawn(d.card, ROR.Difficulty.spawnLevel, spot, d.affix);
     if (!m) { d.lastSuccess = false; return; }
 
     d.credits -= cost;

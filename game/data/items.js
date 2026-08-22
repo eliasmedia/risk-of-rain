@@ -627,7 +627,63 @@
 
   { id: 'chrysalis', name: 'Milky Chrysalis', tier: TIER.equipment, cooldown: 60,
     desc: 'Fünfzehn Sekunden Flug.',
-    use(b) { ROR.Game.player.beginFlight(15); } }
+    use(b) { ROR.Game.player.beginFlight(15); } },
+
+  { id: 'primordial_cube', name: 'Primordial Cube', tier: TIER.equipment, cooldown: 45,
+    desc: 'Zieht alles im Umkreis von 15 m zusammen und hält es fest.',
+    use(b) {
+      const ziel = ROR.Projectiles.nearestEnemy(b.position, 60, b.team);
+      if (!ziel) return;
+      const mitte = at(ziel, V2).clone();
+      const nah = ROR.Projectiles.enemiesInRange(mitte, 15, b.team, 20);
+      for (let i = 0; i < nah.length; i++) {
+        ROR.Buffs.apply(nah[i], 'stun', 4);
+        // Zusammenziehen: sie stehen danach dicht beieinander.
+        nah[i].position.lerp(mitte, 0.55);
+        hit(b, nah[i], 1.0, 0.2);
+      }
+      ROR.Projectiles.spark(mitte, 0xb0a0ff, 6);
+    } },
+
+  { id: 'crowdfunder', name: 'The Crowdfunder', tier: TIER.equipment, cooldown: 5,
+    desc: 'Feuert, solange Gold da ist — jeder Schuss kostet.',
+    use(b) {
+      const p = ROR.Game.player;
+      const schuesse = Math.min(40, Math.floor(p.gold / (2 * ROR.Difficulty.coeff)));
+      if (schuesse < 1) { ROR.HUD.toast('Kein Gold', 'bad'); return; }
+      p.gold -= schuesse * 2 * ROR.Difficulty.coeff;
+      ROR.Camera.aim(V2);
+      at(b, V);
+      for (let i = 0; i < schuesse; i++) {
+        ROR.Game.player.after(i * 0.05, function () {
+          ROR.Camera.aim(V2); at(b, V);
+          ROR.Projectiles.bullet({
+            attacker: b, team: b.team, origin: V.clone(), dir: V2.clone(),
+            coefficient: 1.0, proc: 0.4, falloff: 'standard', range: 90, spread: 0.07,
+            tracerColor: 0xf2c14e
+          });
+        });
+      }
+    } },
+
+  { id: 'gnarled_woodsprite', name: 'Gnarled Woodsprite', tier: TIER.equipment, cooldown: 20,
+    desc: 'Heilt zwanzig Sekunden lang 1.5 % der Höchstgesundheit je Sekunde.',
+    use(b) { ROR.Buffs.apply(b, 'woodsprite', 20); } },
+
+  { id: 'jade_elephant', name: 'Jade Elephant', tier: TIER.equipment, cooldown: 45,
+    desc: 'Fünf Sekunden lang +500 Rüstung.',
+    use(b) { ROR.Buffs.apply(b, 'jade', 5); } },
+
+  { id: 'blast_shower', name: 'Blast Shower', tier: TIER.equipment, cooldown: 25,
+    desc: 'Entfernt alle Beeinträchtigungen und stößt Gegner zurück.',
+    use(b) {
+      b.buffs.length = 0;
+      if (b.dots) b.dots.length = 0;
+      b.statsDirty = true;
+      ROR.Damage.explode({ attacker: b, team: b.team, position: at(b, V2).clone(),
+                           radius: 12, coefficient: 1.0, proc: 0 });
+      ROR.Projectiles.spark(at(b, V2), 0xbfe8ff, 5);
+    } }
 
   ];
 

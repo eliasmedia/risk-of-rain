@@ -29,6 +29,19 @@
       name: 'Sperrfeuer', color: 0xffc46b, stacks: false, hidden: true,
       modify(body, out) { out.moveSpeed *= 0.4; }
     },
+    woodsprite: {
+      name: 'Waldgeist', color: 0x8fd07a, stacks: false,
+      onTickHeal: true
+    },
+    jade: {
+      name: 'Jade-Elefant', color: 0x6fd36f, stacks: false,
+      modify(body, out) { out.armor += 500; }
+    },
+    /* Malachite: solange das anliegt, wirkt keine Heilung. */
+    no_heal: {
+      name: 'Heilung blockiert', color: 0x6fd36f, stacks: false,
+      modify(body, out) { out.healMult = 0; }
+    },
     /* Berzerker's Pauldron. */
     frenzy: {
       name: 'Raserei', color: 0xff6a3a, stacks: false,
@@ -163,6 +176,7 @@
       const list = body.buffs;
       for (let i = list.length - 1; i >= 0; i--) {
         const e = list[i];
+        if (e.def.onTickHeal) ROR.Items.heal(body, body.stats.maxHealth * 0.015 * dt);
         if (e.def.dot) {
           e.tick -= dt;
           if (e.tick <= 0) {

@@ -23,6 +23,10 @@
     loop: 0,
     stagesCleared: 0,
     mountainShrines: 0,
+    lunarCoins: 0,
+    bazaarOffen: false,
+    imBazaar: false,
+    gewonnen: false,
     started: false,
 
     /* Ein Seed aus der Adresszeile macht eine Welt reproduzierbar —
@@ -53,6 +57,10 @@
       Game.stageOrder = 1;
       Game.loop = 0;
       Game.stagesCleared = 0;
+      Game.lunarCoins = 2;          // zwei zum Anfangen, damit der Bazaar erreichbar ist
+      Game.bazaarOffen = false;
+      Game.imBazaar = false;
+      Game.gewonnen = false;
 
       ROR.Body.clear();
       ROR.Difficulty.reset(cfg.difficulty || Game.difficultyFromUrl());
@@ -68,6 +76,7 @@
       Game.player.onDeath = function () { endRun(); };
       ROR.HUD.buildSkills(def);
       ROR.HUD.setDead(false);
+      ROR.HUD.setVictory(false);
 
       ROR.Artifacts.runStart(Game.player);
       Game.afterStage();
@@ -152,6 +161,26 @@
 
     /* Der Sprung ins nächste Environment. Hier springt auch der
        Schwierigkeitskoeffizient um den Faktor 1.15. */
+    /* Der Bazaar liegt zwischen den Stages: man geht hinein, kauft mit
+       Mondmünzen und kommt an derselben Stelle wieder heraus. Deshalb zählt
+       er weder als Stage noch für den Koeffizienten. */
+    enterBazaar() {
+      if (Game.imBazaar) return;
+      Game.imBazaar = true;
+      Game.bazaarOffen = false;
+      // Die Herkunft merken: der Bazaar ist kein Platz in der Reihenfolge.
+      Game.vorBazaar = Game.stageOrder;
+      Game.stageOrder = 0;
+      Game.buildWorld(0, (Game.seed + Game.stagesCleared * 7919) >>> 0);
+      Game.afterStage();
+    },
+
+    leaveBazaar() {
+      Game.imBazaar = false;
+      Game.stageOrder = Game.vorBazaar || 1;
+      Game.nextStage();
+    },
+
     nextStage() {
       /* Beim Verlassen einer Stage wird das Guthaben in Erfahrung umgewandelt.
          Genau das hält die Wirtschaft in Bewegung: drüben fängt man wieder bei
@@ -168,8 +197,14 @@
 
       Game.stagesCleared++;
       ROR.Difficulty.advanceStage();
-      Game.stageOrder++;
-      if (Game.stageOrder > 5) { Game.stageOrder = 1; Game.loop++; }
+
+      /* Nach Sky Meadow steht im ersten Durchgang Commencement an — das ist
+         das Ende des Laufs. Wer weiterspielt, landet danach wieder bei
+         Stage 1 und der Loop beginnt. */
+      if (Game.stageOrder === 5 && Game.loop === 0) Game.stageOrder = 6;
+      else if (Game.stageOrder >= 6) { Game.stageOrder = 1; Game.loop++; }
+      else Game.stageOrder++;
+      if (Game.stageOrder > 5 && Game.stageOrder !== 6) { Game.stageOrder = 1; Game.loop++; }
       const seed = (Game.seed + Game.stagesCleared * 0x9e3779b9) >>> 0;
       Game.buildWorld(Game.stageOrder, seed);
       Game.afterStage();
@@ -198,8 +233,11 @@
         ROR.Input.beginFrame();
         if (ROR.Input.pressed('debug')) ROR.HUD.toggleDebug();
         if (ROR.Input.pressed('pause')) togglePause();
-        if (Game.over && ROR.Input.key('Enter')) Game.newRun(Game.config);
-        if (Game.over && ROR.Input.pressed('pause')) { ROR.HUD.setDead(false); ROR.Menus.show(); }
+        const fertig = Game.over || Game.gewonnen;
+        if (fertig && ROR.Input.key('Enter')) Game.newRun(Game.config);
+        if (fertig && ROR.Input.pressed('pause')) {
+          ROR.HUD.setDead(false); ROR.HUD.setVictory(false); ROR.Menus.show();
+        }
       }, -10);
 
       ROR.Engine.onUpdate(function (dt) { if (!Game.over) ROR.Difficulty.update(dt); }, -5);
@@ -230,6 +268,14 @@
       ROR.Engine.start();
       Game.started = true;
     }
+  };
+
+  Game.onVictory = function () {
+    if (Game.gewonnen) return;
+    Game.gewonnen = true;
+    ROR.Director.stop();
+    ROR.HUD.setVictory(true);
+    ROR.Input.unlock();
   };
 
   function endRun() {

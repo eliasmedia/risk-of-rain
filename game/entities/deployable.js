@@ -40,6 +40,25 @@
     return g;
   }
 
+  /* Drohne: fliegt neben dem Spieler her und schießt mit. Anders als der Turm
+     bleibt sie nicht stehen — man kauft sie einmal und nimmt sie mit. */
+  function bauDrohne(farben) {
+    const g = new THREE.Group();
+    const rumpf = new THREE.Mesh(new THREE.IcosahedronGeometry(0.32, 0), mat(farben.main));
+    rumpf.castShadow = true; g.add(rumpf);
+    for (let k = -1; k <= 1; k += 2) {
+      const fl = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.05, 0.14), mat(farben.dark));
+      fl.position.set(k * 0.34, 0.05, 0); g.add(fl);
+    }
+    const lauf = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.4, 5), mat(farben.dark));
+    lauf.rotation.x = Math.PI / 2; lauf.position.z = -0.28; lauf.name = 'lauf'; g.add(lauf);
+    const auge = new THREE.Mesh(new THREE.IcosahedronGeometry(0.1, 0),
+      new THREE.MeshBasicMaterial({ color: farben.glow, transparent: true, opacity: 0.9,
+                                    depthWrite: false, blending: THREE.AdditiveBlending }));
+    auge.position.z = -0.2; auge.name = 'auge'; g.add(auge);
+    return g;
+  }
+
   function bauMine(farben) {
     const g = new THREE.Group();
     const scheibe = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.5, 0.18, 8), mat(farben.dark));
@@ -139,6 +158,7 @@
 
       const farben = opts.colors || { main: 0x6a8fa8, dark: 0x33444f, glow: 0x9fe4ff };
       const model = kind === 'turret' ? bauTurm(farben)
+                  : kind === 'drone' ? bauDrohne(farben)
                   : kind === 'mine' ? bauMine(farben)
                   : kind === 'zone' ? bauZone(opts.radius || 8, opts.color || 0xffd070)
                   : bauSchild(opts.radius || 10);
@@ -152,14 +172,15 @@
       };
       model.traverse(function (o) { if (o.name) d.parts[o.name] = o; });
 
-      if (kind === 'turret') {
+      if (kind === 'turret' || kind === 'drone') {
         /* Der Turm erbt Leben und Schaden — und weil `stats` beim Besitzer
            bereits alle Items enthält, erbt er sie damit gleich mit. */
         d.body = ROR.Body.create({
           def: { name: 'Turm', growth: 'flat', health: owner.stats.maxHealth,
                  damage: owner.stats.damage, regen: 0, armor: 0, moveSpeed: 0 },
           level: 1, team: ROR.Body.PLAYER, position: model.position,
-          radius: 0.6, height: 1.1, object: model
+          radius: kind === 'drone' ? 0.4 : 0.6, height: kind === 'drone' ? 0.7 : 1.1,
+          object: model
         });
         d.body.isDeployable = true;
         d.body.onDeath = function () { d.alive = false; };
@@ -192,7 +213,8 @@
           continue;
         }
 
-        if (d.kind === 'turret') turm(d, dt);
+        if (d.kind === 'drone') drohne(d, dt);
+        else if (d.kind === 'turret') turm(d, dt);
         else if (d.kind === 'mine') mine(d, dt);
         else if (d.kind === 'zone') zone(d, dt);
         else if (d.kind === 'shield') {
@@ -236,6 +258,47 @@
       coefficient: d.opts.coefficient || 0.667, proc: d.opts.proc === undefined ? 1 : d.opts.proc,
       range: d.opts.range || 40, spread: 0.02,
       tracerColor: 0x9fe4ff, sparkColor: 0xbfe8ff
+    });
+  }
+
+  /* Sie hält Abstand zum Spieler, weicht nach oben aus und schießt auf das,
+     was am nächsten ist. Heildrohnen schießen nicht, sondern heilen. */
+  function drohne(d, dt) {
+    const p = ROR.Game.player;
+    if (!p) return;
+    const pos = d.model.position;
+    const idx = d.opts.index || 0;
+    const winkel = ROR.Engine.time * 0.6 + idx * 2.1;
+    const soll = _v.set(
+      p.position.x + Math.cos(winkel) * 2.6,
+      p.position.y + 2.6 + Math.sin(winkel * 1.7) * 0.3,
+      p.position.z + Math.sin(winkel) * 2.6
+    );
+    pos.lerp(soll, Math.min(1, dt * 2.6));
+
+    if (d.opts.heals) {
+      d.timer -= dt;
+      if (d.timer > 0) return;
+      d.timer += 1.2;
+      if (p.body.health < p.body.stats.maxHealth) {
+        ROR.Items.heal(p.body, p.body.stats.maxHealth * 0.045);
+        ROR.Projectiles.spark(p.position.clone().setY(p.position.y + 1.2), 0x8fff9f, 1.0);
+      }
+      return;
+    }
+
+    const ziel = ROR.Projectiles.nearestEnemy(pos, d.opts.range || 45, ROR.Body.PLAYER);
+    if (!ziel) return;
+    d.model.lookAt(ziel.position.x, ziel.position.y + ziel.height * 0.5, ziel.position.z);
+    d.timer -= dt * (d.body ? d.body.stats.attackSpeed : 1);
+    if (d.timer > 0) return;
+    d.timer += d.opts.interval || 0.5;
+    const dir = new THREE.Vector3(ziel.position.x - pos.x,
+      ziel.position.y + ziel.height * 0.5 - pos.y, ziel.position.z - pos.z).normalize();
+    ROR.Projectiles.bullet({
+      attacker: d.body, team: ROR.Body.PLAYER, origin: pos, dir: dir,
+      coefficient: d.opts.coefficient || 1.0, proc: 1, range: d.opts.range || 45,
+      spread: 0.03, tracerColor: 0x9fe4ff
     });
   }
 

@@ -62,6 +62,12 @@
        der Teil der Stage, in dem man Kisten öffnet. */
     place(stage, seed) {
       Teleporter.clear();
+      const ordnung = ROR.Game.stageOrder;
+
+      /* Zwei Sonderfälle: im Bazaar steht statt eines Teleporters ein
+         fertiges Portal hinaus, auf Commencement gar keiner — dort erscheint
+         Mithrix, und der Kampf *ist* der Ausgang. */
+      Teleporter.mode = ordnung === 0 ? 'bazaar' : ordnung === 6 ? 'final' : 'normal';
       const rng = U.Rng((seed >>> 0) ^ 0x7e1e);
       let spot = null;
       for (let i = 0; i < 60 && !spot; i++) {
@@ -123,7 +129,30 @@
       root.add(strahl);
 
       Teleporter.parts = { kern, ring, strahl, saeulen };
+
+      if (Teleporter.mode === 'bazaar') {
+        // Der Ausgang steht von Anfang an offen.
+        Teleporter.state = 'ready';
+      } else if (Teleporter.mode === 'final') {
+        Teleporter.state = 'used';   // kein Ausgang; es zählt nur der Kampf
+        root.visible = false;
+        Teleporter.spawnMithrix(stage);
+      }
       return Teleporter.position;
+    },
+
+    /* Mithrix erscheint sofort, sobald die Stage steht. Es gibt nichts zu
+       finden und nichts zu laden — nur ihn. */
+    spawnMithrix(stage) {
+      const def = ROR.Data.monster('mithrix');
+      if (!def) return;
+      const spot = stage.terrain.findSpot(U.Rng(stage.seed ^ 0x1111), {
+        rMin: 20, rMax: 60, maxSlope: 0.15, tries: 80
+      }) || stage.spawn;
+      const m = ROR.Monsters.spawn(def, ROR.Difficulty.spawnLevel,
+        new THREE.Vector3(spot.x, spot.y, spot.z));
+      if (m) Teleporter.bosses.push(m);
+      ROR.HUD.toast('Mithrix erwartet dich', 'bad');
     },
 
     activate() {
@@ -221,20 +250,28 @@
     /* Aufforderung und Bedienung laufen über dieselbe Nähe-Prüfung wie die
        Interactables, damit sich beides gleich anfühlt. */
     prompt() {
+      if (Teleporter.mode === 'bazaar') return { text: 'Bazaar verlassen', ok: true };
       if (Teleporter.state === 'idle') return { text: 'Teleporter aktivieren', ok: true };
-      if (Teleporter.state === 'ready') return { text: 'Nächste Stage betreten', ok: true };
+      if (Teleporter.state === 'ready') {
+        return { text: ROR.Game.bazaarOffen ? 'Blaues Portal — in den Bazaar'
+                                            : 'Nächste Stage betreten', ok: true };
+      }
       return null;
     },
 
     use() {
+      if (Teleporter.mode === 'bazaar') { ROR.Game.leaveBazaar(); return true; }
       if (Teleporter.state === 'idle') return Teleporter.activate();
       if (Teleporter.state === 'ready') {
         Teleporter.state = 'used';
-        ROR.Game.nextStage();
+        if (ROR.Game.bazaarOffen) ROR.Game.enterBazaar();
+        else ROR.Game.nextStage();
         return true;
       }
       return false;
     },
+
+    mode: 'normal',
 
     RADIUS: RADIUS,
     CHARGE_TIME: CHARGE_TIME

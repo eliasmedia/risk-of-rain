@@ -49,11 +49,32 @@
       baseCost: 0, directorCost: 30, weight: 8, color: 0x6fd36f },
 
     { id: 'scrapper', name: 'Scrapper', kind: 'scrapper',
-      baseCost: 0, directorCost: 15, weight: 8, color: 0x8a8f95 }
+      baseCost: 0, directorCost: 15, weight: 8, color: 0x8a8f95 },
+
+    { id: 'drone_gun', name: 'Kaputte Kampfdrohne', kind: 'drone',
+      baseCost: 35, directorCost: 14, weight: 14, color: 0x6a8fa8 },
+
+    { id: 'drone_heal', name: 'Kaputte Heildrohne', kind: 'drone', heals: true,
+      baseCost: 50, directorCost: 18, weight: 9, color: 0x6fd3a0 },
+
+    /* Der Newt-Altar kostet eine Mondmünze und öffnet nach dem Teleporter
+       das blaue Portal in den Bazaar. */
+    { id: 'newt_altar', name: 'Newt-Altar', kind: 'newt',
+      baseCost: 0, directorCost: 12, weight: 7, color: 0x7ec8ff },
+
+    /* Nur im Bazaar: gegen Mondmünzen gibt es Lunar-Items — stark, aber
+       jedes mit einem Nachteil. */
+    { id: 'lunar_pod', name: 'Mondkapsel', kind: 'lunar', bazaarOnly: true,
+      baseCost: 0, directorCost: 10, weight: 40, color: 0x7ec8ff },
+
+    { id: 'cleansing_pool', name: 'Reinigungsbecken', kind: 'cleanse', bazaarOnly: true,
+      baseCost: 0, directorCost: 10, weight: 12, color: 0x9fe4ff }
   ];
 
   /* Credits des Scene Directors je Stage — aus dem Wiki. */
   ROR.Data.InteractableBudget = {
-    1: 220, 2: 220, 3: 320, 4: 400, 5: 520
+    0: 70,                                   // Bazaar: ein paar Kapseln
+    1: 220, 2: 220, 3: 320, 4: 400, 5: 520,
+    6: 0                                     // Commencement: nur Mithrix
   };
 })(window.ROR);

@@ -232,6 +232,75 @@
       props: { boulders: 100, trees: 90, pillars: 24, platforms: 40 },
       sun: { azimuth: 5.1, elevation: 0.34 }
     }
+,
+
+    /* ----------------------------------------------------- Sonderrealms */
+
+    {
+      id: 'bazaar', name: 'Bazaar Between Time', subtitle: 'Zwischen den Zeiten',
+      order: 0, size: 150, res: 120, seaLevel: 0,
+      /* Klein, flach und rundum abfallend: ein Marktplatz im Nichts. Hier
+         wird nicht gekämpft, hier wird gehandelt. */
+      terrain: {
+        baseHeight: 5,
+        hillAmp: 1.6,      hillScale: 40,
+        detailAmp: 0.5,    detailScale: 11,
+        ridgeAmp: 10,      ridgeScale: 46,
+        mesaLow: 0.56,     mesaHigh: 0.70,   mesaEdge: 0.05,
+        maskScale: 70,     maskBias: 0.06,   maskWidth: 0.30,
+        terraceStep: 3,    terraceSharp: 0.14,
+        shoreInner: 0.42,  shoreOuter: 0.72, shoreWarp: 0.10,
+        drop: 34
+      },
+      palette: {
+        sky: 0x2a1f4a, horizon: 0x8f6ac0,
+        fog: 0x6a4c9a, fogDensity: 0.0060,
+        sun: 0xffd0f0, sunIntensity: 1.9,
+        ambientSky: 0xc0a0e0, ambientGround: 0x5a4080, ambientIntensity: 2.1,
+        fillIntensity: 0.8,
+        grass: 0x7a6aa8, grassDark: 0x4a3c72,
+        rock: 0xa89ad0, rockDark: 0x5e5090,
+        dirt: 0x6e5f9a,
+        sand: 0xc8b8e0, peak: 0xe0d0f8, seabed: 0x2a1f4a,
+        water: 0x4a2f7a,
+        trunk: 0x4a3a6a, leaf: 0x8f6ac0, leafAlt: 0xa88ad8
+      },
+      props: { boulders: 40, trees: 26, pillars: 14, platforms: 10 },
+      sun: { azimuth: 2.0, elevation: 0.5 }
+    },
+
+    {
+      id: 'commencement', name: 'Commencement', subtitle: 'Der Mond',
+      order: 6, size: 240, res: 160, seaLevel: 0,
+      /* Kahler Fels, harte Kanten, kein Bewuchs. Am Ende steht nur noch
+         der Boden, auf dem gekämpft wird. */
+      terrain: {
+        baseHeight: 6,
+        hillAmp: 3,        hillScale: 70,
+        detailAmp: 1.0,    detailScale: 14,
+        ridgeAmp: 46,      ridgeScale: 84,
+        mesaLow: 0.51,     mesaHigh: 0.64,   mesaEdge: 0.03,
+        maskScale: 100,    maskBias: -0.04,  maskWidth: 0.28,
+        terraceStep: 7,    terraceSharp: 0.11,
+        shoreInner: 0.50,  shoreOuter: 0.90, shoreWarp: 0.18,
+        drop: 30
+      },
+      palette: {
+        sky: 0x0a0a12, horizon: 0x3a3a56,
+        fog: 0x2a2a40, fogDensity: 0.0040,
+        sun: 0xf0f0ff, sunIntensity: 2.2,
+        ambientSky: 0x9098c0, ambientGround: 0x50506a, ambientIntensity: 1.8,
+        fillIntensity: 0.7,
+        grass: 0x8a8a98, grassDark: 0x50505e,
+        rock: 0xb0b0be, rockDark: 0x5a5a68,
+        dirt: 0x70707e,
+        sand: 0xc0c0ce, peak: 0xe8e8f4, seabed: 0x1a1a26,
+        water: 0x1a1a2e,
+        trunk: 0x3a3a46, leaf: 0x5a5a68, leafAlt: 0x6a6a78
+      },
+      props: { boulders: 130, trees: 0, pillars: 44, platforms: 20 },
+      sun: { azimuth: 4.2, elevation: 0.5 }
+    }
   ];
 
   ROR.Data.stageByOrder = function (order) {

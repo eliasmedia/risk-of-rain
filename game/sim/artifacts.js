@@ -64,11 +64,11 @@
     /* Beide brauchen Elite-Gegner beziehungsweise den Doppelgänger — beides
        kommt in Stufe 7. Sie stehen schon in der Liste, damit man sieht, was
        noch fehlt, sind aber nicht wählbar. */
-    { id: 'honor', name: 'Honor', glyph: '✦', locked: 'Stufe 7',
+    { id: 'honor', name: 'Honor', glyph: '✦',
       desc: 'Es erscheinen ausschließlich Elite-Gegner.' },
 
-    { id: 'vengeance', name: 'Vengeance', glyph: '☯', locked: 'Stufe 7',
-      desc: 'Auf jeder Stage erscheint ein Doppelgänger.' }
+    { id: 'vengeance', name: 'Vengeance', glyph: '☯',
+      desc: 'Auf jeder Stage erscheint ein Doppelgänger mit deinen Items.' }
   ];
 
   const active = {};
@@ -140,6 +140,29 @@
 
     stageStart(player) {
       if (active.metamorphosis) Artifacts.rollSurvivor(player);
+      if (active.vengeance) Artifacts.spawnDoppelgaenger(player);
+    },
+
+    /* Der Doppelgänger ist ein Champion-Gegner mit den Items des Spielers —
+       je länger der Durchlauf, desto mehr wird er zum Spiegelbild. */
+    spawnDoppelgaenger(player) {
+      const stage = ROR.Stage.current;
+      if (!stage) return;
+      const kandidaten = ROR.Data.monstersFor(ROR.Game.stageOrder, 'champion');
+      const def = kandidaten.length ? U.chaos.pick(kandidaten) : ROR.Data.monster('stone_titan');
+      const spot = stage.terrain.findSpot(U.chaos, {
+        rMin: 40, rMax: stage.terrain.half * 0.8, maxSlope: 0.3, tries: 40
+      });
+      if (!spot) return;
+      const m = ROR.Monsters.spawn(def, ROR.Difficulty.spawnLevel,
+        new THREE.Vector3(spot.x, def.flying ? spot.y + def.hoverHeight : spot.y, spot.z),
+        U.chaos.pick(ROR.Data.elitesOfTier(1)));
+      if (!m) return;
+      m.body.name = 'Doppelgänger';
+      for (const id in player.body.items) {
+        ROR.Items.give(m.body, id, player.body.items[id]);
+      }
+      ROR.HUD.toast('Ein Doppelgänger ist erschienen', 'bad');
     },
 
     rollEnigma(body) {

@@ -601,3 +601,24 @@ html, body {
   #menu .card { flex: 1 1 46%; min-width: 0; }
   .artefakte { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 }
+
+/* Mondmünzen neben dem Gold. */
+#lunar {
+  position: absolute; top: 44px; right: 22px;
+  font-size: 15px; color: var(--shield); letter-spacing: 0.1em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+}
+
+/* Der Siegbildschirm — dasselbe Gerüst wie der Todesbildschirm, andere Farbe. */
+#victory {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 14px;
+  background: rgba(10, 20, 30, 0.6); backdrop-filter: blur(2px);
+}
+#victory.hidden { display: none; }
+#victory b {
+  font: 800 42px/1 system-ui, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: 0.2em; color: var(--gold); text-shadow: 0 3px 18px rgba(0, 0, 0, 0.9);
+}
+#victory span { color: var(--ink-dim); letter-spacing: 0.1em; }
+@media (max-width: 900px) { #victory b { font-size: 26px; } #lunar { top: 34px; right: 12px; } }

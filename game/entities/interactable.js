@@ -111,8 +111,23 @@
     return g;
   }
 
+  /* Kaputte Drohne am Boden: erst nach dem Kauf hebt sie ab. */
+  function buildDrone(def) {
+    const g = new THREE.Group();
+    box(g, 0.7, 0.24, 0.7, def.color, 0, 0.12, 0);
+    const r = new THREE.Mesh(new THREE.IcosahedronGeometry(0.3, 0), mat(def.color));
+    r.position.y = 0.34; r.rotation.z = 0.5; r.castShadow = true; g.add(r);
+    box(g, 0.5, 0.06, 0.16, 0x33444f, 0.2, 0.3, 0).rotation.z = 0.6;
+    const auge = new THREE.Mesh(new THREE.IcosahedronGeometry(0.1, 0),
+      new THREE.MeshBasicMaterial({ color: 0x9fe4ff, transparent: true, opacity: 0.5,
+                                    depthWrite: false, blending: THREE.AdditiveBlending }));
+    auge.position.set(0, 0.34, -0.2); auge.userData.role = 'glow'; g.add(auge);
+    return g;
+  }
+
   const BUILDERS = {
     chest: buildChest, multishop: buildMultishop, equipment: buildBarrel,
+    drone: buildDrone, newt: buildShrine, lunar: buildBarrel, cleanse: buildShrine,
     shrine_chance: buildShrine, shrine_blood: buildShrine,
     shrine_combat: buildShrine, shrine_mountain: buildShrine,
     printer: (d) => buildMachine(d, true), scrapper: (d) => buildMachine(d, false)
@@ -183,7 +198,13 @@
       Interactables.init();
       const rng = U.Rng((seed >>> 0) ^ 0x5eed1);
       let budget = (ROR.Data.InteractableBudget[stageOrder] || 220);
-      const defs = ROR.Data.Interactables;
+      const imBazaar = stageOrder === 0;
+      /* Der Bazaar hat sein eigenes Sortiment, Commencement gar keines —
+         dort steht nur noch Mithrix. */
+      if (stageOrder === 6) return 0;
+      const defs = ROR.Data.Interactables.filter(function (d) {
+        return imBazaar ? !!d.bazaarOnly : !d.bazaarOnly;
+      });
       let guard = 400;
 
       while (budget > 0 && guard-- > 0) {
@@ -211,6 +232,15 @@
     },
 
     /* --------------------------------------------------------- Bedienen */
+
+    /* Welches Lunar-Item das Becken schlucken würde. */
+    lunarBesitz(body) {
+      const items = ROR.Items.all();
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].tier === 'lunar' && (body.items[items[i].id] || 0) > 0) return items[i];
+      }
+      return null;
+    },
 
     /* Was ein Drucker frisst: zuerst Schrott, sonst das häufigste Item
        dieser Stufe. Ohne Auswahlfenster ist das die Regel, die am wenigsten
@@ -269,6 +299,14 @@
         }
         case 'shrine_chance':
           return { text: d.name + ' — $' + o.cost, ok: p.gold >= o.cost, uses: 2 - o.uses };
+        case 'newt':
+          return { text: 'Newt-Altar — 1 Mondmünze (öffnet den Bazaar)',
+                   ok: ROR.Game.lunarCoins >= 1 };
+        case 'lunar':
+          return { text: 'Mondkapsel — 1 Mondmünze', ok: ROR.Game.lunarCoins >= 1 };
+        case 'cleanse':
+          return { text: 'Reinigungsbecken — ein Lunar-Item gegen eine Münze',
+                   ok: Interactables.lunarBesitz(body) !== null };
         default:
           return { text: d.name + ' — $' + o.cost, ok: p.gold >= o.cost };
       }
@@ -338,6 +376,42 @@
           ROR.HUD.toast('Der Schrein ruft sie herbei', 'bad');
           break;
         }
+
+        case 'drone': {
+          p.gold -= o.cost;
+          o.used = true;
+          const anzahl = ROR.Deployables.list.filter(function (x) { return x.kind === 'drone'; }).length;
+          ROR.Deployables.spawn('drone', body, o.model.position.clone().setY(o.model.position.y + 2),
+            { index: anzahl, heals: !!d.heals, interval: d.heals ? 1.2 : 0.5,
+              coefficient: 1.0, range: 45, max: 6,
+              colors: { main: d.color, dark: 0x33444f, glow: 0x9fe4ff } });
+          ROR.HUD.toast(d.heals ? 'Heildrohne folgt dir' : 'Kampfdrohne folgt dir');
+          break;
+        }
+
+        case 'lunar': {
+          ROR.Game.lunarCoins--;
+          o.used = true;
+          const def2 = ROR.Loot.randomItem('lunar');
+          if (def2) ROR.Loot.drop(o.model.position.clone(), def2);
+          break;
+        }
+
+        case 'cleanse': {
+          const weg = Interactables.lunarBesitz(body);
+          ROR.Items.take(body, weg.id, 1);
+          ROR.Game.lunarCoins++;
+          ROR.Attire.markDirty();
+          ROR.HUD.toast(weg.name + ' abgelegt  ·  +1 Mondmünze', 'gold');
+          break;
+        }
+
+        case 'newt':
+          ROR.Game.lunarCoins--;
+          o.used = true;
+          ROR.Game.bazaarOffen = true;
+          ROR.HUD.toast('Das blaue Portal wird sich öffnen');
+          break;
 
         case 'shrine_mountain':
           o.uses++;

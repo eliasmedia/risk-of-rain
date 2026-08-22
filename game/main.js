@@ -232,6 +232,7 @@
       });
       ROR.HUD.init();
       ROR.Menus.init();
+      ROR.Mobile.init();
       // Ein Durchlauf wird erst gebaut, wenn im Menü gestartet wird.
       Game.newRun();
       ROR.Menus.show();
@@ -267,7 +268,8 @@
         ROR.Camera.update(dt);
         Game.stage.followShadow(Game.player.position);
         ROR.HUD.update(Game, dt);
-        if (ROR.Input.isLocked) ROR.HUD.hideHint();
+        ROR.Mobile.update();
+        if (ROR.Input.isLocked || ROR.Mobile.aktiv) ROR.HUD.hideHint();
       });
 
       ROR.Engine.start();

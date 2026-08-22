@@ -736,3 +736,76 @@ html, body {
   background: rgba(8, 14, 20, 0.6); border-left: 2px solid var(--edge);
 }
 .rekorde div.sieg { color: var(--gold); border-left-color: var(--gold); }
+
+/* ========================================================= Touch-Steuerung */
+
+/* Nur vorhanden, wenn mobile.js sie eingehängt hat. Die Ebene selbst fängt
+   nichts ab — das tun nur Joystick, Knöpfe und das Blickfeld. */
+#touch { position: fixed; inset: 0; z-index: 15; pointer-events: none; touch-action: none; }
+
+#touch .blick {
+  position: absolute; right: 0; top: 0; width: 62%; height: 74%;
+  pointer-events: auto; touch-action: none;
+}
+
+#touch .stick {
+  position: absolute; left: 18px; bottom: 16px;
+  width: min(126px, 32vh); height: min(126px, 32vh); border-radius: 50%;
+  background: rgba(10, 16, 22, 0.4); border: 1px solid var(--edge);
+  pointer-events: auto; touch-action: none;
+}
+#touch .stick i {
+  position: absolute; left: 50%; top: 50%; width: 54px; height: 54px;
+  margin: 0; border-radius: 50%; transform: translate(-50%, -50%);
+  background: rgba(120, 160, 190, 0.30); border: 1px solid var(--edge);
+}
+
+#touch .knoepfe {
+  position: absolute; right: 20px; bottom: 20px;
+  display: grid; grid-template-columns: repeat(3, auto); gap: 9px;
+  align-items: end; justify-items: center;
+}
+#touch .rechts {
+  position: absolute; right: 18px; top: 14px;
+  display: flex; gap: 9px; align-items: center;
+}
+
+#touch .tk {
+  pointer-events: auto; touch-action: none; font: inherit; font-weight: 700;
+  background: rgba(10, 16, 22, 0.55); border: 1px solid var(--edge);
+  color: var(--ink); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.08s, transform 0.08s;
+  -webkit-user-select: none; user-select: none;
+}
+#touch .tk.an { background: rgba(120, 170, 210, 0.4); transform: scale(0.93); }
+#touch .tk.gross  { width: min(88px, 23vh); height: min(88px, 23vh); font-size: 17px; }
+#touch .tk.mittel { width: min(64px, 17vh); height: min(64px, 17vh); font-size: 14px; }
+#touch .tk.klein  { width: min(50px, 13vh); height: min(50px, 13vh); font-size: 13px; }
+
+/* Auf Berührgeräten stört der Tastaturhinweis nur, und das HUD rückt weiter
+   nach innen, damit es unter den Daumen nicht verschwindet. */
+body.touch-an #hint { display: none; }
+/* Feste Pixelabstände gingen daneben: ein Handy im Querformat ist knapp
+   400 Bildpunkte hoch, und 168 px wären dort die halbe Höhe. Deshalb relativ
+   zur Fensterhöhe, gedeckelt für große Bildschirme. */
+/* Am Handy wandert alles Ablesbare nach *oben links*: unten liegen die
+   Daumen, und ein Lebensbalken unter dem Joystick ist kein Lebensbalken. */
+body.touch-an #vitals  { top: 14px; left: 14px; bottom: auto; width: min(230px, 27vw); }
+body.touch-an #itembar { top: 62px; left: 14px; bottom: auto; width: min(230px, 27vw); }
+body.touch-an #skills, body.touch-an #equipwrap { display: none; }
+body.touch-an #prompt  { bottom: 34%; }
+body.touch-an #tpwrap  { bottom: min(112px, 15vh); width: min(280px, 32vw); }
+body.touch-an #topbar  { top: 10px; }
+body.touch-an #diffwrap { top: 30px; width: min(220px, 26vw); }
+
+/* Hochkant ist nicht spielbar — lieber klar sagen als schlecht laufen. */
+#drehen {
+  position: fixed; inset: 0; z-index: 40; display: none;
+  align-items: center; justify-content: center; text-align: center;
+  background: #070b10; color: var(--ink); font: var(--ui); padding: 30px;
+  letter-spacing: 0.12em; line-height: 1.9;
+}
+@media (orientation: portrait) and (pointer: coarse) {
+  body.touch-an #drehen { display: flex; }
+}

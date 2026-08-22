@@ -141,6 +141,10 @@
     move: { x: 0, z: 0 },
     /* Zusätzliche Blickbewegung vom Touch-Overlay, in Radiant. */
     touchLook: { x: 0, y: 0 },
+    /* Der Joystick schreibt hier hinein. Er liefert eine *stufenlose*
+       Richtung — über die Tastenaktionen ginge nur achtelweise, und ein
+       Joystick, der nur acht Richtungen kennt, fühlt sich sofort falsch an. */
+    touchMove: { x: 0, z: 0, aktiv: false },
 
     init(targetCanvas) {
       canvas = targetCanvas;
@@ -176,6 +180,11 @@
 
     /* Am Anfang jedes Bildes: Bewegungsachsen zusammensetzen. */
     beginFrame() {
+      if (Input.touchMove.aktiv) {
+        Input.move.x = Input.touchMove.x;
+        Input.move.z = Input.touchMove.z;
+        return;
+      }
       let x = 0, z = 0;
       if (actionDown('right')) x += 1;
       if (actionDown('left')) x -= 1;

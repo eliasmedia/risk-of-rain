@@ -8,8 +8,9 @@ Build-Schritt, keine Internetverbindung, keine einzige Bild- oder Tondatei.
 
 ## Aktueller Stand
 
-**Stufe 5 abgeschlossen** — ein Durchlauf ist spielbar: fünf Stages, Teleporter,
-Bosse und Loop.
+**Stufen 1 bis 10 abgeschlossen** — das Spiel ist vollständig spielbar:
+sechs Figuren, 79 Items, 14 Artefakte, fünf Stages plus Bazaar und
+Commencement, Elites, Mithrix, Spielstand, Klang und Touch-Steuerung.
 
 | Stufe | Inhalt | Status |
 |---|---|---|
@@ -24,7 +25,7 @@ Bosse und Loop.
 | 7 | Elite-Affixe, Ausrüstung, Drohnen, Bazaar, Mithrix | ✅ fertig |
 | 8 | Menüs, Freischaltungen, Logbuch, Spielstand | ✅ fertig |
 | 9 | Bildnachbearbeitung, prozedurale Musik, Trefferfeedback | ✅ fertig |
-| 10 | Touch-Steuerung fürs Handy | offen |
+| 10 | Touch-Steuerung fürs Handy | ✅ fertig |
 | 11 | Grafik-Überarbeitung: alle Modelle, Gelände-Detail, Materialien | offen |
 
 ## Steuerung
@@ -120,6 +121,7 @@ game/
     style.css              Oberfläche
     hud.js                 Balken, Fähigkeiten, Schadenszahlen, Technikanzeige
     menus.js               Startbildschirm, Figuren- und Artefaktauswahl
+    mobile.js              Touch-Overlay: Joystick, Knöpfe, Blickfeld
   main.js                  Verdrahtung und Reihenfolge der Aktualisierer
 ```
 
@@ -278,6 +280,29 @@ Ohne `--push` wird nur kopiert. Liegt das Website-Repo woanders, hilft
 `ROR_WEB=/pfad/zum/repo ./deploy.sh`.
 
 ---
+
+## Was Stufe 10 gebracht hat
+
+Touch-Steuerung, die nur in **dieselbe Eingabeschicht** schreibt wie Tastatur
+und Maus. Kein anderer Teil des Spiels weiß, dass es sie gibt — genau dafür
+lag die Belegung von Anfang an auf *Aktionen* statt auf Tastencodes.
+
+Erkannt wird über `pointer: coarse` **und** vorhandene Berührungspunkte, nicht
+über die Browserkennung: ein Notebook mit Touchscreen behält die Tastatur, ein
+Handy im Desktop-Modus bleibt bedienbar.
+
+* Joystick links, **stufenlos** — über die Tastenaktionen ginge nur
+  achtelweise, und ein Joystick mit acht Richtungen fühlt sich sofort falsch an.
+  Ganz nach vorn gedrückt heißt sprinten; ein eigener Knopf dafür wäre ein
+  Finger mehr, den niemand frei hat.
+* Blicken überall auf der rechten Hälfte, wo kein Knopf liegt.
+* Am Handy wandert alles Ablesbare nach **oben links** — unten liegen die
+  Daumen, und ein Lebensbalken unter dem Joystick ist kein Lebensbalken.
+* Hochkant erscheint ein Hinweis statt einer schlechten Darstellung.
+
+Gemessen: Joystick ganz vorn ergibt z −0.97 mit Sprint, schräg 0.65/0.32 mit
+Betrag 0.72 (also wirklich stufenlos); Loslassen setzt alles zurück; 100 px
+Wischweg ergeben 0.42 Radiant; nichts überschneidet die Daumenflächen.
 
 ## Was Stufe 9 gebracht hat
 

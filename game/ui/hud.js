@@ -42,10 +42,10 @@
        'timer', 'stagename',
        'hint', 'debug', 'vignette', 'skills', 'numbers', 'crosshair',
        'levelout', 'survivorname', 'gold', 'diffbar', 'difffill', 'diffname',
-       'target', 'targetname', 'targetfill', 'toast', 'dead',
+       'target', 'targetname', 'targetfill', 'toast',
        'itembar', 'prompt', 'pickup', 'equipslot', 'equipsweep', 'equipname',
        'bossbar', 'bossname', 'bossfill', 'tpwrap', 'tpfill', 'tptext',
-       'tpmark', 'banner', 'bannersub', 'victory', 'lunar'
+       'tpmark', 'banner', 'bannersub', 'lunar'
       ].forEach((id) => { el[id] = document.getElementById(id); });
 
       const pool = el.numbers;
@@ -96,8 +96,7 @@
       HUD._toastTimer = setTimeout(function () { el.toast.className = ''; }, 1600);
     },
 
-    setDead(on) { el.dead.classList.toggle('hidden', !on); },
-    setVictory(on) { el.victory.classList.toggle('hidden', !on); },
+
 
     /* Stageschild beim Betreten — der Moment, in dem man weiß, wo man ist. */
     stageBanner(theme, loop) {

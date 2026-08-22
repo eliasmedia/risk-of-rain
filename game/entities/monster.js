@@ -455,12 +455,15 @@
       const p = ROR.Game && ROR.Game.player;
       if (!p) return;
       const aufschlag = m.affix ? m.affix.cost : 1;
+      ROR.Game.kills++;
+      ROR.Save.notiereGegner(m.def.id);
       const xp = ROR.Difficulty.coeff * (m.def.cost * aufschlag) * Monsters.rewardMultiplier;
       p.addExp(xp);
       p.gold += xp * 2;
       // Mondmünzen fallen selten — sie sind die Währung des Bazaars.
       if (U.chaos.next() < 0.012) {
         ROR.Game.lunarCoins++;
+        ROR.Game.muenzenGesammelt++;
         ROR.HUD.toast('Mondmünze gefunden', 'gold');
       }
     },

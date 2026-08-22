@@ -117,6 +117,7 @@
     grant(body, def) {
       if (def.tier === 'equipment') ROR.Items.equip(body, def.id);
       else ROR.Items.give(body, def.id, 1);
+      if (body.team === ROR.Body.PLAYER) ROR.Save.notiereItem(def.id);
       ROR.HUD && ROR.HUD.itemToast(def);
     },
 

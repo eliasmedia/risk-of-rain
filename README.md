@@ -22,7 +22,7 @@ Bosse und Loop.
 | 6b | Huntress, Engineer, MUL-T, Artificer, Mercenary | ✅ fertig |
 | 6c | Charakterdesign aufwerten, Item-Modelle am Körper | ✅ fertig |
 | 7 | Elite-Affixe, Ausrüstung, Drohnen, Bazaar, Mithrix | ✅ fertig |
-| 8 | Menüs, Freischaltungen, Logbuch, Spielstand | offen |
+| 8 | Menüs, Freischaltungen, Logbuch, Spielstand | ✅ fertig |
 | 9 | Prozedurale Musik, Partikel, Trefferfeedback | offen |
 | 10 | Touch-Steuerung fürs Handy | offen |
 | 11 | Grafik-Überarbeitung: alle Modelle, Gelände-Detail, Materialien | offen |
@@ -278,6 +278,29 @@ Ohne `--push` wird nur kopiert. Liegt das Website-Repo woanders, hilft
 `ROR_WEB=/pfad/zum/repo ./deploy.sh`.
 
 ---
+
+## Was Stufe 8 gebracht hat
+
+Ein Spielstand unter dem Präfix `ror2:`, gedrosselt geschrieben — nicht bei
+jedem Kill, sondern höchstens jede Sekunde. Was *nicht* gespeichert wird: der
+laufende Durchlauf. Ein Roguelike, das man mitten im Kampf speichern kann, ist
+keins.
+
+* **Freischaltungen** für die fünf Figuren mit nachprüfbaren Bedingungen
+  (dritte Stage, fünfte Stage, 20 Stages insgesamt, 10 Mondmünzen, Mithrix).
+  Weil du alles von Anfang an haben wolltest, steht im Menü ein Schalter
+  **„Alles freigeschaltet"**, der voreingestellt an ist — das System ist da,
+  sperrt aber nur, wenn man es will.
+* **Logbuch**: gefundene Items und besiegte Gegner mit Zählern, dazu die
+  letzten zwanzig Durchläufe.
+* **Ergebnisbildschirm** mit Zeit, Stages, Stufe, Kills, Items, Koeffizient
+  und der gesammelten Beute — dieselbe Form für Sieg und Tod.
+* **Pausenmenü** statt des alten Hinweisfelds.
+
+Gemessen: drei Stages schalten die Huntress frei, ein Sieg MUL-T und die
+Mercenary; das Logbuch merkt sich Brechstange und Beetle, nicht die Syringe;
+der Stand überlebt das Neuladen (584 Byte); das Menü zeigt sechs Karten, davon
+zwei gesperrt.
 
 ## Was Stufe 7 gebracht hat
 

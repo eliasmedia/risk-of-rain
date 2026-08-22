@@ -25,7 +25,8 @@
   /* ------------------------------------------------------- Figurenkarten */
 
   function survivorCard(def) {
-    const c = el('button', 'card');
+    const frei = ROR.Save.istFrei(def.id);
+    const c = el('button', 'card' + (frei ? '' : ' gesperrt'));
     c.dataset.id = def.id;
     const skills = ['primary', 'secondary', 'utility', 'special']
       .map(function (slot) {
@@ -40,8 +41,9 @@
       + '<em>' + (def.subtitle || '') + '</em>'
       + '<span class="werte">' + def.health + ' LP  ·  ' + def.damage + ' SCH  ·  '
         + def.moveSpeed + ' m/s</span>'
-      + '<span class="skills">' + skills + '</span>';
-    c.addEventListener('click', function () { waehle(def.id); });
+      + '<span class="skills">' + skills + '</span>'
+      + (frei ? '' : '<span class="sperre">' + (ROR.Save.bedingung(def.id) || {}).text + '</span>');
+    if (frei) c.addEventListener('click', function () { waehle(def.id); });
     return c;
   }
 
@@ -116,6 +118,20 @@
     ROR.Artifacts.DEFS.forEach(function (d) { gitter.appendChild(artifactTile(d)); });
     innen.appendChild(gitter);
 
+    /* Freischaltungen: das System ist da, steht aber offen. Wer es scharf
+       stellt, spielt die Figuren frei — der Rest spielt einfach. */
+    const schalterZeile = el('div', 'schalter');
+    const schalter = el('button', 'kippe' + (ROR.Save.data.alleFrei ? ' an' : ''));
+    schalter.innerHTML = '<i></i><b>Alles freigeschaltet</b>'
+      + '<span>Aus: Figuren müssen erspielt werden</span>';
+    schalter.addEventListener('click', function () {
+      ROR.Save.setAlleFrei(!ROR.Save.data.alleFrei);
+      baue();
+      root.scrollTop = 0;
+    });
+    schalterZeile.appendChild(schalter);
+    innen.appendChild(schalterZeile);
+
     const fuss = el('div', 'fuss');
     const seed = el('input', 'seed');
     seed.type = 'text';
@@ -127,13 +143,70 @@
     fuss.appendChild(start);
     innen.appendChild(fuss);
 
+    /* Logbuch und Statistik am Fuß — ausklappbar, damit sie das Menü nicht
+       zustellen. */
+    const stat = ROR.Save.data.stats;
+    const details = el('details', 'logbuch');
+    details.innerHTML = '<summary>Logbuch und Statistik</summary>';
+    const inhalt = el('div', 'logbuch-inhalt');
+    inhalt.innerHTML =
+      '<p class="bilanz">' + stat.laeufe + ' Durchläufe · ' + stat.siege + ' Siege · '
+      + stat.kills + ' Kills · ' + stat.stagesGesamt + ' Stages · beste Stage '
+      + stat.besteStage + ' · höchste Stufe ' + stat.hoechsteStufe + '</p>';
+
+    const gefunden = Object.keys(ROR.Save.data.logbuch.items);
+    inhalt.appendChild(el('h3', null, 'Gefundene Items  <small>' + gefunden.length
+      + ' von ' + ROR.Items.all().filter(function (i) { return !i.scrap; }).length + '</small>'));
+    const gitterI = el('div', 'logliste');
+    ROR.Items.all().forEach(function (it) {
+      if (it.scrap) return;
+      const kennt = ROR.Save.kennt('items', it.id);
+      const e = el('i', kennt ? 'bekannt' : 'unbekannt');
+      e.style.setProperty('--c', '#' + (ROR.Loot.TIER_COLOR[it.tier] || 0xffffff)
+        .toString(16).padStart(6, '0'));
+      e.title = kennt ? it.name + ' — ' + it.desc : 'Noch nicht gefunden';
+      e.textContent = kennt ? it.name.charAt(0) : '?';
+      gitterI.appendChild(e);
+    });
+    inhalt.appendChild(gitterI);
+
+    const getoetet = Object.keys(ROR.Save.data.logbuch.gegner);
+    inhalt.appendChild(el('h3', null, 'Besiegte Gegner  <small>' + getoetet.length
+      + ' von ' + ROR.Data.Monsters.length + '</small>'));
+    const listeG = el('div', 'logliste breit');
+    ROR.Data.Monsters.forEach(function (mo) {
+      const kennt = ROR.Save.kennt('gegner', mo.id);
+      const e = el('i', kennt ? 'bekannt' : 'unbekannt');
+      e.style.setProperty('--c', mo.isBoss ? '#e2564a' : mo.category === 'miniboss'
+        ? '#f2c14e' : '#9fb0bc');
+      e.textContent = kennt ? mo.name + ' ×' + ROR.Save.data.logbuch.gegner[mo.id] : '???';
+      inhalt.appendChild(e);
+      listeG.appendChild(e);
+    });
+    inhalt.appendChild(listeG);
+
+    if (ROR.Save.data.rekorde.length) {
+      inhalt.appendChild(el('h3', null, 'Letzte Durchläufe'));
+      const tab = el('div', 'rekorde');
+      ROR.Save.data.rekorde.slice(0, 8).forEach(function (r) {
+        tab.appendChild(el('div', r.sieg ? 'sieg' : '',
+          (r.sieg ? '★ ' : '') + r.figur + '  ·  Stage ' + r.stages + '  ·  Stufe ' + r.stufe
+          + '  ·  ' + Math.floor(r.zeit / 60) + ':' + String(Math.floor(r.zeit % 60)).padStart(2, '0')
+          + '  ·  ' + r.kills + ' Kills'));
+      });
+      inhalt.appendChild(tab);
+    }
+    details.appendChild(inhalt);
+    innen.appendChild(details);
+
     innen.appendChild(el('p', 'hinweis',
       '<b>W A S D</b> laufen · <b>Maus</b> zielen · <b>Leertaste</b> springen · '
       + '<b>Strg</b> sprinten · <b>E</b> benutzen · <b>Q</b> Ausrüstung · '
       + '<b>M</b> Pause · <b>F3</b> Technik'));
 
     root.appendChild(innen);
-    waehle(ROR.Data.Survivors[0].id);
+    const ersteFreie = ROR.Data.Survivors.filter(function (d) { return ROR.Save.istFrei(d.id); })[0];
+    waehle((ersteFreie || ROR.Data.Survivors[0]).id);
     zaehlerAktualisieren();
   }
 
@@ -175,8 +248,87 @@
     if (f) f(def);
   }
 
+  /* ------------------------------------------------ Ergebnis und Pause */
+
+  function zeit(sekunden) {
+    const s2 = Math.max(0, Math.floor(sekunden));
+    return Math.floor(s2 / 60) + ':' + String(s2 % 60).padStart(2, '0');
+  }
+
+  function zeigeErgebnis(lauf, neuFrei) {
+    const box = document.getElementById('results');
+    const items = lauf.itemListe.map(function (x) {
+      const c = '#' + (ROR.Loot.TIER_COLOR[x.tier] || 0xffffff).toString(16).padStart(6, '0');
+      return '<i style="--c:' + c + '" title="' + x.name + '">' + x.name.charAt(0)
+           + (x.n > 1 ? '<u>' + x.n + '</u>' : '') + '</i>';
+    }).join('');
+
+    box.innerHTML =
+      '<div class="ergebnis-innen">'
+      + '<b class="' + (lauf.sieg ? 'sieg' : 'tod') + '">'
+      + (lauf.sieg ? 'MITHRIX BESIEGT' : 'GESTORBEN') + '</b>'
+      + '<p class="wer">' + lauf.figur + '  ·  ' + lauf.schwer + '</p>'
+      + '<div class="zahlen">'
+      +   '<div><b>' + zeit(lauf.zeit) + '</b><span>Zeit</span></div>'
+      +   '<div><b>' + lauf.stages + '</b><span>Stages</span></div>'
+      +   '<div><b>' + lauf.stufe + '</b><span>Stufe</span></div>'
+      +   '<div><b>' + lauf.kills + '</b><span>Kills</span></div>'
+      +   '<div><b>' + lauf.items + '</b><span>Items</span></div>'
+      +   '<div><b>' + lauf.coeff.toFixed(1) + '</b><span>Koeffizient</span></div>'
+      + '</div>'
+      + '<div class="beute">' + items + '</div>'
+      + (neuFrei.length ? '<p class="frei">Freigeschaltet: '
+          + neuFrei.map(function (id) { return ROR.Data.survivor(id).name; }).join(', ')
+          + '</p>' : '')
+      + '<div class="knoepfe">'
+      +   '<button data-tun="neu">Noch einmal</button>'
+      +   '<button data-tun="menu">Zum Menü</button>'
+      + '</div></div>';
+
+    box.querySelector('[data-tun="neu"]').addEventListener('click', function () {
+      box.className = 'hidden';
+      ROR.Game.newRun(ROR.Game.config);
+    });
+    box.querySelector('[data-tun="menu"]').addEventListener('click', function () {
+      box.className = 'hidden';
+      Menus.show();
+    });
+    box.className = 'show';
+    ROR.Input.unlock();
+  }
+
   const Menus = {
     get open() { return root && !root.classList.contains('hidden'); },
+    showResults: zeigeErgebnis,
+    hideResults() { document.getElementById('results').className = 'hidden'; },
+
+    showPause() {
+      const box = document.getElementById('pause');
+      const p = ROR.Game.player;
+      box.innerHTML =
+        '<div class="pause-innen">'
+        + '<b>PAUSE</b>'
+        + '<p>' + p.def.name + '  ·  Stufe ' + p.body.level + '  ·  Stage '
+        + (ROR.Game.stagesCleared + 1) + '  ·  ' + zeit(ROR.Difficulty.runTime) + '</p>'
+        + '<div class="knoepfe">'
+        +   '<button data-tun="weiter">Weiter</button>'
+        +   '<button data-tun="menu">Durchlauf aufgeben</button>'
+        + '</div>'
+        + '<p class="klein">W A S D laufen · Maus zielen · Leertaste springen · '
+        + 'Strg sprinten · E benutzen · Q Ausrüstung · F3 Technik</p>'
+        + '</div>';
+      box.querySelector('[data-tun="weiter"]').addEventListener('click', function () {
+        Menus.hidePause();
+        ROR.Engine.setPaused(false);
+      });
+      box.querySelector('[data-tun="menu"]').addEventListener('click', function () {
+        Menus.hidePause();
+        Menus.show();
+      });
+      box.className = 'show';
+    },
+
+    hidePause() { document.getElementById('pause').className = 'hidden'; },
 
     init() {
       chooser = document.getElementById('chooser');
@@ -184,7 +336,7 @@
     },
 
     show() {
-      if (!root) baue();
+      baue();   // Freischaltungen und Logbuch können sich geändert haben
       root.classList.remove('hidden');
       ROR.Engine.setPaused(true);
       ROR.Input.unlock();

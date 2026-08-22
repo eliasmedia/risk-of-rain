@@ -622,3 +622,116 @@ html, body {
 }
 #victory span { color: var(--ink-dim); letter-spacing: 0.1em; }
 @media (max-width: 900px) { #victory b { font-size: 26px; } #lunar { top: 34px; right: 12px; } }
+
+/* ====================================================== Ergebnis und Pause */
+
+#results, #pause {
+  position: fixed; inset: 0; z-index: 22; display: none;
+  align-items: center; justify-content: center;
+  background: rgba(6, 10, 14, 0.82); backdrop-filter: blur(3px);
+  font: var(--ui); letter-spacing: 0.04em; overflow-y: auto;
+}
+#results.show, #pause.show { display: flex; }
+
+.ergebnis-innen, .pause-innen {
+  width: min(680px, 92vw); padding: 34px 30px; text-align: center;
+  background: rgba(12, 19, 26, 0.92); border: 1px solid var(--edge);
+  clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
+}
+.ergebnis-innen > b, .pause-innen > b {
+  display: block; font: 800 34px/1 system-ui, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: 0.22em; text-shadow: 0 3px 14px rgba(0, 0, 0, 0.9);
+}
+.ergebnis-innen > b.sieg { color: var(--gold); }
+.ergebnis-innen > b.tod  { color: #ff6b5c; }
+.pause-innen > b { color: var(--ink); }
+.ergebnis-innen .wer, .pause-innen p {
+  margin: 10px 0 22px; color: var(--ink-dim); letter-spacing: 0.14em; font-size: 12px;
+}
+
+/* Die Zahlen des Laufs: gleiche Kacheln, damit man sie vergleichen kann. */
+.zahlen {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  gap: 8px; margin-bottom: 18px;
+}
+.zahlen div { padding: 12px 6px; background: rgba(8, 14, 20, 0.7); border: 1px solid var(--edge); }
+.zahlen b { display: block; font-size: 20px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.zahlen span { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-dim); }
+
+.beute { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin-bottom: 18px; }
+.beute i {
+  position: relative; width: 26px; height: 26px; font-style: normal;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(8, 14, 20, 0.8); border: 1px solid var(--c); color: var(--c);
+  font: 800 12px/1 system-ui, sans-serif;
+}
+.beute i u { position: absolute; right: -1px; bottom: -2px; font-size: 9px;
+             text-decoration: none; color: var(--ink); text-shadow: 0 1px 2px #000; }
+
+.ergebnis-innen .frei {
+  margin: 0 0 16px; color: var(--gold); letter-spacing: 0.1em; font-size: 12px;
+}
+.knoepfe { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.knoepfe button {
+  padding: 12px 22px; font: inherit; letter-spacing: 0.14em; cursor: pointer;
+  background: rgba(20, 30, 40, 0.9); border: 1px solid var(--edge); color: var(--ink);
+  clip-path: var(--bevel);
+}
+.knoepfe button:first-child { background: var(--gold); color: #10161c; border: none; font-weight: 700; }
+.knoepfe button:hover { background: rgba(34, 48, 62, 0.95); }
+.knoepfe button:first-child:hover { background: #ffd76a; }
+.pause-innen .klein { margin: 20px 0 0; font-size: 10px; line-height: 1.9; }
+
+/* ------------------------------------------------- Sperren und Logbuch */
+
+#menu .card.gesperrt { opacity: 0.5; cursor: default; }
+#menu .card.gesperrt:hover { transform: none; background: rgba(14, 22, 30, 0.8); }
+#menu .card .sperre {
+  display: block; margin-top: 9px; font-size: 10px; line-height: 1.5;
+  color: var(--gold); letter-spacing: 0.04em;
+}
+
+#menu .schalter { margin-top: 22px; }
+#menu .kippe {
+  width: 100%; text-align: left; padding: 12px 14px; cursor: pointer; font: inherit;
+  background: rgba(14, 22, 30, 0.8); border: 1px solid var(--edge); color: var(--ink-dim);
+  clip-path: var(--bevel); display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+}
+#menu .kippe i {
+  width: 34px; height: 18px; border-radius: 9px; background: #2a3440;
+  border: 1px solid var(--edge); position: relative; flex: none;
+}
+#menu .kippe i::after {
+  content: ''; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px;
+  border-radius: 50%; background: var(--ink-dim); transition: left 0.15s, background 0.15s;
+}
+#menu .kippe.an { color: var(--ink); border-color: var(--gold); }
+#menu .kippe.an i::after { left: 18px; background: var(--gold); }
+#menu .kippe b { letter-spacing: 0.1em; }
+#menu .kippe span { font-size: 11px; }
+
+#menu .logbuch { margin-top: 26px; }
+#menu .logbuch summary {
+  cursor: pointer; padding: 11px 0; color: var(--ink-dim);
+  letter-spacing: 0.24em; text-transform: uppercase; font-size: 11px;
+  border-bottom: 1px solid var(--edge);
+}
+.logbuch-inhalt { padding-top: 14px; }
+.logbuch-inhalt h3 {
+  margin: 18px 0 8px; font: 600 11px/1 system-ui, sans-serif;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-dim);
+}
+.logbuch-inhalt h3 small { color: var(--gold); letter-spacing: 0.1em; }
+.logbuch-inhalt .bilanz { color: var(--ink-dim); font-size: 11px; line-height: 1.8; margin: 0; }
+.logliste { display: flex; flex-wrap: wrap; gap: 4px; }
+.logliste i {
+  font-style: normal; padding: 5px 8px; font-size: 10px; letter-spacing: 0.06em;
+  background: rgba(8, 14, 20, 0.7); border: 1px solid var(--c); color: var(--c);
+}
+.logliste i.unbekannt { border-color: rgba(120, 140, 155, 0.25); color: #4e5c68; }
+.rekorde { display: flex; flex-direction: column; gap: 3px; }
+.rekorde div {
+  padding: 7px 10px; font-size: 11px; color: var(--ink-dim);
+  background: rgba(8, 14, 20, 0.6); border-left: 2px solid var(--edge);
+}
+.rekorde div.sieg { color: var(--gold); border-left-color: var(--gold); }

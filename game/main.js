@@ -57,6 +57,8 @@
       Game.stageOrder = 1;
       Game.loop = 0;
       Game.stagesCleared = 0;
+      Game.kills = 0;
+      Game.muenzenGesammelt = 0;
       Game.lunarCoins = 2;          // zwei zum Anfangen, damit der Bazaar erreichbar ist
       Game.bazaarOffen = false;
       Game.imBazaar = false;
@@ -75,8 +77,7 @@
       Game.player.onLevelUp = function (lvl) { ROR.HUD.toast('Stufe ' + lvl); };
       Game.player.onDeath = function () { endRun(); };
       ROR.HUD.buildSkills(def);
-      ROR.HUD.setDead(false);
-      ROR.HUD.setVictory(false);
+      ROR.Menus.hideResults();
 
       ROR.Artifacts.runStart(Game.player);
       Game.afterStage();
@@ -222,6 +223,7 @@
         return fail('WebGL lässt sich nicht starten: ' + e.message);
       }
 
+      ROR.Save.load();
       ROR.Input.init(canvas);
       ROR.HUD.init();
       ROR.Menus.init();
@@ -235,9 +237,6 @@
         if (ROR.Input.pressed('pause')) togglePause();
         const fertig = Game.over || Game.gewonnen;
         if (fertig && ROR.Input.key('Enter')) Game.newRun(Game.config);
-        if (fertig && ROR.Input.pressed('pause')) {
-          ROR.HUD.setDead(false); ROR.HUD.setVictory(false); ROR.Menus.show();
-        }
       }, -10);
 
       ROR.Engine.onUpdate(function (dt) { if (!Game.over) ROR.Difficulty.update(dt); }, -5);
@@ -249,6 +248,7 @@
       ROR.Engine.onUpdate(function (dt) { ROR.Teleporter.update(dt); }, 16);
       ROR.Engine.onUpdate(function (dt) { ROR.Loot.update(dt); }, 18);
       ROR.Engine.onUpdate(function (dt) { ROR.Attire.update(dt); }, 25);
+      ROR.Engine.onUpdate(function () { ROR.Save.tick(); }, 99);
       ROR.Engine.onUpdate(function (dt) { ROR.Deployables.update(dt); }, 19);
       ROR.Engine.onUpdate(function (dt) { ROR.Projectiles.update(dt); }, 20);
       ROR.Engine.onUpdate(function (dt) { ROR.Body.updateAll(dt); }, 30);
@@ -270,27 +270,51 @@
     }
   };
 
-  Game.onVictory = function () {
-    if (Game.gewonnen) return;
-    Game.gewonnen = true;
+  /* Die Bilanz eines Durchlaufs — dieselbe Form für Sieg und Tod, damit der
+     Ergebnisbildschirm nur einen Fall kennen muss. */
+  function bilanz(sieg) {
+    const p = Game.player;
+    const liste = [];
+    for (const id in p.body.items) {
+      const d = ROR.Items.def(id);
+      if (d && !d.scrap) liste.push({ name: d.name, tier: d.tier, n: p.body.items[id] });
+    }
+    liste.sort(function (a, b) { return b.n - a.n; });
+    return {
+      sieg: !!sieg, figur: p.def.name, schwer: ROR.Difficulty.mode.name,
+      zeit: ROR.Difficulty.runTime, stages: Game.stagesCleared + 1,
+      stufe: p.body.level, kills: Game.kills, items: ROR.Items.total(p.body),
+      muenzen: Game.muenzenGesammelt, coeff: ROR.Difficulty.coeff, itemListe: liste
+    };
+  }
+
+  function beende(sieg) {
     ROR.Director.stop();
-    ROR.HUD.setVictory(true);
     ROR.Input.unlock();
+    const b = bilanz(sieg);
+    const neu = ROR.Save.notiereLauf(b);
+    ROR.Menus.showResults(b, neu);
+  }
+
+  Game.onVictory = function () {
+    if (Game.gewonnen || Game.over) return;
+    Game.gewonnen = true;
+    beende(true);
   };
 
   function endRun() {
-    if (Game.over) return;
+    if (Game.over || Game.gewonnen) return;
     Game.over = true;
-    ROR.Director.stop();
-    ROR.Input.unlock();
-    ROR.HUD.setDead(true);
+    beende(false);
   }
 
   function togglePause() {
     if (ROR.Menus.open || ROR.Menus.choosing) return;
+    if (Game.over || Game.gewonnen) { ROR.Menus.hideResults(); ROR.Menus.show(); return; }
     const p = !ROR.Engine.isPaused;
     ROR.Engine.setPaused(p);
-    if (p) { ROR.Input.unlock(); ROR.HUD.showHint(); }
+    if (p) { ROR.Input.unlock(); ROR.Menus.showPause(); }
+    else ROR.Menus.hidePause();
   }
 
   function fail(message) {

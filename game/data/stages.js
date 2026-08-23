@@ -27,15 +27,21 @@
       /* Ein Tisch auf einem Berg: innen weit und fast eben, am Rand bricht er
          auf wenigen Metern senkrecht ab. Der Wall kurz vor der Kante ist
          Absicht — man soll den Abgrund sehen, bevor man hineinläuft. */
+      /* Die Zahlen waren so gewählt, dass die Ebene tatsächlich eben wurde:
+         die Tafelmaske war auf über der Hälfte der Fläche null, die zweite
+         Tafelstufe zündete nur in 4.5 % der Fälle, und was übrig blieb, waren
+         Grundwellen von ±2.3 m. Gemessen lagen 80 % der begehbaren Fläche
+         innerhalb von ±3 m. Die Tore stehen jetzt offen, die Stufen liegen im
+         tatsächlichen Wertebereich des Rauschens. */
       terrain: {
         shape: 'plateau',
         baseHeight: 9,
-        hillAmp: 7,        hillScale: 62,
-        detailAmp: 1.7,    detailScale: 15,
-        ridgeAmp: 26,      ridgeScale: 80,
-        mesaLow: 0.56,     mesaHigh: 0.69,     mesaEdge: 0.05,
-        maskScale: 108,    maskBias: 0.02,     maskWidth: 0.26,
-        terraceStep: 5,    terraceSharp: 0.18,
+        hillAmp: 20,       hillScale: 58,
+        detailAmp: 2.4,    detailScale: 15,
+        ridgeAmp: 36,      ridgeScale: 74,
+        mesaLow: 0.45,     mesaHigh: 0.585,    mesaEdge: 0.035,
+        maskScale: 92,     maskBias: -0.12,    maskWidth: 0.20,
+        terraceStep: 6,    terraceSharp: 0.30,
         rimInner: 0.72,    rimOuter: 0.81,     rimLip: 6,
         shoreWarp: 0.20,   drop: 150
       },

@@ -28,6 +28,9 @@
     { id: 'glass', name: 'Glass', glyph: '◈',
       desc: 'Fünffacher Schaden — bei einem Zehntel Gesundheit.' },
 
+    { id: 'godmode', name: 'Godmode', glyph: '✵',
+      desc: 'Vierfacher Schaden — und man nimmt nur ein Zehntel davon.' },
+
     { id: 'swarms', name: 'Swarms', glyph: '⁂',
       desc: 'Doppelt so viele Gegner, dafür mit halber Gesundheit.' },
 
@@ -215,6 +218,11 @@
   ROR.Stats.addModifier(function (body, out) {
     if (body.team === ROR.Body.PLAYER) {
       if (active.glass) { out.damage *= 5; out.maxHealth *= 0.1; }
+      /* Godmode braucht keine eigene Verdrahtung: `damageTaken` ist bereits
+         der Faktor, mit dem damage.js eingehenden Schaden nach der Rüstung
+         multipliziert. Mit Glass zusammen wirkt beides multiplikativ — 20x
+         Schaden bei einem Zehntel Leben, das ist gewollt. */
+      if (active.godmode) { out.damage *= 4; out.damageTaken *= 0.1; }
     } else {
       if (active.swarms) out.maxHealth *= 0.5;
     }

@@ -128,11 +128,19 @@
       set(el.bossname, anzahl > 1 ? name + '  ×' + anzahl : name);
     },
 
-    /* Teleporter: Ladebalken und ein Wegweiser, der am Bildrand klebt,
-       solange er nicht im Bild ist. */
+    /* Teleporter: Ladebalken und ein Wegweiser.
+
+       Solange der Teleporter noch nicht gefunden ist, zeigt das HUD gar
+       nichts an — kein Wegweiser, keine Entfernung. Das Suchen ist Teil der
+       Stage: man entscheidet, wie lange man sucht und wie viel Schwierigkeit
+       man dabei ansammelt. Ein Pfeil am Bildrand nimmt genau diese
+       Entscheidung weg. Erst wenn man ihn einmal gesehen hat, bleibt er
+       markiert, damit man wieder zurueckfindet. */
     updateTeleporter(p) {
       const T = ROR.Teleporter;
       if (!T || !T.parts) { el.tpwrap.className = ''; el.tpmark.className = ''; return; }
+
+      if (!T.entdeckt) { el.tpwrap.className = ''; el.tpmark.className = ''; return; }
 
       const zeigen = T.state !== 'used';
       el.tpwrap.className = zeigen ? 'show' : '';

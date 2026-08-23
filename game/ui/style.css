@@ -625,8 +625,13 @@ html, body {
 
 /* ====================================================== Ergebnis und Pause */
 
+/* `pointer-events: auto` ist hier keine Kosmetik: #results und #pause liegen
+   in #ui, und #ui laesst Klicks absichtlich durch. Ohne diese Zeile bekommen
+   die Knoepfe nie einen Klick — er faellt aufs Canvas durch, das daraufhin den
+   Mauszeiger wieder einfaengt und weiterspielt. Beide Ebenen sind modal und
+   muessen Klicks fangen. */
 #results, #pause {
-  position: fixed; inset: 0; z-index: 22; display: none;
+  position: fixed; inset: 0; z-index: 22; display: none; pointer-events: auto;
   align-items: center; justify-content: center;
   background: rgba(6, 10, 14, 0.82); backdrop-filter: blur(3px);
   font: var(--ui); letter-spacing: 0.04em; overflow-y: auto;

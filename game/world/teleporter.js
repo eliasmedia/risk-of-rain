@@ -32,6 +32,10 @@
     parts: null,
 
     get active() { return Teleporter.state === 'charging' || Teleporter.state === 'waiting'; },
+    /* Einmal gesehen bleibt er markiert. Vorher stand die Entfernung von der
+       ersten Sekunde an im HUD und man lief nur noch einer Zahl hinterher. */
+    entdeckt: false,
+
     get inRange() {
       const p = ROR.Game.player;
       if (!p) return false;
@@ -68,15 +72,31 @@
          fertiges Portal hinaus, auf Commencement gar keiner — dort erscheint
          Mithrix, und der Kampf *ist* der Ausgang. */
       Teleporter.mode = ordnung === 0 ? 'bazaar' : ordnung === 6 ? 'final' : 'normal';
+      Teleporter.entdeckt = false;
       const rng = U.Rng((seed >>> 0) ^ 0x7e1e);
-      let spot = null;
-      for (let i = 0; i < 60 && !spot; i++) {
-        const s = stage.terrain.findSpot(rng, {
-          rMin: stage.terrain.half * 0.35, rMax: stage.terrain.half * 0.85,
-          maxSlope: 0.14, tries: 20
+      let spot = null, bester = null;
+      /* Um den Teleporter herum wird gekaempft, er braucht also wirklich
+         Platz — 7 m Freiraum, nicht nur einen Punkt ohne Hindernis.
+
+         Mindestabstand relativ zur Karte statt fest 60 m: mit dem festen Wert
+         lag der Teleporter auf jeder Kartengroesse gleich nah, eine groessere
+         Karte machte den Weg sogar kuerzer, weil der Startpunkt mitwanderte.
+
+         Und statt bei Misserfolg auf den Startpunkt zurueckzufallen — was den
+         Weg auf null setzte — wird der weiteste gefundene Platz behalten. */
+      const mind = Math.max(60, stage.terrain.half * 0.62);
+      let besterAbstand = -1;
+      for (let i = 0; i < 90 && !spot; i++) {
+        const s = stage.findeFreiePosition(rng, {
+          rMin: stage.terrain.half * 0.3, rMax: stage.terrain.half * 0.88,
+          maxSlope: 0.14, tries: 20, platz: 7
         });
-        if (s && U.dist2(s.x, s.z, stage.spawn.x, stage.spawn.z) > 60 * 60) spot = s;
+        if (!s) continue;
+        const d2 = U.dist2(s.x, s.z, stage.spawn.x, stage.spawn.z);
+        if (d2 > mind * mind) { spot = s; break; }
+        if (d2 > besterAbstand) { besterAbstand = d2; bester = s; }
       }
+      if (!spot && bester) spot = bester;
       spot = spot || stage.spawn;
       Teleporter.position.set(spot.x, spot.y, spot.z);
 
@@ -146,8 +166,8 @@
     spawnMithrix(stage) {
       const def = ROR.Data.monster('mithrix');
       if (!def) return;
-      const spot = stage.terrain.findSpot(U.Rng(stage.seed ^ 0x1111), {
-        rMin: 20, rMax: 60, maxSlope: 0.15, tries: 80
+      const spot = stage.findeFreiePosition(U.Rng(stage.seed ^ 0x1111), {
+        rMin: 20, rMax: 60, maxSlope: 0.15, tries: 80, platz: 6
       }) || stage.spawn;
       const m = ROR.Monsters.spawn(def, ROR.Difficulty.spawnLevel,
         new THREE.Vector3(spot.x, spot.y, spot.z));
@@ -204,6 +224,13 @@
       p.ring.scale.setScalar(1 + Teleporter.charge * 0.5);
       /* Erst ab etwa zwölf Metern sichtbar, voll ab vierzig. */
       const kameraNah = ROR.Engine.camera.position.distanceTo(Teleporter.position);
+      /* Als entdeckt gilt er, wenn man ihn einmal aus 55 m Naehe gesehen hat
+         oder das Ereignis laeuft — dann muss man ohnehin zurueckfinden. */
+      if (!Teleporter.entdeckt &&
+          (Teleporter.distance < 55 || Teleporter.state !== 'idle')) {
+        Teleporter.entdeckt = true;
+        ROR.HUD.toast('Teleporter gefunden');
+      }
       const sicht = U.clamp((kameraNah - 12) / 28, 0, 1);
       p.strahl.material.opacity = Teleporter.state === 'used' ? 0
         : (Teleporter.state === 'ready' ? 0.16 : 0.075) * sicht;

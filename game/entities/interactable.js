@@ -213,8 +213,8 @@
         });
         if (!bezahlbar.length) break;
         const def = rng.weighted(bezahlbar);
-        const spot = stage.terrain.findSpot(rng, {
-          rMin: 6, rMax: stage.terrain.half * 0.85, maxSlope: 0.16, tries: 30
+        const spot = stage.findeFreiePosition(rng, {
+          rMin: 6, rMax: stage.terrain.half * 0.85, maxSlope: 0.16, tries: 30, platz: 2.6
         });
         if (!spot) continue;
         // Nicht ineinander stellen.

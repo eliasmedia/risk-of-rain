@@ -156,7 +156,13 @@
       addEventListener('mousemove', onMouseMove);
       addEventListener('contextmenu', (e) => { if (e.target === canvas) e.preventDefault(); });
       document.addEventListener('pointerlockchange', onLockChange);
-      canvas.addEventListener('click', () => Input.lock());
+      /* Nur einfangen, wenn wirklich gespielt wird. Sonst greift ein Klick
+         neben ein offenes Menue den Mauszeiger und das Spiel laeuft weiter. */
+      canvas.addEventListener('click', function () {
+        if (ROR.Engine && ROR.Engine.isPaused) return;
+        if (ROR.Menus && (ROR.Menus.open || ROR.Menus.choosing)) return;
+        Input.lock();
+      });
     },
 
     lock() {

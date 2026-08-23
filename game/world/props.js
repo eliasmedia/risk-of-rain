@@ -45,6 +45,15 @@
     return g;
   }
 
+  /* Palettenfarbe als Zahlentripel — so kann ein Bauteil in `verbinde` seine
+     eigene Toenung mitbringen. */
+  const _c = new THREE.Color();
+  function ton(hex, faktor) {
+    _c.set(hex);
+    if (faktor) _c.multiplyScalar(faktor);
+    return [_c.r, _c.g, _c.b];
+  }
+
   function verbinde(teile) {
     // Ein Mesh aus mehreren Formen: das spart je Objekt einen Zeichenaufruf.
     const geos = [];
@@ -59,26 +68,46 @@
       g.applyMatrix4(m);
       geos.push(g);
     }
-    // Von Hand zusammenfügen — BufferGeometryUtils liegt unter examples/.
+    /* Von Hand zusammenfügen — BufferGeometryUtils liegt unter examples/.
+
+       Die Puffergröße muss sich nach der Zahl der *ausgegebenen* Eckpunkte
+       richten, nicht nach der Zahl der gespeicherten. Bei indizierter
+       Geometrie ist der Index laenger als die Punktliste: eine
+       CylinderGeometry mit acht Seiten hat 54 Punkte, aber 96 Indizes. Mit der
+       alten Rechnung war der Puffer zu klein, und alles, was hinten
+       ueberlief, wurde von der typisierten Liste stillschweigend verworfen —
+       deshalb fehlte den Aquaedukt-Saeulen der Kapitell-Aufsatz. */
     let n = 0;
-    for (let i = 0; i < geos.length; i++) n += geos[i].attributes.position.count;
+    for (let i = 0; i < geos.length; i++) {
+      const g = geos[i];
+      n += g.index ? g.index.count : g.attributes.position.count;
+    }
     const pos = new Float32Array(n * 3), nor = new Float32Array(n * 3);
+    /* Eckpunktfarben: ein Objekt bekommt vom Instanzsystem genau eine Farbe.
+       Ein Baum war deshalb einfarbig — Stamm und Krone im selben Gruen. Mit
+       einem Farbwert je Eckpunkt kann ein Teil seine eigene Toenung mitbringen;
+       das Material multipliziert beides. */
+    const farbe = new Float32Array(n * 3);
     let o = 0;
     for (let i = 0; i < geos.length; i++) {
       const g = geos[i];
       const p = g.attributes.position.array, q = g.attributes.normal.array;
       // Indizierte Geometrie zuerst auflösen, sonst passt die Länge nicht.
       const idx = g.index ? g.index.array : null;
+      const t = teile[i];
+      const cr = t.ton ? t.ton[0] : 1, cg = t.ton ? t.ton[1] : 1, cb = t.ton ? t.ton[2] : 1;
       if (idx) {
         for (let k = 0; k < idx.length; k++) {
           pos[o * 3] = p[idx[k] * 3]; pos[o * 3 + 1] = p[idx[k] * 3 + 1]; pos[o * 3 + 2] = p[idx[k] * 3 + 2];
           nor[o * 3] = q[idx[k] * 3]; nor[o * 3 + 1] = q[idx[k] * 3 + 1]; nor[o * 3 + 2] = q[idx[k] * 3 + 2];
+          farbe[o * 3] = cr; farbe[o * 3 + 1] = cg; farbe[o * 3 + 2] = cb;
           o++;
         }
       } else {
         for (let k = 0; k < g.attributes.position.count; k++) {
           pos[o * 3] = p[k * 3]; pos[o * 3 + 1] = p[k * 3 + 1]; pos[o * 3 + 2] = p[k * 3 + 2];
           nor[o * 3] = q[k * 3]; nor[o * 3 + 1] = q[k * 3 + 1]; nor[o * 3 + 2] = q[k * 3 + 2];
+          farbe[o * 3] = cr; farbe[o * 3 + 1] = cg; farbe[o * 3 + 2] = cb;
           o++;
         }
       }
@@ -87,6 +116,7 @@
     const out = new THREE.BufferGeometry();
     out.setAttribute('position', new THREE.BufferAttribute(pos.subarray(0, o * 3), 3));
     out.setAttribute('normal', new THREE.BufferAttribute(nor.subarray(0, o * 3), 3));
+    out.setAttribute('color', new THREE.BufferAttribute(farbe.subarray(0, o * 3), 3));
     return out;
   }
 
@@ -108,7 +138,8 @@
        geo(noise, P)       das Modell (Einheitsgröße, Fuß bei y = 0)
        farbe(P, rng)       Farbe je Exemplar
        skala               [min, max]
-       solid               'cyl' | null — steht es im Weg?
+       solid               Beschnitt des Kollisionszylinders (1 = Modellbreite),
+                           null = keine Kollision
        neigung             maximale Hangneigung am Standort
        ausrichtung         'boden' | 'decke'                                */
 
@@ -117,42 +148,79 @@
     fels: {
       geo: (n) => boulderGeometry(n, 1, 0.34),
       farbe: (P, r) => new THREE.Color(P.rock).lerp(new THREE.Color(P.rockDark), r.range(0, 0.8)),
-      skala: [0.7, 3.4], neigung: 0.55, solid: 0.85, solidAb: 1.6, versatz: 0.42
+      skala: [0.7, 3.4], neigung: 0.55, solid: 0.82, solidAb: 1.6, versatz: 0.42
     },
 
-    /* Nadelbaum: drei Kronen und ein verjüngter Stamm statt eines Kegels auf
-       einem Zylinder. Der Unterschied ist die Silhouette. */
+    /* Baeume tragen ihre Farben jetzt in den Eckpunkten: Stamm ist Rinde,
+       Krone ist Laub, und die Instanzfarbe ist nur noch eine Helligkeit, damit
+       nicht alle gleich aussehen. Vorher hatte ein Baum genau eine Farbe —
+       Stamm und Nadeln im selben Gruen. Genau daran las er sich als Dreieck
+       auf einem Stiel. */
     nadelbaum: {
-      geo: () => verbinde([
-        { geo: prism(0.055, 0.11, 1.0, 5), y: 0.5 },
-        { geo: new THREE.ConeGeometry(0.34, 0.55, 7), y: 1.05 },
-        { geo: new THREE.ConeGeometry(0.27, 0.5, 7), y: 1.4 },
-        { geo: new THREE.ConeGeometry(0.17, 0.42, 7), y: 1.75 }
-      ]),
-      farbe: (P, r) => new THREE.Color(P.leaf).lerp(new THREE.Color(P.leafAlt), r.next()),
+      geo: (n, P) => {
+        const rinde = ton(P.trunk), hell = ton(P.leaf), dunkel = ton(P.leafAlt, 0.72);
+        const teile = [
+          { geo: prism(0.035, 0.1, 1.15, 6), y: 0.575, ton: rinde },
+          // Wurzelanlauf: verbreitert den Fuss, damit der Stamm nicht abknickt.
+          { geo: prism(0.1, 0.2, 0.14, 6), y: 0.06, ton: ton(P.trunk, 0.85) }
+        ];
+        /* Fuenf Kranzlagen statt drei, jede gegen die vorige verdreht. Die
+           Verdrehung ist entscheidend: gleich ausgerichtete Kegel stapeln sich
+           zu einer glatten Pyramide. */
+        for (let i = 0; i < 5; i++) {
+          const t = i / 4;
+          teile.push({
+            geo: new THREE.ConeGeometry(0.42 - t * 0.3, 0.46 - t * 0.16, 7),
+            y: 0.82 + i * 0.3, ry: i * 0.45,
+            ton: i % 2 ? dunkel : hell
+          });
+        }
+        teile.push({ geo: new THREE.ConeGeometry(0.06, 0.26, 6), y: 2.28, ton: hell });
+        return verbinde(teile);
+      },
+      farbe: (P, r) => new THREE.Color().setScalar(r.range(0.82, 1.12)),
       skala: [3.6, 8.5], neigung: 0.30, solid: null, versatz: -0.2
     },
 
     laubbaum: {
-      geo: () => verbinde([
-        { geo: prism(0.07, 0.14, 1.2, 6), y: 0.6 },
-        { geo: new THREE.IcosahedronGeometry(0.55, 0), y: 1.5, sy: 0.8 },
-        { geo: new THREE.IcosahedronGeometry(0.38, 0), y: 1.85, x: 0.24, sy: 0.8 },
-        { geo: new THREE.IcosahedronGeometry(0.34, 0), y: 1.75, x: -0.28, z: 0.2, sy: 0.8 }
-      ]),
-      farbe: (P, r) => new THREE.Color(P.leaf).lerp(new THREE.Color(P.leafAlt), r.next()),
+      geo: (n, P) => {
+        const rinde = ton(P.trunk), hell = ton(P.leaf), dunkel = ton(P.leafAlt, 0.75);
+        const teile = [
+          { geo: prism(0.05, 0.13, 1.15, 6), y: 0.575, ton: rinde },
+          { geo: prism(0.11, 0.22, 0.13, 6), y: 0.055, ton: ton(P.trunk, 0.85) },
+          // Zwei Aeste, die aus dem Stamm in die Krone laufen.
+          { geo: prism(0.025, 0.05, 0.5, 4), y: 1.15, x: 0.14, rz: -0.6, ton: rinde },
+          { geo: prism(0.025, 0.05, 0.44, 4), y: 1.25, x: -0.12, z: 0.1, rz: 0.55, ton: rinde }
+        ];
+        /* Krone aus fuenf Ballen unterschiedlicher Groesse. Ein einzelner
+           Ballen liest sich als Kugel, mehrere ergeben eine Silhouette. */
+        const ballen = [
+          [0.0, 1.62, 0.0, 0.52, hell], [0.3, 1.5, 0.12, 0.36, dunkel],
+          [-0.3, 1.56, -0.1, 0.34, hell], [0.1, 1.9, -0.22, 0.32, dunkel],
+          [-0.12, 1.86, 0.24, 0.3, hell]
+        ];
+        for (const b of ballen) {
+          teile.push({ geo: new THREE.IcosahedronGeometry(b[3], 0),
+                       x: b[0], y: b[1], z: b[2], sy: 0.82, ton: b[4] });
+        }
+        return verbinde(teile);
+      },
+      farbe: (P, r) => new THREE.Color().setScalar(r.range(0.84, 1.12)),
       skala: [3.2, 7], neigung: 0.28, solid: null, versatz: -0.2
     },
 
     /* Toter Baum: kahle Gabelung. Das Wüstenmotiv, das keine Fichte kann. */
     totbaum: {
-      geo: () => verbinde([
-        { geo: prism(0.05, 0.13, 1.4, 5), y: 0.7 },
-        { geo: prism(0.03, 0.06, 0.7, 4), y: 1.35, x: 0.22, rz: -0.7 },
-        { geo: prism(0.03, 0.06, 0.6, 4), y: 1.5, x: -0.2, z: 0.1, rz: 0.6 },
-        { geo: prism(0.02, 0.04, 0.4, 4), y: 1.75, x: 0.34, rz: -1.0 }
+      geo: (n, P) => verbinde([
+        { geo: prism(0.04, 0.13, 1.5, 5), y: 0.75, ton: ton(P.trunk) },
+        { geo: prism(0.11, 0.2, 0.12, 5), y: 0.06, ton: ton(P.trunk, 0.8) },
+        { geo: prism(0.03, 0.06, 0.7, 4), y: 1.35, x: 0.22, rz: -0.7, ton: ton(P.trunk, 1.12) },
+        { geo: prism(0.02, 0.04, 0.36, 4), y: 1.62, x: 0.44, rz: -1.2, ton: ton(P.trunk, 1.2) },
+        { geo: prism(0.03, 0.06, 0.6, 4), y: 1.5, x: -0.2, z: 0.1, rz: 0.6, ton: ton(P.trunk, 0.95) },
+        { geo: prism(0.02, 0.04, 0.4, 4), y: 1.75, x: 0.34, rz: -1.0, ton: ton(P.trunk, 1.15) },
+        { geo: prism(0.02, 0.035, 0.34, 4), y: 1.86, x: -0.3, z: -0.12, rz: 0.9, ton: ton(P.trunk, 1.05) }
       ]),
-      farbe: (P, r) => new THREE.Color(P.trunk).multiplyScalar(r.range(0.8, 1.2)),
+      farbe: (P, r) => new THREE.Color().setScalar(r.range(0.85, 1.15)),
       skala: [2.6, 5.5], neigung: 0.35, solid: null, versatz: -0.1
     },
 
@@ -187,7 +255,7 @@
         return verbinde(teile);
       },
       farbe: (P, r) => new THREE.Color(P.rock).lerp(new THREE.Color(P.sand), r.range(0, 0.6)),
-      skala: [9, 18], neigung: 0.18, solid: 0.5, versatz: -0.05
+      skala: [9, 18], neigung: 0.18, solid: 0.95, versatz: -0.05
     },
 
     saeule: {
@@ -201,14 +269,14 @@
         return verbinde(teile);
       },
       farbe: (P, r) => new THREE.Color(P.sand).lerp(new THREE.Color(P.rock), r.range(0, 0.7)),
-      skala: [4, 9], neigung: 0.16, solid: 0.6, versatz: -0.05
+      skala: [4, 9], neigung: 0.16, solid: 0.95, versatz: -0.05
     },
 
     /* Höhle: Zacken vom Boden und von der Decke. */
     stalagmit: {
       geo: () => prism(0.04, 0.42, 1.0, 6),
       farbe: (P, r) => new THREE.Color(P.rockDark).lerp(new THREE.Color(P.rock), r.range(0, 0.8)),
-      skala: [2, 9], neigung: 0.5, solid: 0.5, versatz: -0.05
+      skala: [2, 9], neigung: 0.5, solid: 0.8, versatz: -0.05
     },
 
     stalaktit: {
@@ -234,7 +302,7 @@
         { geo: prism(0.52, 0.52, 0.06, 4, 1.14, 1.14), y: 0.5 }
       ]),
       farbe: (P, r) => new THREE.Color([0xa8503c, 0x3c6a8a, 0x8a8f6a, 0x5a5f66][r.int(4)]),
-      skala: [3.2, 5.5], neigung: 0.14, solid: 1.1, versatz: 0
+      skala: [3.2, 5.5], neigung: 0.14, solid: 0.95, versatz: 0
     },
 
     betonblock: {
@@ -243,7 +311,7 @@
         { geo: prism(0.54, 0.5, 0.1, 4, 0.5, 0.46), y: 1.0 }
       ]),
       farbe: (P, r) => new THREE.Color(P.rock).lerp(new THREE.Color(P.rockDark), r.range(0.2, 0.9)),
-      skala: [3, 9], neigung: 0.18, solid: 0.85, versatz: -0.04
+      skala: [3, 9], neigung: 0.18, solid: 0.95, versatz: -0.04
     },
 
     antenne: {
@@ -254,14 +322,14 @@
         { geo: prism(0.2, 0.02, 0.05, 4), y: 0.9, rz: 1.57 }
       ]),
       farbe: (P) => new THREE.Color(P.rockDark),
-      skala: [7, 16], neigung: 0.15, solid: 0.3, versatz: -0.05
+      skala: [7, 16], neigung: 0.15, solid: 0.9, versatz: -0.05
     },
 
     /* Schwebende Scholle — Sprungziel. */
     scholle: {
       geo: () => prism(1.0, 0.72, 1.0, 7),
       farbe: (P, r) => new THREE.Color(P.rockDark).lerp(new THREE.Color(P.rock), r.range(0.2, 0.8)),
-      skala: [3.4, 8], neigung: 0.6, solid: 0.94, schwebt: [6, 22]
+      skala: [3.4, 8], neigung: 0.6, solid: 1.0, schwebt: [6, 22]
     },
 
     felsscherbe: {
@@ -276,6 +344,7 @@
   function instanced(geo, count, castShadow, leuchtet) {
     const mat = new THREE.MeshLambertMaterial({
       color: 0xffffff, flatShading: true,
+      vertexColors: !!geo.attributes.color,
       emissive: leuchtet ? 0xffffff : 0x000000,
       emissiveIntensity: leuchtet || 0
     });
@@ -322,6 +391,21 @@
         const mesh = instanced(geo, eintrag.count, true, art.leuchtet);
         meshes.push(mesh);
 
+        /* Die Kollisionsform kommt aus der Geometrie, nicht aus einer
+           geschaetzten Zahl. Vorher stand in `solid` ein handgesetzter Radius,
+           und der lag oft weit daneben: der Betonblock hatte die 9.9-fache
+           Grundflaeche seines Modells, der Container die 3.7-fache, die
+           Aquaedukt-Saeule die 6.1-fache — dafuer war der Fels-Zylinder nur
+           halb so gross wie der Fels. Jetzt ist `solid` nur noch ein
+           Beschnitt: 1 bedeutet „genau die Modellbreite". */
+        geo.computeBoundingBox();
+        const bb = geo.boundingBox;
+        const halbX = Math.max(Math.abs(bb.min.x), Math.abs(bb.max.x));
+        const halbZ = Math.max(Math.abs(bb.min.z), Math.abs(bb.max.z));
+        // Mittelwert statt Maximum: ein Zylinder um die Ecken eines Kastens
+        // waere wieder zu gross und ergaebe unsichtbare Waende an den Ecken.
+        const halb = (halbX + halbZ) * 0.5;
+
         for (let i = 0; i < eintrag.count; i++) {
           const spot = terrain.findSpot(rng, {
             rMin: eintrag.rMin || 0,
@@ -355,8 +439,9 @@
 
           // Kleine Steine sind Dekoration; erst ab `solidAb` stehen sie im Weg.
           if (art.solid && s >= (art.solidAb || 0)) {
-            solids.push({ kind: 'cyl', x: spot.x, z: spot.z, r: breit * art.solid,
-                          y0: y - s * 0.6, y1: y + s * (art.schwebt ? 0.0 : 0.9) });
+            solids.push({ kind: 'cyl', x: spot.x, z: spot.z,
+                          r: breit * halb * art.solid,
+                          y0: y + bb.min.y * s, y1: y + bb.max.y * s });
           }
         }
       });

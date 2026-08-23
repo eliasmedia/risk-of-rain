@@ -149,9 +149,42 @@
         return x >= s.x0 && x <= s.x1 && z >= s.z0 && z <= s.z1;
       }
 
+      /* Ist an dieser Stelle Platz? Die Platzsuche im Terrain kennt nur den
+         Boden, nicht die Aufbauten — deshalb landeten Kisten, Schreine und
+         auch schon der Teleporter mitten in einem Betonblock. */
+      function frei(x, z, radius) {
+        const list = near(x, z);
+        for (let i = 0; i < list.length; i++) {
+          const s = list[i];
+          if (s.kind === 'cyl') {
+            const dx = x - s.x, dz = z - s.z, r = s.r + radius;
+            if (dx * dx + dz * dz < r * r) return false;
+          } else {
+            const cx = U.clamp(x, s.x0, s.x1), cz = U.clamp(z, s.z0, s.z1);
+            const dx = x - cx, dz = z - cz;
+            if (dx * dx + dz * dz < radius * radius) return false;
+          }
+        }
+        return true;
+      }
+
+      /* Platzsuche, die den Boden *und* die Aufbauten beruecksichtigt. */
+      function findeFreiePosition(rng, opts) {
+        opts = opts || {};
+        const platz = opts.platz === undefined ? 2.2 : opts.platz;
+        const versuche = opts.tries || 60;
+        for (let i = 0; i < versuche; i++) {
+          const spot = terrain.findSpot(rng, Object.assign({}, opts, { tries: 1 }));
+          if (spot && frei(spot.x, spot.z, platz)) return spot;
+        }
+        return null;
+      }
+
       current = {
         theme, terrain, root, sun, hemi, seed,
         solids: props.solids,
+        frei: frei,
+        findeFreiePosition: findeFreiePosition,
         spawn: null,
 
         /* Höchste tragende Fläche unter (oder knapp über) den Füßen. */
@@ -293,8 +326,8 @@
 
       /* Startpunkt: möglichst eben, nicht am Rand, nicht auf einem Plateau. */
       const startRng = U.Rng(seed ^ 0x1234);
-      current.spawn = terrain.findSpot(startRng, {
-        rMin: 0, rMax: terrain.half * 0.35, maxSlope: 0.12, tries: 400
+      current.spawn = findeFreiePosition(startRng, {
+        rMin: 0, rMax: terrain.half * 0.35, maxSlope: 0.12, tries: 400, platz: 4
       }) || { x: 0, y: terrain.heightAt(0, 0), z: 0 };
 
       ROR.Camera.clearance = current.clearance;

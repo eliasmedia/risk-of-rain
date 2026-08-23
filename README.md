@@ -27,7 +27,7 @@ Commencement, Elites, Mithrix, Spielstand, Klang und Touch-Steuerung.
 | 9 | Bildnachbearbeitung, prozedurale Musik, Trefferfeedback | ✅ fertig |
 | 10 | Touch-Steuerung fürs Handy | ✅ fertig |
 | 11a | Weltform je Stage, Steigungsgrenze | ✅ fertig |
-| 11b | Bewuchs und Detailschicht je Biom | offen |
+| 11b | Bewuchs und Detailschicht je Biom | ✅ fertig |
 | 11c | Gegnermodelle mit eigener Silhouette | offen |
 | 11d | Figuren und Waffen mit Bewegung | offen |
 
@@ -108,7 +108,7 @@ game/
     itemmodels.js          Wie ein Item am Körper aussieht und wo es hängt
   world/
     terrain.js             Höhenfunktion, Geometrie, Vertexfarben, Abfragen
-    props.js               Felsen, Bäume, Monolithen, schwebende Plattformen
+    props.js               Bauarten je Biom und die Detailschicht
     stage.js               Aufbau, Licht, Himmel, alle Kollisionsabfragen
     teleporter.js          Das Ereignis: Laden, Bosswelle, Belohnung, Portal
   entities/
@@ -153,6 +153,19 @@ Der verzerrte Radius, der die Kartengrenze bestimmt, läuft über **zwei**
 Maßstäbe: die grobe Welle gibt ihr den Umriss, die feine die Zacken. Mit nur
 einer war der Rand der Hochebene ein sauberer Kreis und das Ganze sah aus wie
 eine Torte.
+
+**Jedes Biom bringt seinen eigenen Bewuchs mit.** Dass die Wüste dieselben
+Fichten hatte wie die Wiese, war die andere Hälfte des Grundes, warum alle
+Stages gleich aussahen. Eine Stage listet jetzt ihre Bauarten selbst auf
+(`props.kinds`): Aquädukt-Bögen und Trockensträucher in der Schlucht,
+Container und Antennen auf Rallypoint, Stalagmiten von unten und Stalaktiten
+von der Decke in der Höhle, Felsscherben über Sky Meadow.
+
+**Die Detailschicht.** Vierzehntausend Grasbüschel und Kiesel je Stage,
+instanziert und ohne Kollision — man nimmt keinen einzelnen wahr, aber ohne
+sie wirkt jede Fläche wie lackiertes Plastik. Gestreut wird in **Büscheln**,
+nicht gleichmäßig: Gras wächst in Gruppen, und eine Gleichverteilung sieht
+sofort nach Computer aus. Der Aufbau einer ganzen Stage dauert damit 87 ms.
 
 **Steile Wände sind Wände.** Gemessen wird die *Neigung*, nicht der
 Höhenunterschied je Bild — der hängt am Tempo, die Neigung nicht. Über 60°

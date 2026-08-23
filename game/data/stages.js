@@ -58,7 +58,10 @@
         trunk: 0x4b3b2b, leaf: 0x4c6f2c, leafAlt: 0x648c38
       },
 
-      props: { boulders: 120, trees: 115, pillars: 20, platforms: 16 },
+      props: { detail: 70000, kinds: [
+        { kind: 'fels', count: 90 }, { kind: 'nadelbaum', count: 115 },
+        { kind: 'monolith', count: 18 }, { kind: 'scholle', count: 12 }
+      ] },
       sun: { azimuth: 2.35, elevation: 0.40 }
     },
 
@@ -100,15 +103,19 @@
         sun: 0xfff0cc, sunIntensity: 2.7,
         ambientSky: 0xe0d8c0, ambientGround: 0x8a7550, ambientIntensity: 2.0,
         fillIntensity: 0.7,
-        grass: 0x8d9448, grassDark: 0x5d6430,
+        grass: 0xb2a267, grassDark: 0x84744a,
         rock: 0xc4a878, rockDark: 0x7e6640,
         dirt: 0xa8905c,
         sand: 0xdcc699, peak: 0xe0d2b0, seabed: 0x1f5560,
         water: 0x2f8a92,
-        trunk: 0x6a5236, leaf: 0x7e8f42, leafAlt: 0x94a04e
+        trunk: 0x7a6242, leaf: 0x8e8a4a, leafAlt: 0xa39a58
       },
 
-      props: { boulders: 150, trees: 40, pillars: 46, platforms: 22 },
+      props: { detail: 9000, kinds: [
+        { kind: 'fels', count: 120 }, { kind: 'totbaum', count: 42 },
+        { kind: 'strauch', count: 95 }, { kind: 'aquaedukt', count: 14 },
+        { kind: 'saeule', count: 26 }, { kind: 'scholle', count: 6 }
+      ] },
       sun: { azimuth: 0.9, elevation: 0.55 }
     },
 
@@ -153,7 +160,11 @@
         trunk: 0x3a3630, leaf: 0x2e4636, leafAlt: 0x3d5a44
       },
 
-      props: { boulders: 90, trees: 70, pillars: 34, platforms: 26 },
+      props: { detail: 12000, kinds: [
+        { kind: 'fels', count: 70 }, { kind: 'nadelbaum', count: 85 },
+        { kind: 'container', count: 22 }, { kind: 'betonblock', count: 30 },
+        { kind: 'antenne', count: 10 }, { kind: 'scholle', count: 14 }
+      ] },
       sun: { azimuth: 3.6, elevation: 0.28 }
     },
 
@@ -204,7 +215,11 @@
         trunk: 0x2a1a14, leaf: 0x4a2a20, leafAlt: 0x5c3626
       },
 
-      props: { boulders: 180, trees: 20, pillars: 52, platforms: 30 },
+      props: { detail: 8000, kinds: [
+        { kind: 'fels', count: 140 }, { kind: 'stalagmit', count: 95 },
+        { kind: 'stalaktit', count: 75 }, { kind: 'kristall', count: 48 },
+        { kind: 'scholle', count: 10 }
+      ] },
       sun: { azimuth: 1.6, elevation: 0.75 }
     },
 
@@ -250,7 +265,11 @@
         trunk: 0x54405a, leaf: 0x5e8c50, leafAlt: 0x86a860
       },
 
-      props: { boulders: 100, trees: 90, pillars: 24, platforms: 40 },
+      props: { detail: 13000, kinds: [
+        { kind: 'fels', count: 70 }, { kind: 'laubbaum', count: 80 },
+        { kind: 'nadelbaum', count: 28 }, { kind: 'strauch', count: 60 },
+        { kind: 'felsscherbe', count: 26 }, { kind: 'scholle', count: 24 }
+      ] },
       sun: { azimuth: 5.1, elevation: 0.34 }
     }
 ,
@@ -290,7 +309,10 @@
         water: 0x4a2f7a,
         trunk: 0x4a3a6a, leaf: 0x8f6ac0, leafAlt: 0xa88ad8
       },
-      props: { boulders: 40, trees: 26, pillars: 14, platforms: 10 },
+      props: { detail: 2600, kinds: [
+        { kind: 'saeule', count: 18 }, { kind: 'fels', count: 24 },
+        { kind: 'kristall', count: 22 }, { kind: 'scholle', count: 10 }
+      ] },
       sun: { azimuth: 2.0, elevation: 0.5 }
     },
 
@@ -327,7 +349,10 @@
         water: 0x1a1a2e,
         trunk: 0x3a3a46, leaf: 0x5a5a68, leafAlt: 0x6a6a78
       },
-      props: { boulders: 130, trees: 0, pillars: 44, platforms: 20 },
+      props: { detail: 1400, kinds: [
+        { kind: 'fels', count: 120 }, { kind: 'monolith', count: 30 },
+        { kind: 'saeule', count: 20 }, { kind: 'scholle', count: 14 }
+      ] },
       sun: { azimuth: 4.2, elevation: 0.5 }
     }
   ];

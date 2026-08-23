@@ -192,6 +192,11 @@
 
   /* ------------------------------------------------------------ Aufbau */
 
+  /* Der Formenbaukasten wird auch von den Gegnermodellen gebraucht — dort
+     gilt dasselbe: verjüngte Körper statt Quader. Einmal geschrieben, zweimal
+     benutzt, und beide sprechen dieselbe Formensprache. */
+  ROR.Shapes = { mat, prism, slab, spike, joint, glow };
+
   ROR.SurvivorModel = {
     build(def) {
       const c = def.colors;

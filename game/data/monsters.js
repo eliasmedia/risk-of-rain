@@ -37,7 +37,7 @@
       id: 'lesser_wisp', name: 'Lesser Wisp',
       health: 35, damage: 3.5, moveSpeed: 6, cost: 10,
       radius: 0.45, height: 1.0, flying: true, hoverHeight: 3.4,
-      shape: { kind: 'orb', size: 0.5, shards: 5,
+      shape: { kind: 'wisp', size: 0.5, shards: 6,
                colors: { main: 0xffa03a, glow: 0xffd98a, dark: 0x8a3d12 } },
       ai: { kind: 'ranged', range: 26, keep: 16, windup: 0.55, cooldown: 1.6,
             shot: { speed: 32, radius: 0.28, coefficient: 1.0, proc: 1, color: 0xffb45a } }
@@ -47,7 +47,7 @@
       id: 'beetle', name: 'Beetle',
       health: 80, damage: 12, moveSpeed: 6, cost: 8,
       radius: 0.6, height: 1.3, stages: [1, 2, 3],
-      shape: { kind: 'quadruped', body: [1.25, 0.72, 0.9], head: 0.44, tail: 0,
+      shape: { kind: 'beetle', body: [1.35, 0.72, 1.05], head: 0.42,
                colors: { main: 0x8a5f3c, dark: 0x5b3d26, eye: 0xffe07a } },
       ai: { kind: 'melee', range: 2.4, windup: 0.45, cooldown: 1.3, coefficient: 1.0, proc: 1 }
     }),
@@ -56,7 +56,7 @@
       id: 'lemurian', name: 'Lemurian',
       health: 80, damage: 12, moveSpeed: 7, cost: 11,
       radius: 0.6, height: 1.6,
-      shape: { kind: 'quadruped', body: [1.5, 0.65, 0.62], head: 0.5, tail: 1.5, upright: 0.35,
+      shape: { kind: 'lemurian', body: [1.1, 0.62, 0.55], head: 0.42, tail: 1.8,
                colors: { main: 0x9c4636, dark: 0x62281d, eye: 0xffcf6b } },
       ai: { kind: 'ranged', range: 22, keep: 9, windup: 0.6, cooldown: 1.9,
             melee: { range: 2.6, coefficient: 1.0, cooldown: 1.2 },
@@ -79,7 +79,7 @@
       id: 'bighorn_bison', name: 'Bighorn Bison',
       health: 480, damage: 12, moveSpeed: 3, cost: 12, stages: [1, 2, 3],
       radius: 0.85, height: 1.7,
-      shape: { kind: 'quadruped', body: [1.9, 1.05, 1.2], head: 0.62, horns: true, tail: 0.5,
+      shape: { kind: 'bison', body: [1.9, 1.0, 1.15], head: 0.6, tail: 0.7,
                colors: { main: 0x7d6a4d, dark: 0x4d4031, eye: 0xd9d0b0 } },
       ai: { kind: 'charger', range: 26, windup: 0.9, cooldown: 3.2,
             chargeSpeed: 24, chargeTime: 1.6, coefficient: 2.4, proc: 1 }
@@ -99,7 +99,7 @@
       id: 'blind_pest', name: 'Blind Pest',
       health: 80, damage: 15, moveSpeed: 6, cost: 8, stages: [1, 2, 3],
       radius: 0.45, height: 1.0, flying: true, hoverHeight: 4.2,
-      shape: { kind: 'orb', size: 0.42, shards: 3, wings: true,
+      shape: { kind: 'pest', size: 0.45,
                colors: { main: 0xb0a8c8, glow: 0xe4dcff, dark: 0x554d70 } },
       ai: { kind: 'ranged', range: 24, keep: 18, windup: 0.4, cooldown: 1.2,
             shot: { speed: 30, radius: 0.24, coefficient: 0.8, proc: 1, color: 0xd4c8ff } }
@@ -119,7 +119,7 @@
       id: 'imp', name: 'Imp',
       health: 140, damage: 10, moveSpeed: 10, cost: 28, stages: [3, 4, 5],
       radius: 0.5, height: 1.9,
-      shape: { kind: 'biped', size: 1.0, horns: true, claws: true,
+      shape: { kind: 'imp', size: 1.05,
                colors: { main: 0x3b3050, dark: 0x1e182b, eye: 0xff5a5a } },
       ai: { kind: 'melee', range: 2.8, windup: 0.3, cooldown: 0.9, coefficient: 1.0, proc: 1 }
     }),
@@ -141,7 +141,7 @@
       id: 'beetle_guard', name: 'Beetle Guard',
       health: 480, damage: 12, moveSpeed: 7, cost: 40, category: 'miniboss',
       radius: 1.0, height: 2.6, stages: [1, 2, 3, 4, 5],
-      shape: { kind: 'quadruped', body: [2.1, 1.3, 1.5], head: 0.8, horns: true, tail: 0,
+      shape: { kind: 'beetleGuard', body: [2.2, 1.25, 1.7], head: 0.66,
                colors: { main: 0x9a7040, dark: 0x5f4526, eye: 0xffd06a } },
       ai: { kind: 'melee', range: 3.6, windup: 0.7, cooldown: 1.8, coefficient: 2.0, proc: 1,
             slam: { radius: 5.5, coefficient: 1.2, proc: 0 } }
@@ -151,7 +151,7 @@
       id: 'clay_templar', name: 'Clay Templar',
       health: 700, damage: 16, moveSpeed: 6, cost: 100, category: 'miniboss',
       radius: 0.8, height: 2.4, stages: [2, 3, 4, 5],
-      shape: { kind: 'biped', size: 1.25, pot: true,
+      shape: { kind: 'clay', size: 1.4,
                colors: { main: 0xa4552f, dark: 0x5c2c17, eye: 0xffb060 } },
       ai: { kind: 'ranged', range: 26, keep: 12, windup: 0.5, cooldown: 2.2, burst: 4,
             shot: { speed: 22, radius: 0.36, coefficient: 0.9, proc: 0.8, color: 0xd9743c, gravity: 4 } }
@@ -161,7 +161,8 @@
       id: 'elder_lemurian', name: 'Elder Lemurian',
       health: 900, damage: 16, moveSpeed: 13, cost: 115, category: 'miniboss',
       radius: 0.9, height: 2.4, stages: [1, 2, 3, 4, 5],
-      shape: { kind: 'quadruped', body: [2.4, 1.0, 0.95], head: 0.8, tail: 2.2, upright: 0.4, horns: true,
+      shape: { kind: 'lemurian', body: [1.7, 0.95, 0.85], head: 0.62, tail: 2.6,
+               horns: true, frill: true,
                colors: { main: 0x7a3a6b, dark: 0x46203f, eye: 0xffd070 } },
       ai: { kind: 'ranged', range: 24, keep: 8, windup: 0.7, cooldown: 2.6, burst: 5,
             melee: { range: 3.2, coefficient: 1.4, cooldown: 1.4 },
@@ -196,7 +197,7 @@
       id: 'beetle_queen', name: 'Beetle Queen', category: 'champion', isBoss: true,
       health: 2100, damage: 25, armor: 20, moveSpeed: 6, cost: 600,
       radius: 1.9, height: 4.2, stages: [1, 2, 3],
-      shape: { kind: 'quadruped', body: [3.4, 2.0, 2.4], head: 1.15, horns: true, tail: 0,
+      shape: { kind: 'beetleQueen', body: [3.2, 1.7, 2.2], head: 0.9,
                colors: { main: 0xa07a44, dark: 0x5f4526, eye: 0xffd06a } },
       ai: { kind: 'boss', keep: 14,
         attacks: [
@@ -213,7 +214,7 @@
       id: 'wandering_vagrant', name: 'Wandering Vagrant', category: 'champion', isBoss: true,
       health: 2100, damage: 6.5, armor: 15, moveSpeed: 6, cost: 600,
       radius: 1.8, height: 4.0, flying: true, hoverHeight: 7.5, stages: [1, 2, 3, 4, 5],
-      shape: { kind: 'orb', size: 1.7, shards: 10, ring: true,
+      shape: { kind: 'vagrant', size: 1.5,
                colors: { main: 0x9fd8ff, glow: 0xe8f6ff, dark: 0x3a5a78 } },
       ai: { kind: 'boss', keep: 24,
         attacks: [
@@ -254,7 +255,7 @@
       id: 'clay_dunestrider', name: 'Clay Dunestrider', category: 'champion', isBoss: true,
       health: 2100, damage: 20, armor: 20, moveSpeed: 9, cost: 600,
       radius: 1.7, height: 4.4, stages: [2, 3, 4, 5],
-      shape: { kind: 'biped', size: 2.6, pot: true,
+      shape: { kind: 'clay', size: 2.5,
                colors: { main: 0xa4552f, dark: 0x4c2313, eye: 0xffb060 } },
       ai: { kind: 'boss', keep: 16,
         attacks: [
@@ -281,7 +282,7 @@
       id: 'mithrix', name: 'Mithrix', category: 'champion', isBoss: true, isFinal: true,
       health: 12000, damage: 40, armor: 20, moveSpeed: 9, cost: 6000,
       radius: 1.6, height: 4.6, stages: [6],
-      shape: { kind: 'biped', size: 2.4, horns: true, claws: true,
+      shape: { kind: 'mithrix', size: 2.0,
                colors: { main: 0xe8e4d8, dark: 0x6a6458, eye: 0xffd070 } },
       ai: { kind: 'boss', keep: 6,
         attacks: [
@@ -306,7 +307,7 @@
       id: 'greater_wisp', name: 'Greater Wisp',
       health: 750, damage: 15, moveSpeed: 7, cost: 200, category: 'miniboss',
       radius: 0.9, height: 2.2, flying: true, hoverHeight: 6.5, stages: [2, 3, 4, 5],
-      shape: { kind: 'orb', size: 1.1, shards: 8, ring: true,
+      shape: { kind: 'wisp', size: 1.15, shards: 9, ring: true,
                colors: { main: 0xff8a3a, glow: 0xffe1a8, dark: 0x7d3410 } },
       ai: { kind: 'ranged', range: 40, keep: 24, windup: 0.9, cooldown: 2.6, burst: 2,
             shot: { speed: 24, radius: 0.7, coefficient: 1.2, proc: 1, color: 0xffb050,

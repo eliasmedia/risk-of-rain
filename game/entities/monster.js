@@ -25,303 +25,26 @@
   const _w = new THREE.Vector3();
   const _aim = new THREE.Vector3();
 
-  /* ---------------------------------------------------------- Modellbau */
-
-  function mat(color) {
-    return new THREE.MeshLambertMaterial({ color: color, flatShading: true });
-  }
-
-  function add(parent, geo, material, x, y, z, role) {
-    const m = new THREE.Mesh(geo, material);
-    m.position.set(x || 0, y || 0, z || 0);
-    m.castShadow = true;
-    if (role) m.userData.role = role;
-    parent.add(m);
-    return m;
-  }
-
-  function joint(parent, x, y, z, role) {
-    const g = new THREE.Group();
-    g.position.set(x, y, z);
-    if (role) g.userData.role = role;
-    parent.add(g);
-    return g;
-  }
-
-  const BOX = (w, h, d) => new THREE.BoxGeometry(w, h, d);
-
-  /* Vierbeiner: Beetle, Lemurian, Bison, Beetle Guard, Elder Lemurian.
-     `upright` hebt den Vorderkörper an — daraus wird aus dem Käfer eine Echse. */
-  function buildQuadruped(s) {
-    const root = new THREE.Group();
-    const c = s.colors;
-    const mMain = mat(c.main), mDark = mat(c.dark), mEye = mat(c.eye);
-    const [L, H, W] = s.body;
-    const lift = s.upright || 0;
-
-    const core = joint(root, 0, H * 0.55 + 0.35, 0, 'core');
-    add(core, BOX(W, H, L), mMain, 0, 0, 0);
-    add(core, BOX(W * 0.72, H * 0.5, L * 0.55), mDark, 0, H * 0.42, -L * 0.1);
-
-    const neck = joint(core, 0, H * 0.2 + lift * H, -L * 0.45, 'head');
-    const hd = s.head;
-    add(neck, BOX(hd * 1.1, hd, hd * 1.35), mMain, 0, 0, -hd * 0.4);
-    add(neck, BOX(hd * 0.7, hd * 0.55, hd * 0.7), mDark, 0, -hd * 0.15, -hd * 1.1);
-    add(neck, BOX(hd * 0.2, hd * 0.2, hd * 0.12), mEye, hd * 0.34, hd * 0.16, -hd * 0.9);
-    add(neck, BOX(hd * 0.2, hd * 0.2, hd * 0.12), mEye, -hd * 0.34, hd * 0.16, -hd * 0.9);
-    if (s.horns) {
-      add(neck, BOX(hd * 0.22, hd * 0.9, hd * 0.22), mDark, hd * 0.55, hd * 0.5, -hd * 0.2)
-        .rotation.z = -0.5;
-      add(neck, BOX(hd * 0.22, hd * 0.9, hd * 0.22), mDark, -hd * 0.55, hd * 0.5, -hd * 0.2)
-        .rotation.z = 0.5;
-    }
-
-    const legLen = H * 0.55 + 0.35;
-    for (let i = 0; i < 4; i++) {
-      const front = i < 2 ? -1 : 1;
-      const side = i % 2 ? 1 : -1;
-      const hip = joint(core, side * W * 0.5, -H * 0.3, front * L * 0.3, 'leg' + i);
-      add(hip, BOX(W * 0.2, legLen, W * 0.2), mDark, 0, -legLen * 0.5, 0);
-      add(hip, BOX(W * 0.26, W * 0.16, W * 0.34), mDark, 0, -legLen, -W * 0.06);
-    }
-
-    if (s.tail) {
-      const tail = joint(core, 0, H * 0.1, L * 0.45, 'tail');
-      let seg = tail;
-      for (let i = 0; i < 3; i++) {
-        const w = W * (0.34 - i * 0.08);
-        const len = s.tail / 3;
-        add(seg, BOX(w, w, len), mMain, 0, 0, len * 0.5);
-        seg = joint(seg, 0, 0, len, 'tail' + i);
-      }
-    }
-    return root;
-  }
-
-  /* Schwebende Kugel: Wisps und Blind Pest. */
-  function buildOrb(s) {
-    const root = new THREE.Group();
-    const c = s.colors;
-    const core = joint(root, 0, s.size * 1.6, 0, 'core');
-    add(core, new THREE.IcosahedronGeometry(s.size, 1), mat(c.main), 0, 0, 0);
-    const glow = new THREE.Mesh(
-      new THREE.IcosahedronGeometry(s.size * 0.62, 1),
-      new THREE.MeshBasicMaterial({ color: c.glow, transparent: true, opacity: 0.85,
-                                    depthWrite: false, blending: THREE.AdditiveBlending })
-    );
-    glow.userData.role = 'glow';
-    core.add(glow);
-
-    const ring = joint(core, 0, 0, 0, 'ring');
-    const mDark = mat(c.dark);
-    for (let i = 0; i < s.shards; i++) {
-      const a = (i / s.shards) * U.TAU;
-      const r = s.size * 1.7;
-      const sh = add(ring, BOX(s.size * 0.3, s.size * 0.75, s.size * 0.3), mDark,
-                     Math.cos(a) * r, Math.sin(a * 2) * s.size * 0.4, Math.sin(a) * r);
-      sh.rotation.set(a, a * 0.7, 0);
-    }
-    if (s.ring) {
-      add(core, new THREE.TorusGeometry(s.size * 2.1, s.size * 0.13, 6, 14), mDark, 0, 0, 0)
-        .rotation.x = Math.PI / 2;
-    }
-    if (s.wings) {
-      for (let k = -1; k <= 1; k += 2) {
-        const w = joint(core, k * s.size * 0.8, s.size * 0.2, 0, 'wing' + (k > 0 ? 1 : 0));
-        add(w, BOX(s.size * 1.4, s.size * 0.08, s.size * 0.8), mDark, k * s.size * 0.7, 0, 0);
-      }
-    }
-    return root;
-  }
-
-  /* Qualle: Kuppel mit Fangfäden. */
-  function buildJelly(s) {
-    const root = new THREE.Group();
-    const c = s.colors;
-    const core = joint(root, 0, s.size * 1.5, 0, 'core');
-    const dome = new THREE.Mesh(
-      new THREE.SphereGeometry(s.size, 10, 6, 0, U.TAU, 0, Math.PI * 0.62),
-      new THREE.MeshLambertMaterial({ color: c.main, flatShading: true,
-                                      transparent: true, opacity: 0.9 })
-    );
-    dome.castShadow = true;
-    core.add(dome);
-    const glow = new THREE.Mesh(
-      new THREE.IcosahedronGeometry(s.size * 0.5, 1),
-      new THREE.MeshBasicMaterial({ color: c.glow, transparent: true, opacity: 0.8,
-                                    depthWrite: false, blending: THREE.AdditiveBlending })
-    );
-    glow.userData.role = 'glow';
-    glow.position.y = -s.size * 0.2;
-    core.add(glow);
-    const mDark = mat(c.dark);
-    for (let i = 0; i < s.tendrils; i++) {
-      const a = (i / s.tendrils) * U.TAU;
-      const t = joint(core, Math.cos(a) * s.size * 0.6, -s.size * 0.1, Math.sin(a) * s.size * 0.6,
-                      'tendril' + i);
-      add(t, BOX(s.size * 0.12, s.size * 1.5, s.size * 0.12), mDark, 0, -s.size * 0.75, 0);
-    }
-    return root;
-  }
-
-  /* Zweibeiner: Imp und Clay Templar. */
-  function buildBiped(s) {
-    const root = new THREE.Group();
-    const c = s.colors;
-    const mMain = mat(c.main), mDark = mat(c.dark), mEye = mat(c.eye);
-    const S = s.size;
-    const core = joint(root, 0, S * 1.05, 0, 'core');
-
-    if (s.pot) {
-      add(core, new THREE.CylinderGeometry(S * 0.5, S * 0.34, S * 0.95, 8), mMain, 0, 0, 0);
-      add(core, new THREE.CylinderGeometry(S * 0.56, S * 0.56, S * 0.12, 8), mDark, 0, S * 0.42, 0);
-    } else {
-      add(core, BOX(S * 0.62, S * 0.85, S * 0.42), mMain, 0, 0, 0);
-      add(core, BOX(S * 0.75, S * 0.28, S * 0.5), mDark, 0, S * 0.35, 0);
-    }
-
-    const neck = joint(core, 0, S * 0.62, 0, 'head');
-    add(neck, BOX(S * 0.4, S * 0.38, S * 0.4), mDark, 0, S * 0.16, 0);
-    add(neck, BOX(S * 0.12, S * 0.1, S * 0.06), mEye, S * 0.12, S * 0.2, -S * 0.2);
-    add(neck, BOX(S * 0.12, S * 0.1, S * 0.06), mEye, -S * 0.12, S * 0.2, -S * 0.2);
-    if (s.horns) {
-      add(neck, BOX(S * 0.1, S * 0.5, S * 0.1), mDark, S * 0.18, S * 0.5, 0).rotation.z = -0.4;
-      add(neck, BOX(S * 0.1, S * 0.5, S * 0.1), mDark, -S * 0.18, S * 0.5, 0).rotation.z = 0.4;
-    }
-
-    for (let k = -1; k <= 1; k += 2) {
-      const sh = joint(core, k * S * 0.42, S * 0.3, 0, 'arm' + (k > 0 ? 1 : 0));
-      add(sh, BOX(S * 0.16, S * 0.62, S * 0.16), mMain, 0, -S * 0.31, 0);
-      if (s.claws) {
-        add(sh, BOX(S * 0.1, S * 0.42, S * 0.1), mDark, 0, -S * 0.78, -S * 0.06).rotation.x = -0.5;
-      }
-      const hip = joint(core, k * S * 0.2, -S * 0.45, 0, 'leg' + (k > 0 ? 1 : 0));
-      add(hip, BOX(S * 0.2, S * 0.62, S * 0.2), mDark, 0, -S * 0.31, 0);
-      add(hip, BOX(S * 0.24, S * 0.12, S * 0.36), mDark, 0, -S * 0.62, -S * 0.06);
-    }
-    return root;
-  }
-
-  /* Golem: massiger Klotz mit einem Auge, das den Laser ankündigt. */
-  function buildGolem(s) {
-    const root = new THREE.Group();
-    const c = s.colors;
-    const mMain = mat(c.main), mDark = mat(c.dark);
-    const S = s.size;
-    const core = joint(root, 0, S * 1.35, 0, 'core');
-    add(core, BOX(S * 1.15, S * 1.05, S * 0.85), mMain, 0, 0, 0);
-    add(core, BOX(S * 1.35, S * 0.35, S * 1.0), mDark, 0, S * 0.45, 0);
-
-    const neck = joint(core, 0, S * 0.6, 0, 'head');
-    add(neck, BOX(S * 0.7, S * 0.5, S * 0.6), mMain, 0, S * 0.2, 0);
-    const eye = new THREE.Mesh(
-      new THREE.IcosahedronGeometry(S * 0.2, 1),
-      new THREE.MeshBasicMaterial({ color: c.eye, transparent: true, opacity: 0.9,
-                                    depthWrite: false, blending: THREE.AdditiveBlending })
-    );
-    eye.userData.role = 'glow';
-    eye.position.set(0, S * 0.2, -S * 0.33);
-    neck.add(eye);
-
-    for (let k = -1; k <= 1; k += 2) {
-      const sh = joint(core, k * S * 0.75, S * 0.25, 0, 'arm' + (k > 0 ? 1 : 0));
-      add(sh, BOX(S * 0.34, S * 0.9, S * 0.34), mDark, 0, -S * 0.45, 0);
-      const hip = joint(core, k * S * 0.34, -S * 0.55, 0, 'leg' + (k > 0 ? 1 : 0));
-      add(hip, BOX(S * 0.38, S * 0.8, S * 0.4), mDark, 0, -S * 0.4, 0);
-    }
-    return root;
-  }
-
-  /* Brass Contraption: Kasten auf einem Bein, mit Lauf. */
-  function buildContraption(s) {
-    const root = new THREE.Group();
-    const c = s.colors;
-    const mMain = mat(c.main), mDark = mat(c.dark);
-    const S = s.size;
-    const core = joint(root, 0, S * 1.7, 0, 'core');
-    add(core, BOX(S * 0.9, S * 0.9, S * 0.9), mMain, 0, 0, 0);
-    add(core, new THREE.CylinderGeometry(S * 0.12, S * 0.18, S * 1.6, 6), mDark, 0, -S * 1.1, 0);
-    add(core, new THREE.CylinderGeometry(S * 0.4, S * 0.4, S * 0.16, 8), mDark, 0, -S * 1.9, 0);
-    add(core, new THREE.CylinderGeometry(S * 0.16, S * 0.16, S * 0.9, 6), mDark, 0, 0, -S * 0.7)
-      .rotation.x = Math.PI / 2;
-    const glow = new THREE.Mesh(
-      new THREE.IcosahedronGeometry(S * 0.17, 1),
-      new THREE.MeshBasicMaterial({ color: c.glow, transparent: true, opacity: 0.9,
-                                    depthWrite: false, blending: THREE.AdditiveBlending })
-    );
-    glow.userData.role = 'glow';
-    glow.position.set(0, 0, -S * 1.1);
-    core.add(glow);
-    return root;
-  }
-
-  /* Mini Mushrum: Stiel und Hut, wächst beim Angriff. */
-  function buildFungus(s) {
-    const root = new THREE.Group();
-    const c = s.colors;
-    const S = s.size;
-    const core = joint(root, 0, S * 0.5, 0, 'core');
-    add(core, new THREE.CylinderGeometry(S * 0.28, S * 0.4, S * 0.9, 7), mat(c.dark), 0, 0, 0);
-    const cap = joint(core, 0, S * 0.5, 0, 'head');
-    add(cap, new THREE.SphereGeometry(S * 0.78, 10, 5, 0, U.TAU, 0, Math.PI * 0.5),
-        mat(c.main), 0, 0, 0);
-    const glow = new THREE.Mesh(
-      new THREE.IcosahedronGeometry(S * 0.22, 1),
-      new THREE.MeshBasicMaterial({ color: c.glow, transparent: true, opacity: 0.8,
-                                    depthWrite: false, blending: THREE.AdditiveBlending })
-    );
-    glow.userData.role = 'glow';
-    glow.position.y = S * 0.35;
-    cap.add(glow);
-    return root;
-  }
-
-  /* Wurm: Kopf plus eine Kette von Gliedern, jedes am vorigen aufgehängt.
-     Die Welle entsteht in der Animation aus einer Phasenverschiebung je
-     Glied — das ist billiger und lesbarer als eine Wegaufzeichnung. */
-  function buildWorm(s) {
-    const root = new THREE.Group();
-    const c = s.colors;
-    const mMain = mat(c.main), mDark = mat(c.dark);
-    const S = s.size;
-    const core = joint(root, 0, S * 1.15, 0, 'core');
-
-    add(core, BOX(S * 1.25, S * 1.05, S * 1.6), mMain, 0, 0, -S * 0.35);
-    add(core, BOX(S * 1.45, S * 0.3, S * 0.5), mDark, 0, S * 0.4, -S * 0.7);
-    for (let k = -1; k <= 1; k += 2) {
-      const kiefer = add(core, BOX(S * 0.22, S * 0.7, S * 0.8), mDark,
-                         k * S * 0.55, -S * 0.15, -S * 1.1);
-      kiefer.rotation.z = -k * 0.3;
-    }
-    const glut = new THREE.Mesh(
-      new THREE.IcosahedronGeometry(S * 0.42, 1),
-      new THREE.MeshBasicMaterial({ color: c.glow, transparent: true, opacity: 0.85,
-                                    depthWrite: false, blending: THREE.AdditiveBlending })
-    );
-    glut.position.set(0, 0, -S * 0.9);
-    glut.userData.role = 'glow';
-    core.add(glut);
-
-    let eltern = core;
-    for (let i = 0; i < s.segments; i++) {
-      const seg = joint(eltern, 0, 0, S * 1.05, 'seg' + i);
-      const w = S * (1.1 - i * 0.075);
-      add(seg, BOX(w, w, S * 1.0), mMain, 0, 0, S * 0.5);
-      add(seg, BOX(w * 1.2, w * 0.22, S * 0.24), mDark, 0, w * 0.4, S * 0.15);
-      eltern = seg;
-    }
-    return root;
-  }
-
-  const BUILDERS = {
-    quadruped: buildQuadruped, orb: buildOrb, jelly: buildJelly,
-    biped: buildBiped, golem: buildGolem, contraption: buildContraption,
-    fungus: buildFungus, worm: buildWorm
-  };
+  /* Die Modelle selbst entstehen in entities/monstermodel.js — dort steht,
+     woran man welche Art erkennt. Hier bleibt nur, was sich bewegt. */
 
   /* Vorlage je Gegnerart, danach nur noch klonen. */
   function template(def) {
-    if (!def._template) def._template = BUILDERS[def.shape.kind](def.shape);
+    if (!def._template) {
+      const g = ROR.MonsterModel.build(def);
+      /* Jedes Modell wird auf seine Trefferzone eingepasst. Sonst müsste ich
+         zwanzig Bauplänen von Hand die richtige Größe anmessen — und beim
+         nächsten Formwechsel wieder. So kann ich am Bauplan die Proportionen
+         ändern, ohne dass Modell und Trefferzone auseinanderlaufen. */
+      const bb = new THREE.Box3().setFromObject(g);
+      const hoch = bb.max.y - bb.min.y;
+      if (hoch > 0.01) g.scale.setScalar(def.height / hoch);
+      /* Die Einpassung sitzt auf einer inneren Gruppe, nicht auf der Wurzel:
+         die Wurzel gehört dem Spawn-Effekt, der von 0.01 auf 1 hochskaliert. */
+      const wurzel = new THREE.Group();
+      wurzel.add(g);
+      def._template = wurzel;
+    }
     return def._template;
   }
 
@@ -988,9 +711,20 @@
     m.walkPhase += dt * (4 + stride * 7);
     const sw = Math.sin(m.walkPhase) * U.clamp(stride, 0, 1.2);
 
-    for (let i = 0; i < 4; i++) {
+    /* Bis zu sechs Beine: Insekten setzen ihre Beine im Dreieck, deshalb die
+       Verschiebung um ein Drittel statt nur vor und zurück. */
+    for (let i = 0; i < 6; i++) {
       const leg = parts['leg' + i];
-      if (leg) leg.rotation.x = (i % 2 ? sw : -sw) * 0.7;
+      if (!leg) continue;
+      const phase = m.walkPhase + (i % 2) * Math.PI + (i >> 1) * 2.09;
+      leg.rotation.x = Math.sin(phase) * U.clamp(stride, 0, 1.2) * 0.6;
+    }
+    // Fangfäden und Tentakel schwingen träge nach.
+    for (let i = 0; i < 8; i++) {
+      const t = parts['tendril' + i];
+      if (!t) continue;
+      t.rotation.x = Math.sin(m.walkPhase * 0.7 + i) * 0.22;
+      t.rotation.z = Math.cos(m.walkPhase * 0.6 + i * 1.3) * 0.22;
     }
     if (parts.tail) parts.tail.rotation.y = Math.sin(m.walkPhase * 0.6) * 0.35;
     if (parts.wing0) { parts.wing0.rotation.z = Math.sin(m.walkPhase * 4) * 0.5; }

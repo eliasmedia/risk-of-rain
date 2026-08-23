@@ -137,7 +137,20 @@
 
       const themen = ROR.Data.stageByOrder(order);
       const theme = themen[(seed >>> 3) % themen.length];
-      Game.stage = ROR.Stage.load(theme, seed);
+
+      /* Gelaende fest, Inhalt zufaellig.
+
+         Das Gelaende einer Stage entsteht aus `theme.mapSeed` — einer festen
+         Zahl in stages.js. Titanic Plains ist damit in jedem Durchlauf
+         dieselbe Karte: dieselben Plateaus, dieselben Klippen, dieselben
+         Waelder. Man lernt sie, man erkennt sie wieder, man weiss nach ein
+         paar Durchlaeufen, wo es sich lohnt hinzulaufen.
+
+         Alles, was darauf steht, benutzt weiter den Durchlauf-Seed: Kisten,
+         Schreine, der Teleporter, die Gegnerwellen. Sonst waere jeder
+         Durchlauf identisch statt nur wiedererkennbar. Genau diese Trennung
+         macht die Vorlage aus — feste Karte, wechselnder Inhalt. */
+      Game.stage = ROR.Stage.load(theme, theme.mapSeed !== undefined ? theme.mapSeed : seed);
       ROR.Projectiles.init();
       ROR.Loot.init();
       ROR.Deployables.init();

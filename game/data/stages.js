@@ -18,10 +18,11 @@
     {
       id: 'titanic_plains',
       name: 'Titanic Plains',
+      mapSeed: 464660,   // festes Gelaende, siehe main.js
       subtitle: 'Ebene der Riesen',
       order: 1,
-      size: 300,
-      res: 176,
+      size: 600,
+      res: 340,
       seaLevel: -30,
 
       /* Ein Tisch auf einem Berg: innen weit und fast eben, am Rand bricht er
@@ -36,11 +37,11 @@
       terrain: {
         shape: 'plateau',
         baseHeight: 9,
-        hillAmp: 20,       hillScale: 58,
-        detailAmp: 2.4,    detailScale: 15,
-        ridgeAmp: 36,      ridgeScale: 74,
+        hillAmp: 20,       hillScale: 104,
+        detailAmp: 2.4,    detailScale: 27,
+        ridgeAmp: 36,      ridgeScale: 133,
         mesaLow: 0.45,     mesaHigh: 0.585,    mesaEdge: 0.035,
-        maskScale: 92,     maskBias: -0.12,    maskWidth: 0.20,
+        maskScale: 166,     maskBias: -0.12,    maskWidth: 0.20,
         terraceStep: 6,    terraceSharp: 0.30,
         rimInner: 0.72,    rimOuter: 0.81,     rimLip: 6,
         shoreWarp: 0.20,   drop: 150
@@ -52,7 +53,7 @@
       palette: {
         grade: { saettigung: 0.94, kontrast: 1.05, leuchten: 0.75, vignette: 0.40, hauch: 0x203040 },
         sky: 0x7ba2c2, horizon: 0xdcdfd2,
-        fog: 0xdcdfd2, fogDensity: 0.0026,
+        fog: 0xdcdfd2, fogDensity: 0.00130,
         sun: 0xffe6bc, sunIntensity: 2.5,
         ambientSky: 0xc0d2dc, ambientGround: 0x6d6a48, ambientIntensity: 1.9,
         fillIntensity: 0.6,
@@ -64,9 +65,9 @@
         trunk: 0x4b3b2b, leaf: 0x4c6f2c, leafAlt: 0x648c38
       },
 
-      props: { detail: 70000, kinds: [
-        { kind: 'fels', count: 90 }, { kind: 'nadelbaum', count: 115 },
-        { kind: 'monolith', count: 18 }, { kind: 'scholle', count: 12 }
+      props: { detail: 280000, kinds: [
+        { kind: 'fels', count: 360 }, { kind: 'nadelbaum', count: 460 },
+        { kind: 'monolith', count: 72 }, { kind: 'scholle', count: 48 }
       ] },
       sun: { azimuth: 2.35, elevation: 0.40 }
     },
@@ -74,10 +75,11 @@
     {
       id: 'abandoned_aqueduct',
       name: 'Abandoned Aqueduct',
+      mapSeed: 174573,   // festes Gelaende, siehe main.js
       subtitle: 'Verlassenes Aquädukt',
       order: 2,
-      size: 280,
-      res: 172,
+      size: 560,
+      res: 336,
       seaLevel: -12,
 
       /* Sandsteinterrassen: kleine Stufen, dafür viele. Der Ort ist eine
@@ -90,11 +92,11 @@
       terrain: {
         shape: 'canyon',
         baseHeight: 4,     plateauHeight: 44,
-        hillAmp: 5,        hillScale: 58,
-        detailAmp: 1.3,    detailScale: 13,
-        ridgeAmp: 12,      ridgeScale: 62,
+        hillAmp: 5,        hillScale: 104,
+        detailAmp: 1.3,    detailScale: 23,
+        ridgeAmp: 12,      ridgeScale: 112,
         mesaLow: 0.50,     mesaHigh: 0.60,     mesaEdge: 0.035,
-        maskScale: 78,     maskBias: -0.10,    maskWidth: 0.34,
+        maskScale: 140,     maskBias: -0.10,    maskWidth: 0.34,
         terraceStep: 4,    terraceSharp: 0.12,
         canyonWind: 120,   canyonWobble: 0.62,
         canyonWidth: 0.17, canyonDepth: 45,
@@ -105,7 +107,7 @@
       palette: {
         grade: { saettigung: 0.92, kontrast: 1.06, leuchten: 0.72, vignette: 0.38, hauch: 0x2a2418 },
         sky: 0x9fb4c8, horizon: 0xf0e2c4,
-        fog: 0xf0e2c4, fogDensity: 0.0026,
+        fog: 0xf0e2c4, fogDensity: 0.00130,
         sun: 0xfff0cc, sunIntensity: 2.7,
         ambientSky: 0xe0d8c0, ambientGround: 0x8a7550, ambientIntensity: 2.0,
         fillIntensity: 0.7,
@@ -117,10 +119,10 @@
         trunk: 0x7a6242, leaf: 0x8e8a4a, leafAlt: 0xa39a58
       },
 
-      props: { detail: 9000, kinds: [
-        { kind: 'fels', count: 120 }, { kind: 'totbaum', count: 42 },
-        { kind: 'strauch', count: 95 }, { kind: 'aquaedukt', count: 14 },
-        { kind: 'saeule', count: 26 }, { kind: 'scholle', count: 6 }
+      props: { detail: 36000, kinds: [
+        { kind: 'fels', count: 480 }, { kind: 'totbaum', count: 168 },
+        { kind: 'strauch', count: 380 }, { kind: 'aquaedukt', count: 56 },
+        { kind: 'saeule', count: 104 }, { kind: 'scholle', count: 24 }
       ] },
       sun: { azimuth: 0.9, elevation: 0.55 }
     },
@@ -128,10 +130,11 @@
     {
       id: 'rallypoint_delta',
       name: 'Rallypoint Delta',
+      mapSeed: 318999,   // festes Gelaende, siehe main.js
       subtitle: 'Sammelpunkt Delta',
       order: 3,
-      size: 320,
-      res: 180,
+      size: 640,
+      res: 348,
       seaLevel: 0,
 
       /* Breite, sehr flache Plateaus mit steilen Flanken — die Militärbasis
@@ -141,11 +144,11 @@
       terrain: {
         shape: 'mesa',
         baseHeight: 7,
-        hillAmp: 3.5,      hillScale: 88,
-        detailAmp: 1.0,    detailScale: 19,
-        ridgeAmp: 52,      ridgeScale: 96,
+        hillAmp: 3.5,      hillScale: 158,
+        detailAmp: 1.0,    detailScale: 34,
+        ridgeAmp: 52,      ridgeScale: 173,
         mesaLow: 0.505,    mesaHigh: 0.63,     mesaEdge: 0.028,
-        maskScale: 130,    maskBias: -0.06,    maskWidth: 0.26,
+        maskScale: 234,    maskBias: -0.06,    maskWidth: 0.26,
         terraceStep: 9,    terraceSharp: 0.10,
         rimInner: 0.54,    rimOuter: 0.95,
         shoreWarp: 0.22,   drop: 22
@@ -154,7 +157,7 @@
       palette: {
         grade: { saettigung: 0.88, kontrast: 1.08, leuchten: 0.85, vignette: 0.46, hauch: 0x1c2836 },
         sky: 0x6b86a4, horizon: 0xd6dee6,
-        fog: 0xd6dee6, fogDensity: 0.0044,
+        fog: 0xd6dee6, fogDensity: 0.00220,
         sun: 0xdce8f6, sunIntensity: 1.9,
         ambientSky: 0xc8d6e4, ambientGround: 0x6a7280, ambientIntensity: 2.1,
         fillIntensity: 0.7,
@@ -166,10 +169,10 @@
         trunk: 0x3a3630, leaf: 0x2e4636, leafAlt: 0x3d5a44
       },
 
-      props: { detail: 12000, kinds: [
-        { kind: 'fels', count: 70 }, { kind: 'nadelbaum', count: 85 },
-        { kind: 'container', count: 22 }, { kind: 'betonblock', count: 30 },
-        { kind: 'antenne', count: 10 }, { kind: 'scholle', count: 14 }
+      props: { detail: 48000, kinds: [
+        { kind: 'fels', count: 280 }, { kind: 'nadelbaum', count: 340 },
+        { kind: 'container', count: 88 }, { kind: 'betonblock', count: 120 },
+        { kind: 'antenne', count: 40 }, { kind: 'scholle', count: 56 }
       ] },
       sun: { azimuth: 3.6, elevation: 0.28 }
     },
@@ -177,10 +180,11 @@
     {
       id: 'abyssal_depths',
       name: 'Abyssal Depths',
+      mapSeed: 43989,   // festes Gelaende, siehe main.js
       subtitle: 'Abgründige Tiefen',
       order: 4,
-      size: 260,
-      res: 170,
+      size: 520,
+      res: 332,
       seaLevel: -70,
 
       /* Hohe, enge Felsnadeln und tiefe Spalten. Das „Meer" unten ist Lava —
@@ -192,11 +196,11 @@
       terrain: {
         shape: 'cave',
         baseHeight: 4,
-        hillAmp: 6,        hillScale: 42,
-        detailAmp: 2.4,    detailScale: 11,
-        ridgeAmp: 28,      ridgeScale: 56,
+        hillAmp: 6,        hillScale: 76,
+        detailAmp: 2.4,    detailScale: 20,
+        ridgeAmp: 28,      ridgeScale: 101,
         mesaLow: 0.55,     mesaHigh: 0.68,     mesaEdge: 0.045,
-        maskScale: 70,     maskBias: 0.02,     maskWidth: 0.24,
+        maskScale: 126,     maskBias: 0.02,     maskWidth: 0.24,
         terraceStep: 6,    terraceSharp: 0.18,
         rimInner: 0.60,    rimOuter: 0.92,     wallRise: 78,
         ceilHeight: 44,    ceilRough: 17,
@@ -206,7 +210,7 @@
       palette: {
         grade: { saettigung: 1.08, kontrast: 1.02, leuchten: 1.35, vignette: 0.46, hauch: 0x40200e, belichtung: 1.9 },
         sky: 0x140c10, horizon: 0x502218,
-        fog: 0x40201a, fogDensity: 0.0029,
+        fog: 0x40201a, fogDensity: 0.00145,
         /* In einer Höhle gibt es keine Sonne. Das Licht kommt von unten aus
            der Lava — deshalb ist die Richtungslampe fast aus und das
            Umgebungslicht trägt fast alles, warm und von unten eingefärbt. */
@@ -221,10 +225,10 @@
         trunk: 0x2a1a14, leaf: 0x4a2a20, leafAlt: 0x5c3626
       },
 
-      props: { detail: 8000, kinds: [
-        { kind: 'fels', count: 140 }, { kind: 'stalagmit', count: 95 },
-        { kind: 'stalaktit', count: 75 }, { kind: 'kristall', count: 48 },
-        { kind: 'scholle', count: 10 }
+      props: { detail: 32000, kinds: [
+        { kind: 'fels', count: 560 }, { kind: 'stalagmit', count: 380 },
+        { kind: 'stalaktit', count: 300 }, { kind: 'kristall', count: 192 },
+        { kind: 'scholle', count: 40 }
       ] },
       sun: { azimuth: 1.6, elevation: 0.75 }
     },
@@ -232,10 +236,11 @@
     {
       id: 'sky_meadow',
       name: 'Sky Meadow',
+      mapSeed: 377322,   // festes Gelaende, siehe main.js
       subtitle: 'Himmelswiese',
       order: 5,
-      size: 290,
-      res: 176,
+      size: 580,
+      res: 340,
       seaLevel: -28,
 
       /* Schwebende Wiese über den Wolken. Das „Meer" ist Wolkenweiß und
@@ -245,11 +250,11 @@
       terrain: {
         shape: 'islands',
         baseHeight: 6,
-        hillAmp: 6.5,      hillScale: 56,
-        detailAmp: 1.5,    detailScale: 16,
-        ridgeAmp: 30,      ridgeScale: 68,
+        hillAmp: 6.5,      hillScale: 101,
+        detailAmp: 1.5,    detailScale: 29,
+        ridgeAmp: 30,      ridgeScale: 122,
         mesaLow: 0.53,     mesaHigh: 0.66,     mesaEdge: 0.04,
-        maskScale: 92,     maskBias: -0.04,    maskWidth: 0.30,
+        maskScale: 166,     maskBias: -0.04,    maskWidth: 0.30,
         terraceStep: 5,    terraceSharp: 0.15,
         islandScale: 84,   islandBias: -0.13,  islandEdge: 0.13,
         rimInner: 0.56,    rimOuter: 0.88,
@@ -259,7 +264,7 @@
       palette: {
         grade: { saettigung: 1.02, kontrast: 1.03, leuchten: 1.00, vignette: 0.36, hauch: 0x2a1c38 },
         sky: 0x6a5a9c, horizon: 0xf0c8d8,
-        fog: 0xf0c8d8, fogDensity: 0.0030,
+        fog: 0xf0c8d8, fogDensity: 0.00150,
         sun: 0xffd8c0, sunIntensity: 2.3,
         ambientSky: 0xd8c0e0, ambientGround: 0x5c6a48, ambientIntensity: 2.0,
         fillIntensity: 0.75,
@@ -271,10 +276,10 @@
         trunk: 0x54405a, leaf: 0x5e8c50, leafAlt: 0x86a860
       },
 
-      props: { detail: 13000, kinds: [
-        { kind: 'fels', count: 70 }, { kind: 'laubbaum', count: 80 },
-        { kind: 'nadelbaum', count: 28 }, { kind: 'strauch', count: 60 },
-        { kind: 'felsscherbe', count: 26 }, { kind: 'scholle', count: 24 }
+      props: { detail: 52000, kinds: [
+        { kind: 'fels', count: 280 }, { kind: 'laubbaum', count: 320 },
+        { kind: 'nadelbaum', count: 112 }, { kind: 'strauch', count: 240 },
+        { kind: 'felsscherbe', count: 104 }, { kind: 'scholle', count: 96 }
       ] },
       sun: { azimuth: 5.1, elevation: 0.34 }
     }

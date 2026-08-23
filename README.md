@@ -26,7 +26,10 @@ Commencement, Elites, Mithrix, Spielstand, Klang und Touch-Steuerung.
 | 8 | Menüs, Freischaltungen, Logbuch, Spielstand | ✅ fertig |
 | 9 | Bildnachbearbeitung, prozedurale Musik, Trefferfeedback | ✅ fertig |
 | 10 | Touch-Steuerung fürs Handy | ✅ fertig |
-| 11 | Grafik-Überarbeitung: alle Modelle, Gelände-Detail, Materialien | offen |
+| 11a | Weltform je Stage, Steigungsgrenze | ✅ fertig |
+| 11b | Bewuchs und Detailschicht je Biom | offen |
+| 11c | Gegnermodelle mit eigener Silhouette | offen |
+| 11d | Figuren und Waffen mit Bewegung | offen |
 
 ## Steuerung
 
@@ -134,11 +137,28 @@ Neue Dateien dort eintragen.
 derselben Funktion in `terrain.js`. Ob jemand irgendwo stehen darf, ist daraus
 direkt ableitbar (`heightAt`, `slopeAt`) und wird nicht getrennt gepflegt.
 
-**Tafelberge statt Buckel.** Zwei harte Schwellen (`mesaLow`, `mesaHigh`) auf
-demselben Rauschfeld ergeben Stufen mit waagerechtem Deckel und steiler Flanke.
-Eine gröbere Maske entscheidet, *wo* es Tafelberge gibt; weil sie den Betrag
-skaliert, laufen die Plateaus an ihren Rändern von selbst als begehbare Rampe
-aus. Gratrauschen allein gäbe nur Spitzen.
+**Jede Stage hat eine eigene Grundform, nicht nur eine andere Farbe.**
+`T.shape` entscheidet, *welche Art Ort* entsteht — fünf Landschaftsideen, alle
+über dieselbe Funktion `rawHeight(x, z)`:
+
+| Form | Wo | Idee |
+|---|---|---|
+| `plateau` | Titanic Plains, Commencement | Tisch auf einem Berg, ringsum senkrecht in den Abgrund |
+| `canyon` | Abandoned Aqueduct | Wüstenhochland, in das sich zwei Schluchten gegraben haben |
+| `cave` | Abyssal Depths | Boden *und* Decke, oben geschlossen — es gibt keinen Himmel |
+| `mesa` | Rallypoint Delta | Terrassen mit waagerechtem Deckel und steiler Flanke |
+| `islands` | Sky Meadow, Bazaar | getrennte Schollen, dazwischen Leere |
+
+Der verzerrte Radius, der die Kartengrenze bestimmt, läuft über **zwei**
+Maßstäbe: die grobe Welle gibt ihr den Umriss, die feine die Zacken. Mit nur
+einer war der Rand der Hochebene ein sauberer Kreis und das Ganze sah aus wie
+eine Torte.
+
+**Steile Wände sind Wände.** Gemessen wird die *Neigung*, nicht der
+Höhenunterschied je Bild — der hängt am Tempo, die Neigung nicht. Über 60°
+geht es nicht mehr hinauf; wer trotzdem hoch will, braucht einen Sprung, einen
+Satz oder den Umweg. Blockiert wird gleitend (erst nur X, dann nur Z), damit
+man an der Wand entlangrutscht statt daran zu kleben.
 
 **Zwei Kollisionsformen, mehr nicht.** Neben dem Gelände gibt es nur stehende
 Zylinder und Kästen. `stage.js` beantwortet damit alle Fragen — `supportAt`,

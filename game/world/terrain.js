@@ -34,38 +34,144 @@
 
       /* ------------------------------------------------ Die Höhenfunktion */
 
-      function rawHeight(x, z) {
-        // Küstenabfall. Der Radius wird verrauscht, sonst ist die Insel rund.
-        const warp = n.fbm(x / 90, z / 90, 2) * T.shoreWarp;
-        const r = Math.sqrt(x * x + z * z) / half + warp;
-        const land = U.smoothstep(T.shoreOuter, T.shoreInner, r);
+      /* ================================================================
+         Die Grundform einer Stage.
 
-        const hills = n.fbm(x / T.hillScale, z / T.hillScale, 4) * T.hillAmp;
-        const detail = n.fbm(x / T.detailScale, z / T.detailScale, 3) * T.detailAmp;
+         Bis hierher war jede Stage dieselbe Insel mit anderen Farben — und
+         genau so sah sie auch aus. Jetzt entscheidet `T.shape`, *welche Art
+         Ort* entsteht; die Parameter darunter stimmen ihn nur noch ab.
 
-        // Wo stehen Plateaus? Eine eigene, gröbere Maske entscheidet das. Sie
-        // wird mit dem Landanteil multipliziert, damit an der Küste keine
-        // Klippen ins Wasser ragen.
+           plateau  Hochebene auf einem Berg, ringsum senkrecht in den Abgrund
+           canyon   Wüstenhochland, in das sich eine Schlucht gegraben hat
+           cave     Höhle mit Boden und Decke, oben geschlossen
+           mesa     Terrassenlandschaft mit Tafelbergen
+           islands  getrennte Schwebeinseln mit Leere dazwischen
+
+         Alle liefern dieselbe Funktion `rawHeight(x, z)`. Was sich
+         unterscheidet, ist die Landschaftsidee dahinter.                */
+
+      /* Verzerrter Abstand zur Mitte. Zwei Maßstäbe, und das ist der Punkt:
+         die grobe Welle gibt der Kartengrenze ihren Umriss, die feine ihre
+         Zacken. Mit nur einer war der Rand der Hochebene ein sauberer Kreis
+         und das Ganze sah aus wie eine Torte. */
+      function radius(x, z) {
+        const grob = n.fbm(x / 115, z / 115, 2) * T.shoreWarp;
+        const fein = n.fbm(x / 31, z / 31, 3) * T.shoreWarp * 0.42;
+        return Math.sqrt(x * x + z * z) / half + grob + fein;
+      }
+
+      function grundwellen(x, z) {
+        return n.fbm(x / T.hillScale, z / T.hillScale, 4) * T.hillAmp
+             + n.fbm(x / T.detailScale, z / T.detailScale, 3) * T.detailAmp;
+      }
+
+      /* Tafelberge: zwei harte Schwellen auf demselben Rauschfeld ergeben
+         Stufen mit waagerechtem Deckel und steiler Flanke. */
+      function tafeln(x, z, staerke) {
         const m = n.fbm(x / T.maskScale, z / T.maskScale, 3);
-        const mask = U.smoothstep(T.maskBias, T.maskBias + T.maskWidth, m) * land;
-
-        // Zwei harte Schwellen auf demselben Rauschfeld: das ergibt zwei
-        // Stufen mit waagerechtem Deckel und steiler Flanke. Gratrauschen
-        // allein gäbe nur Spitzen — genau das, was hier nicht hingehört.
-        // Weil die Maske den Betrag skaliert, laufen die Tafelberge an ihren
-        // Rändern von selbst als begehbare Rampe aus.
+        const maske = U.smoothstep(T.maskBias, T.maskBias + T.maskWidth, m) * staerke;
         const f = n.fbm(x / T.ridgeScale, z / T.ridgeScale, 3) * 0.5 + 0.5;
-        const mesa = mask * T.ridgeAmp * (
+        return { maske: maske, hoehe: maske * T.ridgeAmp * (
           U.smoothstep(T.mesaLow, T.mesaLow + T.mesaEdge, f) * 0.55 +
-          U.smoothstep(T.mesaHigh, T.mesaHigh + T.mesaEdge, f) * 0.45
-        );
+          U.smoothstep(T.mesaHigh, T.mesaHigh + T.mesaEdge, f) * 0.45) };
+      }
 
-        let h = T.baseHeight + hills + detail + mesa;
-        h = h * land - (1 - land) * T.drop;
+      function terrassiert(h, maske) {
+        return U.lerp(h, terrace(h, T.terraceStep, T.terraceSharp), maske);
+      }
 
-        // Terrassieren ganz zum Schluss — davor würde der Küstenabfall die
-        // Stufen wieder schräg ziehen und alles sähe aus wie geknetet.
-        return U.lerp(h, terrace(h, T.terraceStep, T.terraceSharp), mask);
+      const FORMEN = {
+
+        /* Ein Tisch auf einem Berg. Innen fast eben, damit man Übersicht hat;
+           am Rand bricht er auf wenigen Metern senkrecht ab. Der Abgrund
+           *ist* die Kartengrenze — kein Wasser, keine sanfte Böschung. */
+        plateau(x, z) {
+          const r = radius(x, z);
+          const kante = U.smoothstep(T.rimInner, T.rimOuter, r);
+          const t = tafeln(x, z, 0.7);
+          let h = T.baseHeight + grundwellen(x, z) * 0.55 + t.hoehe;
+          h = terrassiert(h, t.maske * 0.8);
+          // Ein umlaufender Wall kurz vor der Kante: man sieht den Abgrund,
+          // bevor man hineinläuft.
+          h += U.smoothstep(T.rimInner - 0.10, T.rimInner, r)
+             * (1 - kante) * T.rimLip;
+          return h - kante * T.drop;
+        },
+
+        /* Wüstenhochland mit einer gewundenen Schlucht. Gelaufen wird unten,
+           die Wände stehen links und rechts — daher kommt das Gefühl von
+           Enge, das ein offenes Feld nie hat. */
+        canyon(x, z) {
+          const r = radius(x, z);
+          const oben = T.baseHeight + T.plateauHeight + grundwellen(x, z) * 0.5;
+
+          // Hauptschlucht: ein verzerrter Streifen quer über die Karte.
+          const w1 = n.fbm(x / T.canyonWind, z / T.canyonWind, 2);
+          const p1 = Math.abs(z / half - w1 * T.canyonWobble);
+          // Schmale Sohle, kurze Flanke: erst dadurch wird aus der Mulde eine
+          // Schlucht. Der Übergang darf nur wenige Meter breit sein.
+          const tal1 = U.smoothstep(T.canyonWidth, T.canyonWidth * 0.38, p1);
+
+          // Nebenschlucht quer dazu, damit es Kreuzungen gibt.
+          const w2 = n.fbm(x / (T.canyonWind * 0.7) + 40, z / (T.canyonWind * 0.7), 2);
+          const p2 = Math.abs(x / half - w2 * T.canyonWobble);
+          const tal2 = U.smoothstep(T.canyonWidth * 0.85, T.canyonWidth * 0.32, p2);
+
+          const tal = Math.max(tal1, tal2);
+          let h = oben - tal * T.canyonDepth;
+          // Terrassen an den Wänden — das Aquädukt-Motiv.
+          h = terrassiert(h, 0.85);
+          return h - U.smoothstep(T.rimInner, T.rimOuter, r) * T.drop;
+        },
+
+        /* Höhle: Boden und Decke. Oben ist zu, es gibt keinen Himmel — das
+           allein macht den Ort. Die Decke wird als eigenes Netz gebaut. */
+        cave(x, z) {
+          const r = radius(x, z);
+          const t = tafeln(x, z, 0.6);
+          let h = T.baseHeight + grundwellen(x, z) + t.hoehe * 0.6;
+          h = terrassiert(h, t.maske * 0.7);
+          // Zum Rand hin steigt der Boden an und trifft die Decke: die Höhle
+          // schließt sich, statt ins Nichts auszulaufen.
+          return h + U.smoothstep(T.rimInner, T.rimOuter, r) * T.wallRise;
+        },
+
+        /* Terrassenlandschaft: das, was die Stages vorher alle waren —
+           hier bleibt es, weil es zu Rallypoint passt. */
+        mesa(x, z) {
+          const r = radius(x, z);
+          const land = U.smoothstep(T.rimOuter, T.rimInner, r);
+          const t = tafeln(x, z, 1);
+          let h = T.baseHeight + grundwellen(x, z) + t.hoehe;
+          h = h * land - (1 - land) * T.drop;
+          return terrassiert(h, t.maske);
+        },
+
+        /* Getrennte Schollen mit Leere dazwischen. Der Sprung von Insel zu
+           Insel ist hier der Weg. */
+        islands(x, z) {
+          const r = radius(x, z);
+          const feld = n.fbm(x / T.islandScale, z / T.islandScale, 3);
+          const insel = U.smoothstep(T.islandBias, T.islandBias + T.islandEdge, feld)
+                      * U.smoothstep(T.rimOuter, T.rimInner, r);
+          const t = tafeln(x, z, 0.8);
+          let h = T.baseHeight + grundwellen(x, z) + t.hoehe * 0.7;
+          h = terrassiert(h, t.maske * 0.6);
+          return h * insel - (1 - insel) * T.drop;
+        }
+      };
+
+      const form = FORMEN[T.shape] || FORMEN.mesa;
+      function rawHeight(x, z) { return form(x, z); }
+
+      /* Die Höhlendecke. Sie folgt dem Boden mit Abstand, senkt sich in der
+         Mitte etwas ab und trifft am Rand auf den ansteigenden Boden. */
+      function ceilingHeight(x, z) {
+        const r = radius(x, z);
+        const boden = rawHeight(x, z);
+        const zacken = n.ridged(x / 26, z / 26, 3) * T.ceilRough;
+        const bogen = T.ceilHeight * (1 - U.smoothstep(0.2, T.rimOuter, r) * 0.75);
+        return boden + Math.max(6, bogen - zacken);
       }
 
       /* ----------------------------------------------- Gitter und Geometrie */
@@ -130,14 +236,48 @@
       mesh.receiveShadow = true;
       mesh.name = 'terrain';
 
+      /* ------------------------------------------------------- Höhlendecke */
+
+      /* Nur bei `shape: 'cave'`. Dasselbe Gitter wie der Boden, nur höher und
+         nach innen gedreht — dadurch sieht man sie von unten und sie wirft
+         Schatten auf den Boden. */
+      let decke = null;
+      if (T.shape === 'cave') {
+        const dgeo = new THREE.PlaneGeometry(size, size, res >> 1, res >> 1);
+        dgeo.rotateX(Math.PI / 2);          // Normalen nach unten
+        const dpos = dgeo.attributes.position;
+        const dcol = new Float32Array(dpos.count * 3);
+        const cDeckeHell = new THREE.Color(P.rock);
+        const cDeckeDunkel = new THREE.Color(P.rockDark);
+        for (let k = 0; k < dpos.count; k++) {
+          const x = dpos.getX(k), z = dpos.getZ(k);
+          dpos.setY(k, ceilingHeight(x, z));
+        }
+        dpos.needsUpdate = true;
+        dgeo.computeVertexNormals();
+        for (let k = 0; k < dpos.count; k++) {
+          const x = dpos.getX(k), z = dpos.getZ(k);
+          const g = n.fbm(x / 13, z / 13, 2) * 0.5 + 0.5;
+          c.copy(cDeckeDunkel).lerp(cDeckeHell, g * 0.5);
+          dcol[k * 3] = c.r; dcol[k * 3 + 1] = c.g; dcol[k * 3 + 2] = c.b;
+        }
+        dgeo.setAttribute('color', new THREE.BufferAttribute(dcol, 3));
+        decke = new THREE.Mesh(dgeo, new THREE.MeshLambertMaterial({
+          vertexColors: true, flatShading: true, side: THREE.DoubleSide
+        }));
+        decke.name = 'decke';
+        decke.receiveShadow = true;
+      }
+
       /* ------------------------------------------------------------ Wasser */
 
-      const water = new THREE.Mesh(
+      /* Die Ebene unter allem. Je nach Stage ist das Meer, Lava, Wolken —
+         oder in einer Höhle gar nichts. */
+      const water = T.shape === 'cave' ? null : new THREE.Mesh(
         new THREE.PlaneGeometry(6000, 6000, 1, 1).rotateX(-Math.PI / 2),
         new THREE.MeshBasicMaterial({ color: P.water, fog: true })
       );
-      water.position.y = sea;
-      water.name = 'water';
+      if (water) { water.position.y = sea; water.name = 'water'; }
 
       /* ------------------------------------------------------- Abfragen */
 
@@ -195,9 +335,15 @@
         return null;
       }
 
+      /* Wie hoch ist es hier drüber zu? Ohne Decke unendlich. */
+      function ceilingAt(x, z) {
+        return decke ? ceilingHeight(x, z) : Infinity;
+      }
+
       return {
-        theme, mesh, water, heights, size, res, half, cell, seaLevel: sea,
-        heightAt, normalAt, slopeAt, isWalkable, inBounds, findSpot, rawHeight
+        theme, mesh, water, decke, heights, size, res, half, cell, seaLevel: sea,
+        heightAt, normalAt, slopeAt, isWalkable, inBounds, findSpot, rawHeight,
+        ceilingAt, hatDecke: !!decke
       };
     }
   };

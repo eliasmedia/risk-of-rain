@@ -54,7 +54,9 @@
 
       const root = new THREE.Group();
       root.name = 'stage';
-      root.add(terrain.mesh, terrain.water, props.group);
+      root.add(terrain.mesh, props.group);
+      if (terrain.water) root.add(terrain.water);
+      if (terrain.decke) root.add(terrain.decke);
 
       /* --------------------------------------------------------- Himmel */
 
@@ -82,7 +84,8 @@
       );
       sky.frustumCulled = false;
       sky.renderOrder = -1;
-      root.add(sky);
+      // In einer Höhle gibt es keinen Himmel — die Decke ist der Himmel.
+      if (!terrain.hatDecke) root.add(sky);
 
       /* --------------------------------------------------------- Licht */
 
@@ -169,7 +172,9 @@
         /* Tiefste Unterkante über dem Kopf — verhindert das Durchspringen
            schwebender Plattformen. */
         ceilingAt(x, z, headY) {
-          let best = Infinity;
+          // Die Höhlendecke zählt wie ein Solid über dem Kopf.
+          let best = terrain.ceilingAt(x, z);
+          if (best < headY) best = Infinity;
           const list = near(x, z);
           for (let i = 0; i < list.length; i++) {
             const s = list[i];
@@ -178,6 +183,33 @@
             best = s.y0;
           }
           return best;
+        },
+
+        /* Steigungsgrenze des Geländes.
+
+           Bis hierher trug `supportAt` die Figur auf *jede* Höhe, die unter
+           ihr lag — also auch eine senkrechte Wand hinauf, sobald man
+           dagegenlief. Damit waren Klippen keine Hindernisse und die
+           Bewegungsfähigkeiten ohne Zweck.
+
+           Gemessen wird die Neigung, nicht der Höhenunterschied je Bild:
+           der Höhenunterschied hängt am Tempo, die Neigung nicht. Über
+           `maxSlope` (0.5 ≈ 60°) geht es nicht mehr hinauf. Wer trotzdem
+           hoch will, braucht einen Sprung, einen Satz — oder den Umweg.
+
+           Blockiert wird nicht hart, sondern gleitend: erst nur X, dann nur
+           Z. Dadurch rutscht man an der Wand entlang, statt daran zu kleben. */
+        blockSteep(pos, altX, altZ, feetY, maxSlope) {
+          maxSlope = maxSlope === undefined ? 0.5 : maxSlope;
+          const hoch = function (x, z) {
+            return terrain.heightAt(x, z) - feetY > 0.12
+                && terrain.slopeAt(x, z) > maxSlope;
+          };
+          if (!hoch(pos.x, pos.z)) return false;
+          if (!hoch(pos.x, altZ)) { pos.z = altZ; return true; }
+          if (!hoch(altX, pos.z)) { pos.x = altX; return true; }
+          pos.x = altX; pos.z = altZ;
+          return true;
         },
 
         /* Schiebt eine Figur seitlich aus allem heraus, was zu hoch zum
@@ -230,6 +262,7 @@
             const y = origin.y + dir.y * d;
             const z = origin.z + dir.z * d;
             if (y < terrain.heightAt(x, z) + 0.45) return d;
+            if (y > terrain.ceilingAt(x, z) - 0.4) return d;
             const list = near(x, z);
             for (let i = 0; i < list.length; i++) {
               const s = list[i];

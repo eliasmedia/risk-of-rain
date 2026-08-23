@@ -418,8 +418,13 @@
       if (p.velocity.y < -90) p.velocity.y = -90;
     }
 
+    const altX = p.position.x, altZ = p.position.z;
     p.position.x += p.velocity.x * dt;
     p.position.z += p.velocity.z * dt;
+    // Steile Wände sind Wände. Wer hinauf will, springt oder nimmt den Umweg.
+    if (stage.blockSteep(p.position, altX, altZ, p.position.y)) {
+      p.velocity.x *= 0.6; p.velocity.z *= 0.6;
+    }
     stage.pushOut(p.position, RADIUS, HEIGHT, STEP_UP);
 
     const wasGrounded = p.grounded;

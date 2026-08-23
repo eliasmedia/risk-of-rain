@@ -67,6 +67,13 @@
       ROR.Body.clear();
       ROR.Difficulty.reset(cfg.difficulty || Game.difficultyFromUrl());
 
+      /* Das Modell der alten Figur muss weg, bevor die neue entsteht.
+         Body.clear() räumt nur die Spielwerte auf — die Three-Gruppe hing
+         weiter in der Szene, und so stand nach jedem Neustart ein reglose
+         Kopie des Spielers irgendwo in der Welt herum. */
+      if (Game.player && Game.player.object) {
+        ROR.Engine.scene.remove(Game.player.object);
+      }
       const def = ROR.Data.survivor(cfg.survivor || 'commando');
       Game.player = null;
       Game.buildWorld(1, Game.seed);

@@ -22,20 +22,22 @@
       order: 1,
       size: 300,
       res: 176,
-      seaLevel: 0,
+      seaLevel: -30,
 
+      /* Ein Tisch auf einem Berg: innen weit und fast eben, am Rand bricht er
+         auf wenigen Metern senkrecht ab. Der Wall kurz vor der Kante ist
+         Absicht — man soll den Abgrund sehen, bevor man hineinläuft. */
       terrain: {
-        baseHeight: 5,
-        hillAmp: 5,        hillScale: 64,
-        detailAmp: 1.5,    detailScale: 15,
-        ridgeAmp: 44,      ridgeScale: 78,
-        mesaLow: 0.53,     mesaHigh: 0.655,
-        mesaEdge: 0.05,
-        maskScale: 110,    maskBias: -0.02,    maskWidth: 0.30,
-        terraceStep: 6,    terraceSharp: 0.20,
-        shoreInner: 0.56,  shoreOuter: 0.96,
-        shoreWarp: 0.20,
-        drop: 18
+        shape: 'plateau',
+        baseHeight: 9,
+        hillAmp: 7,        hillScale: 62,
+        detailAmp: 1.7,    detailScale: 15,
+        ridgeAmp: 26,      ridgeScale: 80,
+        mesaLow: 0.56,     mesaHigh: 0.69,     mesaEdge: 0.05,
+        maskScale: 108,    maskBias: 0.02,     maskWidth: 0.26,
+        terraceStep: 5,    terraceSharp: 0.18,
+        rimInner: 0.72,    rimOuter: 0.81,     rimLip: 6,
+        shoreWarp: 0.20,   drop: 150
       },
 
       /* Farbklima: entsättigtes Olivgrün statt Signalgrün, warmes Gestein,
@@ -44,7 +46,7 @@
       palette: {
         grade: { saettigung: 0.94, kontrast: 1.05, leuchten: 0.75, vignette: 0.40, hauch: 0x203040 },
         sky: 0x7ba2c2, horizon: 0xdcdfd2,
-        fog: 0xdcdfd2, fogDensity: 0.0033,
+        fog: 0xdcdfd2, fogDensity: 0.0026,
         sun: 0xffe6bc, sunIntensity: 2.5,
         ambientSky: 0xc0d2dc, ambientGround: 0x6d6a48, ambientIntensity: 1.9,
         fillIntensity: 0.6,
@@ -67,29 +69,34 @@
       order: 2,
       size: 280,
       res: 172,
-      seaLevel: 0,
+      seaLevel: -12,
 
       /* Sandsteinterrassen: kleine Stufen, dafür viele. Der Ort ist eine
          Ruinenlandschaft, keine Berglandschaft — deshalb niedrige Tafelberge
          mit engem Stufenabstand statt weniger großer Klippen. */
+      /* Wüstenhochland, in das sich eine Schlucht gegraben hat. Gelaufen wird
+         unten zwischen den Wänden; die Terrassen an den Flanken sind das
+         Aquädukt-Motiv. Zwei Schluchten kreuzen sich, damit es Abzweigungen
+         gibt statt eines Schlauchs. */
       terrain: {
-        baseHeight: 6,
-        hillAmp: 4,        hillScale: 52,
-        detailAmp: 1.1,    detailScale: 13,
-        ridgeAmp: 30,      ridgeScale: 62,
-        mesaLow: 0.50,     mesaHigh: 0.60,
-        mesaEdge: 0.035,
+        shape: 'canyon',
+        baseHeight: 4,     plateauHeight: 44,
+        hillAmp: 5,        hillScale: 58,
+        detailAmp: 1.3,    detailScale: 13,
+        ridgeAmp: 12,      ridgeScale: 62,
+        mesaLow: 0.50,     mesaHigh: 0.60,     mesaEdge: 0.035,
         maskScale: 78,     maskBias: -0.10,    maskWidth: 0.34,
-        terraceStep: 4,    terraceSharp: 0.13,
-        shoreInner: 0.58,  shoreOuter: 0.97,
-        shoreWarp: 0.16,
-        drop: 14
+        terraceStep: 4,    terraceSharp: 0.12,
+        canyonWind: 120,   canyonWobble: 0.62,
+        canyonWidth: 0.17, canyonDepth: 45,
+        rimInner: 0.86,    rimOuter: 0.98,
+        shoreWarp: 0.13,   drop: 60
       },
 
       palette: {
         grade: { saettigung: 0.92, kontrast: 1.06, leuchten: 0.72, vignette: 0.38, hauch: 0x2a2418 },
         sky: 0x9fb4c8, horizon: 0xf0e2c4,
-        fog: 0xf0e2c4, fogDensity: 0.0031,
+        fog: 0xf0e2c4, fogDensity: 0.0026,
         sun: 0xfff0cc, sunIntensity: 2.7,
         ambientSky: 0xe0d8c0, ambientGround: 0x8a7550, ambientIntensity: 2.0,
         fillIntensity: 0.7,
@@ -116,18 +123,19 @@
 
       /* Breite, sehr flache Plateaus mit steilen Flanken — die Militärbasis
          steht auf ebenen Flächen, dazwischen fällt es hart ab. */
+      /* Breite, sehr flache Terrassen mit steilen Flanken — die Militärbasis
+         steht auf ebenen Flächen, dazwischen fällt es hart ab. */
       terrain: {
+        shape: 'mesa',
         baseHeight: 7,
         hillAmp: 3.5,      hillScale: 88,
         detailAmp: 1.0,    detailScale: 19,
         ridgeAmp: 52,      ridgeScale: 96,
-        mesaLow: 0.505,    mesaHigh: 0.63,
-        mesaEdge: 0.028,
+        mesaLow: 0.505,    mesaHigh: 0.63,     mesaEdge: 0.028,
         maskScale: 130,    maskBias: -0.06,    maskWidth: 0.26,
         terraceStep: 9,    terraceSharp: 0.10,
-        shoreInner: 0.54,  shoreOuter: 0.95,
-        shoreWarp: 0.22,
-        drop: 22
+        rimInner: 0.54,    rimOuter: 0.95,
+        shoreWarp: 0.22,   drop: 22
       },
 
       palette: {
@@ -156,32 +164,38 @@
       order: 4,
       size: 260,
       res: 170,
-      seaLevel: 0,
+      seaLevel: -70,
 
       /* Hohe, enge Felsnadeln und tiefe Spalten. Das „Meer" unten ist Lava —
          dieselbe Ebene, nur anders eingefärbt. Ein echtes Höhlendach würde
          die Kamera unbrauchbar machen; die Dunkelheit macht der Himmel. */
+      /* Eine Höhle: Boden und Decke, oben geschlossen. Zum Rand hin steigt der
+         Boden an und trifft die sinkende Decke — die Höhle schließt sich,
+         statt ins Nichts auszulaufen. Es gibt hier keinen Himmel. */
       terrain: {
+        shape: 'cave',
         baseHeight: 4,
-        hillAmp: 6,        hillScale: 44,
-        detailAmp: 2.2,    detailScale: 11,
-        ridgeAmp: 62,      ridgeScale: 58,
-        mesaLow: 0.55,     mesaHigh: 0.68,
-        mesaEdge: 0.045,
-        maskScale: 72,     maskBias: 0.02,     maskWidth: 0.24,
-        terraceStep: 7,    terraceSharp: 0.18,
-        shoreInner: 0.50,  shoreOuter: 0.92,
-        shoreWarp: 0.26,
-        drop: 26
+        hillAmp: 6,        hillScale: 42,
+        detailAmp: 2.4,    detailScale: 11,
+        ridgeAmp: 28,      ridgeScale: 56,
+        mesaLow: 0.55,     mesaHigh: 0.68,     mesaEdge: 0.045,
+        maskScale: 70,     maskBias: 0.02,     maskWidth: 0.24,
+        terraceStep: 6,    terraceSharp: 0.18,
+        rimInner: 0.60,    rimOuter: 0.92,     wallRise: 78,
+        ceilHeight: 44,    ceilRough: 17,
+        shoreWarp: 0.20,   drop: 0
       },
 
       palette: {
-        grade: { saettigung: 1.06, kontrast: 1.04, leuchten: 1.20, vignette: 0.44, hauch: 0x3a1a10, belichtung: 1.5 },
+        grade: { saettigung: 1.08, kontrast: 1.02, leuchten: 1.35, vignette: 0.46, hauch: 0x40200e, belichtung: 1.9 },
         sky: 0x140c10, horizon: 0x502218,
-        fog: 0x3a1a14, fogDensity: 0.0044,
-        sun: 0xff9a50, sunIntensity: 2.0,
-        ambientSky: 0x503040, ambientGround: 0x6a2c18, ambientIntensity: 1.7,
-        fillIntensity: 0.9,
+        fog: 0x40201a, fogDensity: 0.0029,
+        /* In einer Höhle gibt es keine Sonne. Das Licht kommt von unten aus
+           der Lava — deshalb ist die Richtungslampe fast aus und das
+           Umgebungslicht trägt fast alles, warm und von unten eingefärbt. */
+        sun: 0xff9a50, sunIntensity: 0.8,
+        ambientSky: 0x6a3a30, ambientGround: 0xa04a1c, ambientIntensity: 3.4,
+        fillIntensity: 1.5,
         grass: 0x5c4030, grassDark: 0x32201a,
         rock: 0x8e5c46, rockDark: 0x452820,
         dirt: 0x663c26,
@@ -201,22 +215,24 @@
       order: 5,
       size: 290,
       res: 176,
-      seaLevel: 0,
+      seaLevel: -28,
 
       /* Schwebende Wiese über den Wolken. Das „Meer" ist Wolkenweiß und
          verschwindet im Nebel, sodass die Ränder ins Nichts abfallen. */
+      /* Getrennte Schollen über den Wolken. Der Sprung von Insel zu Insel ist
+         hier der Weg — deshalb die harte Kante am Inselrand. */
       terrain: {
+        shape: 'islands',
         baseHeight: 6,
-        hillAmp: 6.5,      hillScale: 58,
-        detailAmp: 1.4,    detailScale: 16,
-        ridgeAmp: 40,      ridgeScale: 70,
-        mesaLow: 0.52,     mesaHigh: 0.64,
-        mesaEdge: 0.04,
-        maskScale: 96,     maskBias: -0.04,    maskWidth: 0.30,
-        terraceStep: 5.5,  terraceSharp: 0.16,
-        shoreInner: 0.52,  shoreOuter: 0.86,
-        shoreWarp: 0.24,
-        drop: 30
+        hillAmp: 6.5,      hillScale: 56,
+        detailAmp: 1.5,    detailScale: 16,
+        ridgeAmp: 30,      ridgeScale: 68,
+        mesaLow: 0.53,     mesaHigh: 0.66,     mesaEdge: 0.04,
+        maskScale: 92,     maskBias: -0.04,    maskWidth: 0.30,
+        terraceStep: 5,    terraceSharp: 0.15,
+        islandScale: 84,   islandBias: -0.13,  islandEdge: 0.13,
+        rimInner: 0.56,    rimOuter: 0.88,
+        shoreWarp: 0.20,   drop: 95
       },
 
       palette: {
@@ -243,19 +259,22 @@
 
     {
       id: 'bazaar', name: 'Bazaar Between Time', subtitle: 'Zwischen den Zeiten',
-      order: 0, size: 150, res: 120, seaLevel: 0,
+      order: 0, size: 150, res: 120, seaLevel: -24,
       /* Klein, flach und rundum abfallend: ein Marktplatz im Nichts. Hier
          wird nicht gekämpft, hier wird gehandelt. */
+      /* Ein Marktplatz im Nichts: eine kleine Scholle, ringsum Leere. */
       terrain: {
-        baseHeight: 5,
-        hillAmp: 1.6,      hillScale: 40,
-        detailAmp: 0.5,    detailScale: 11,
-        ridgeAmp: 10,      ridgeScale: 46,
-        mesaLow: 0.56,     mesaHigh: 0.70,   mesaEdge: 0.05,
-        maskScale: 70,     maskBias: 0.06,   maskWidth: 0.30,
+        shape: 'islands',
+        baseHeight: 6,
+        hillAmp: 1.8,      hillScale: 40,
+        detailAmp: 0.6,    detailScale: 11,
+        ridgeAmp: 9,       ridgeScale: 44,
+        mesaLow: 0.56,     mesaHigh: 0.72,     mesaEdge: 0.05,
+        maskScale: 66,     maskBias: 0.06,     maskWidth: 0.30,
         terraceStep: 3,    terraceSharp: 0.14,
-        shoreInner: 0.42,  shoreOuter: 0.72, shoreWarp: 0.10,
-        drop: 34
+        islandScale: 56,   islandBias: -0.24,  islandEdge: 0.18,
+        rimInner: 0.44,    rimOuter: 0.72,
+        shoreWarp: 0.08,   drop: 70
       },
       palette: {
         grade: { saettigung: 1.08, kontrast: 1.04, leuchten: 1.30, vignette: 0.48, hauch: 0x241844, belichtung: 1.2 },
@@ -277,19 +296,22 @@
 
     {
       id: 'commencement', name: 'Commencement', subtitle: 'Der Mond',
-      order: 6, size: 240, res: 160, seaLevel: 0,
+      order: 6, size: 240, res: 160, seaLevel: -36,
       /* Kahler Fels, harte Kanten, kein Bewuchs. Am Ende steht nur noch
          der Boden, auf dem gekämpft wird. */
+      /* Der Mond: dieselbe Tischform wie Titanic Plains, aber kahl, härter
+         und mit höherem Wall — hier gibt es nichts als den Boden. */
       terrain: {
-        baseHeight: 6,
+        shape: 'plateau',
+        baseHeight: 7,
         hillAmp: 3,        hillScale: 70,
-        detailAmp: 1.0,    detailScale: 14,
-        ridgeAmp: 46,      ridgeScale: 84,
-        mesaLow: 0.51,     mesaHigh: 0.64,   mesaEdge: 0.03,
-        maskScale: 100,    maskBias: -0.04,  maskWidth: 0.28,
+        detailAmp: 1.1,    detailScale: 14,
+        ridgeAmp: 34,      ridgeScale: 84,
+        mesaLow: 0.52,     mesaHigh: 0.65,     mesaEdge: 0.03,
+        maskScale: 100,    maskBias: -0.04,    maskWidth: 0.28,
         terraceStep: 7,    terraceSharp: 0.11,
-        shoreInner: 0.50,  shoreOuter: 0.90, shoreWarp: 0.18,
-        drop: 30
+        rimInner: 0.68,    rimOuter: 0.78,     rimLip: 9,
+        shoreWarp: 0.19,   drop: 165
       },
       palette: {
         grade: { saettigung: 0.80, kontrast: 1.06, leuchten: 1.10, vignette: 0.52, hauch: 0x14182a, belichtung: 1.25 },

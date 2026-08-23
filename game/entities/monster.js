@@ -681,8 +681,11 @@
 
     m.velocity.y -= GRAVITY * dt;
     const before = pos.x + pos.z;
+    const altX = pos.x, altZ = pos.z;
     pos.x += m.velocity.x * dt;
     pos.z += m.velocity.z * dt;
+    // Gegner klettern ebenso wenig senkrechte Wände hoch wie der Spieler.
+    stage.blockSteep(pos, altX, altZ, pos.y, 0.55);
     stage.pushOut(pos, m.body.radius, m.def.height, 0.7);
     pos.y += m.velocity.y * dt;
 

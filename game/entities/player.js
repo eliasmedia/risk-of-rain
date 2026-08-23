@@ -90,7 +90,8 @@
 
         _walkPhase: 0, _coyote: 0, _jumpBuffer: 0, _airTime: 0,
         _lastFallSpeed: 0, _landTimer: 0, _aimTimer: 0,
-        _gunKick: 0, _dash: null, _combo: 0, _pending: [],
+        _gunKick: 0, _kickOff: 0, _dash: null, _combo: 0, _pending: [],
+        _swing: 0, _swingStark: 0, _swingSeite: 1, _handWechsel: 1,
         _jumpsLeft: 1,
         hurtFlash: 0,
 
@@ -98,7 +99,23 @@
         get maxHealth() { return body.stats.maxHealth; },
         get level() { return body.level; },
 
-        recoil(amount) { p._gunKick = Math.min(1.4, p._gunKick + amount); },
+        /* Der Rückstoßimpuls jeder Fähigkeit. Bei einer Fernwaffe wirft er die
+           Waffe zurück, bei einer Nahkampfwaffe löst er stattdessen einen
+           Hieb aus — so muss keine Fähigkeit wissen, was die Figur trägt. */
+        recoil(amount) {
+          if (p.model && p.model.nahkampf) {
+            p._swing = 1;
+            p._swingStark = U.clamp(amount * 1.6, 0.5, 1.5);
+            p._swingSeite = -p._swingSeite;   // Hiebe wechseln die Seite
+            return;
+          }
+          if (p.model && p.model.gunOff) {
+            // Zwei Pistolen: abwechselnd feuern, wie im Original.
+            p._handWechsel = -p._handWechsel;
+            if (p._handWechsel < 0) { p._kickOff = Math.min(1.4, p._kickOff + amount); return; }
+          }
+          p._gunKick = Math.min(1.4, p._gunKick + amount);
+        },
 
         /* Etwas gleich, aber nicht sofort tun — der zweite Streich von
            Whirlwind, der Nachschlag einer Kombination. */
@@ -564,19 +581,110 @@
       b.hips.rotation.x = U.damp(b.hips.rotation.x, 0, 0.1, dt);
     }
 
-    /* Der Waffenarm hebt sich beim Zielen und wird vom Rückstoß geworfen. */
     if (!p._dash) {
-      const aiming = p._aimTimer > 0;
-      // +1.45 rad bringt den hängenden Arm auf Waagerechte nach vorn.
-      // Der Rückstoß hebt die Mündung, dreht also *weiter* in dieselbe Richtung.
-      const want = aiming ? 1.45 + p._gunKick * 0.30 : (p.grounded ? swing * 0.45 - 0.2 : -0.4);
-      b.arms[1].shoulder.rotation.x = U.damp(b.arms[1].shoulder.rotation.x, want, 0.03, dt);
-      b.arms[1].elbow.rotation.x = U.damp(b.arms[1].elbow.rotation.x, aiming ? 0.1 : 0, 0.05, dt);
+      if (b.nahkampf) hiebPose(p, b, dt, swing);
+      else schussPose(p, b, dt, swing, swing2);
     }
-    b.flash.material.opacity = Math.min(1, p._gunKick);
-    b.flash.scale.setScalar(0.6 + p._gunKick * 0.9);
-    p._gunKick = Math.max(0, p._gunKick - dt * 9);
 
+    blitz(b.flash, p._gunKick);
+    blitz(b.flashOff, p._kickOff);
+    p._gunKick = Math.max(0, p._gunKick - dt * 9);
+    p._kickOff = Math.max(0, p._kickOff - dt * 9);
+    p._swing = Math.max(0, p._swing - dt * 3.4);
     p._landTimer = Math.max(0, p._landTimer - dt);
+  }
+
+  function blitz(f, staerke) {
+    if (!f) return;
+    f.material.opacity = Math.min(1, staerke);
+    f.scale.setScalar(0.6 + staerke * 0.9);
+  }
+
+  /* Fernwaffen: Der Arm hebt sich beim Zielen, und die Waffe selbst wird vom
+     Rückstoß zurückgeworfen und hebt die Mündung. Vorher bewegte sich nur der
+     Arm — die Waffe hing starr daran und wirkte angeklebt. */
+  function schussPose(p, b, dt, swing, swing2) {
+    const aiming = p._aimTimer > 0;
+    // +1.45 rad bringt den hängenden Arm auf Waagerechte nach vorn.
+    const want = aiming ? 1.45 + p._gunKick * 0.3 : (p.grounded ? swing * 0.45 - 0.2 : -0.4);
+    b.arms[1].shoulder.rotation.x = U.damp(b.arms[1].shoulder.rotation.x, want, 0.03, dt);
+    b.arms[1].elbow.rotation.x = U.damp(b.arms[1].elbow.rotation.x, aiming ? 0.1 : 0, 0.05, dt);
+
+    // Zweitwaffe: der linke Arm zielt mit, sonst schwingt er beim Laufen.
+    if (b.gunOff) {
+      const wantL = aiming ? 1.45 + p._kickOff * 0.3 : (p.grounded ? swing2 * 0.45 - 0.2 : -0.4);
+      b.arms[0].shoulder.rotation.x = U.damp(b.arms[0].shoulder.rotation.x, wantL, 0.03, dt);
+      b.arms[0].elbow.rotation.x = U.damp(b.arms[0].elbow.rotation.x, aiming ? 0.1 : 0, 0.05, dt);
+    }
+
+    /* Ruhiges Wiegen der Waffe. Ohne das steht sie bewegungslos im Bild,
+       auch wenn die Figur atmet — daran erkennt man sofort ein starres Modell. */
+    const wiegen = Math.sin(p._walkPhase * 0.45) * 0.035
+                 + Math.sin(p._walkPhase * 1.7) * 0.012;
+    waffeStoss(b.gun, p._gunKick, wiegen);
+    waffeStoss(b.gunOff, p._kickOff, -wiegen);
+  }
+
+  /* Rückstoß an der Waffe: nach hinten geschoben (in Waffenkoordinaten ist das
+     +Z) und die Mündung nach oben gekippt. */
+  function waffeStoss(g, kick, wiegen) {
+    if (!g) return;
+    if (g.userData.wurf) {
+      /* Wurfwaffe: sie schnellt nach vorn und dreht sich um den Schaft,
+         statt zurückgeworfen zu werden. */
+      g.position.z = -kick * 0.16;
+      g.rotation.x = -Math.PI / 2 + kick * 0.5 + wiegen * 0.5;
+      g.rotation.z = wiegen - kick * 0.7;
+      return;
+    }
+    g.position.z = kick * 0.09;
+    g.rotation.x = -Math.PI / 2 - kick * 0.34 + wiegen * 0.5;
+    g.rotation.z = wiegen;
+    if (g.userData.ring) {
+      // Artificer: der Kristall im Ring dreht sich und pulst mit dem Schuss.
+      g.userData.ring.rotation.z += 0.9 * (1 / 60) + kick * 0.12;
+      g.userData.ring.scale.setScalar(1 + kick * 0.25);
+    }
+  }
+
+  /* Nahkampf: Ausholen, Hieb, Nachschwingen — als eine Kurve über den ganzen
+     Körper, nicht nur über den Arm. Die Hüfte dreht mit, sonst sieht der Hieb
+     aus, als käme die Kraft aus dem Handgelenk. */
+  function hiebPose(p, b, dt, swing) {
+    const seite = p._swingSeite;
+    let w;
+    if (p._swing > 0) {
+      const t = 1 - p._swing;
+      if (t < 0.26) {
+        w = -U.smoothstep(0, 1, t / 0.26);              // ausholen
+      } else if (t < 0.56) {
+        w = -1 + 2.6 * U.smoothstep(0, 1, (t - 0.26) / 0.3);  // Hieb
+      } else {
+        w = 1.6 * (1 - U.smoothstep(0, 1, (t - 0.56) / 0.44));
+      }
+      w *= p._swingStark;
+    } else {
+      w = 0;
+    }
+
+    const ruhe = p.grounded ? swing * 0.35 - 0.15 : -0.35;
+    const zielX = p._swing > 0 ? 0.95 + w * 0.5 : ruhe;
+    b.arms[1].shoulder.rotation.x = U.damp(b.arms[1].shoulder.rotation.x, zielX, 0.025, dt);
+    b.arms[1].shoulder.rotation.y = U.damp(b.arms[1].shoulder.rotation.y, -seite * w * 0.85, 0.025, dt);
+    b.arms[1].shoulder.rotation.z = U.damp(b.arms[1].shoulder.rotation.z, seite * w * 0.3, 0.03, dt);
+    b.arms[1].elbow.rotation.x = U.damp(b.arms[1].elbow.rotation.x,
+      p._swing > 0 ? 0.6 - Math.max(0, w) * 0.55 : 0.15, 0.03, dt);
+
+    // Der freie Arm geht gegen, das hält die Figur im Gleichgewicht.
+    b.arms[0].shoulder.rotation.y = U.damp(b.arms[0].shoulder.rotation.y, seite * w * 0.5, 0.04, dt);
+    // Hüftdrehung: die halbe Wucht kommt von hier.
+    b.hips.rotation.y = U.damp(b.hips.rotation.y, -seite * w * 0.3, 0.03, dt);
+
+    // Klinge kippt in die Hiebebene, dazu ein ruhiges Wiegen im Stand.
+    const wiegen = Math.sin(p._walkPhase * 0.45) * 0.05;
+    if (b.gun) {
+      b.gun.rotation.x = -Math.PI / 2 + (p._swing > 0 ? 0.25 : wiegen * 0.6);
+      b.gun.rotation.z = seite * w * 0.55 + wiegen;
+    }
   }
 })(window.ROR);

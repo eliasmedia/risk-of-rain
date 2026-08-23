@@ -141,52 +141,210 @@
 
   /* ------------------------------------------------------------- Waffen */
 
+  /* Die Waffen.
+
+     Alle sind gleich orientiert: Der Griff sitzt im Ursprung, das arbeitende
+     Ende zeigt nach −Z. Damit hängt jede Waffe richtig in einer Hand, deren
+     Unterarm nach unten zeigt, und die Animation muss nicht je Waffe wissen,
+     wo vorn ist.
+
+     Am Ende trägt jede Waffe in `userData.muendung` den Punkt, an dem der
+     Mündungsblitz sitzt, und in `userData.nahkampf`, ob sie geschwungen statt
+     abgefeuert wird. Vorher war die Waffe ein Prisma mit einer leuchtenden
+     Box daran — als Schwert war das eine Neonröhre. */
   function waffe(hand, art, M, c) {
-    if (art === 'glaive') {
-      const g = joint(hand, 0, -0.36, 0);
-      prism(g, { mat: M.metal, tw: 0.05, bw: 0.05, h: 0.5, rx: Math.PI / 2, sides: 4 });
-      const scheibe = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.035, 4, 10),
-        new THREE.MeshBasicMaterial({ color: c.visor, transparent: true, opacity: 0.85,
-                                      depthWrite: false, blending: THREE.AdditiveBlending }));
-      scheibe.position.z = -0.22;
-      g.add(scheibe);
-      return g;
+    const g = joint(hand, 0, -0.33, 0);
+    /* Der Unterarm zeigt nach −Y, gebaut wird aber nach −Z. Diese Drehung
+       legt die Waffenachse auf die Armachse: die Mündung zeigt dorthin, wohin
+       der Arm zeigt, und die Oberseite der Waffe bleibt oben. */
+    g.rotation.x = -Math.PI / 2;
+
+    function muendung(x, y, z) {
+      const j = joint(g, x, y, z);
+      g.userData.muendung = j;
+      return j;
     }
-    if (art === 'nailgun') {
-      const g = joint(hand, 0, -0.34, 0);
-      prism(g, { mat: M.metal, tw: 0.13, bw: 0.16, td: 0.42, bd: 0.46, h: 0.2, z: -0.12, sides: 4 });
-      for (let i = -1; i <= 1; i += 2) {
-        prism(g, { mat: M.coatDark, tw: 0.045, bw: 0.045, h: 0.34, x: i * 0.05,
-                   z: -0.34, rx: Math.PI / 2, sides: 5 });
-      }
-      return g;
-    }
-    if (art === 'wand') {
-      const g = joint(hand, 0, -0.34, 0);
-      prism(g, { mat: M.coatDark, tw: 0.035, bw: 0.05, h: 0.46, rx: -0.35, sides: 5 });
-      glow(g, 0.11, c.visor, 0, -0.24, -0.08);
-      return g;
-    }
+
     if (art === 'sword') {
-      const g = joint(hand, 0, -0.34, 0);
-      prism(g, { mat: M.metal, tw: 0.05, bw: 0.06, h: 0.16, sides: 4 });
-      const klinge = new THREE.Mesh(new THREE.BoxGeometry(0.07, 1.05, 0.14),
-        new THREE.MeshBasicMaterial({ color: c.visor, transparent: true, opacity: 0.75,
+      g.userData.nahkampf = true;
+      // Knauf und umwickelter Griff.
+      prism(g, { mat: M.metal, tw: 0.055, bw: 0.045, td: 0.055, bd: 0.045,
+                 h: 0.07, z: 0.11, rx: -Math.PI / 2, sides: 6 });
+      prism(g, { mat: M.coatDark, tw: 0.036, bw: 0.042, h: 0.2, z: 0.02,
+                 rx: -Math.PI / 2, sides: 6 });
+      for (let i = 0; i < 3; i++) {
+        prism(g, { mat: M.metal, tw: 0.046, bw: 0.046, h: 0.016,
+                   z: 0.075 - i * 0.05, rx: -Math.PI / 2, sides: 6 });
+      }
+      // Parierstange quer zur Klinge — daran erkennt man ein Schwert sofort.
+      prism(g, { mat: M.metal, tw: 0.028, bw: 0.05, td: 0.05, bd: 0.07,
+                 h: 0.34, z: -0.09, rz: Math.PI / 2, sides: 5 });
+      prism(g, { mat: M.metal, tw: 0.05, bw: 0.07, td: 0.05, bd: 0.08,
+                 h: 0.07, z: -0.14, rx: -Math.PI / 2, sides: 5 });
+      /* Klinge: hochkant, breit am Ansatz, spitz am Ende, mit einer dunklen
+         Hohlkehle in der Mitte.
+
+         Zwei Dinge waren beim ersten Versuch falsch. Die Klinge lag flach —
+         dann sieht man von der Seite nur einen Strich. Und die Leuchtkante war
+         dicker als das Metall, also blieb vom Schwert optisch nur der Schein
+         übrig: eine Neonröhre. Jetzt trägt das Metall, und die Schneide ist
+         ein schmaler Streifen an der Unterkante. */
+      prism(g, { mat: M.metal, tw: 0.022, bw: 0.042, td: 0.055, bd: 0.115,
+                 h: 0.84, z: -0.6, rx: -Math.PI / 2, sides: 4 });
+      prism(g, { mat: M.coatDark, tw: 0.03, bw: 0.05, td: 0.022, bd: 0.05,
+                 h: 0.68, z: -0.54, rx: -Math.PI / 2, sides: 4 });
+      // Leuchtende Schneide an der Unterkante, kürzer als die Klinge.
+      const schneide = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.014, 0.7),
+        new THREE.MeshBasicMaterial({ color: c.visor, transparent: true, opacity: 0.95,
                                       depthWrite: false, blending: THREE.AdditiveBlending }));
-      klinge.position.set(0, -0.6, 0);
-      g.add(klinge);
+      schneide.position.set(0, -0.055, -0.56);
+      g.add(schneide);
+      muendung(0, 0, -1.0);
       return g;
     }
-    if (art === 'gauntlet') {
-      const g = joint(hand, 0, -0.32, 0);
-      prism(g, { mat: M.metal, tw: 0.2, bw: 0.17, td: 0.24, bd: 0.2, h: 0.26, y: -0.1, sides: 6 });
-      glow(g, 0.07, c.visor, 0, -0.2, -0.1);
+
+    if (art === 'glaive') {
+      /* Kein Nahkampf: die Huntress wirft die Glaive und schießt zielsuchende
+         Pfeile. Statt eines Hiebbogens bekommt sie deshalb eine Wurfbewegung —
+         die Waffe schnellt nach vorn, statt zurückgestoßen zu werden. */
+      g.userData.wurf = true;
+      // Schaft mit Wicklung, hinten ein Gegengewicht.
+      prism(g, { mat: M.coatDark, tw: 0.036, bw: 0.046, h: 0.9, z: -0.28,
+                 rx: -Math.PI / 2, sides: 6 });
+      prism(g, { mat: M.metal, tw: 0.06, bw: 0.045, h: 0.11, z: 0.2,
+                 rx: -Math.PI / 2, sides: 6 });
+      for (let i = 0; i < 3; i++) {
+        prism(g, { mat: M.metal, tw: 0.05, bw: 0.05, h: 0.024,
+                   z: 0.02 - i * 0.06, rx: -Math.PI / 2, sides: 6 });
+      }
+      /* Die Klinge ist eine Sichel aus drei Gliedern, jedes breit und flach.
+         Als dünne Stäbchen sah die Sichel aus wie ein verbogener Draht — die
+         Fläche muss die Krümmung tragen, nicht die Kante. */
+      const kopf = joint(g, 0, 0, -0.7);
+      prism(kopf, { mat: M.metal, tw: 0.05, bw: 0.075, td: 0.07, bd: 0.11,
+                    h: 0.14, z: -0.06, rx: -Math.PI / 2, sides: 5 });
+      let vor = joint(kopf, 0, 0, -0.12);
+      for (let i = 0; i < 3; i++) {
+        vor.rotation.x = -0.5;
+        const br = 0.155 - i * 0.042;      // Fläche der Sichel
+        const dk = 0.026 - i * 0.006;      // Dicke
+        prism(vor, { mat: M.metal, tw: dk * 0.7, bw: dk, td: br * 0.72, bd: br,
+                     h: 0.23, y: 0.115, sides: 4 });
+        const kante = new THREE.Mesh(new THREE.BoxGeometry(dk * 1.3, 0.23, 0.016),
+          new THREE.MeshBasicMaterial({ color: c.visor, transparent: true, opacity: 0.9,
+                                        depthWrite: false, blending: THREE.AdditiveBlending }));
+        kante.position.set(0, 0.115, -br * 0.5);
+        vor.add(kante);
+        vor = joint(vor, 0, 0.23, 0);
+      }
+      muendung(0, 0.12, -0.95);
       return g;
     }
-    // Pistole
-    const g = joint(hand, 0, -0.34, 0);
-    prism(g, { mat: M.metal, tw: 0.09, bw: 0.11, td: 0.3, bd: 0.34, h: 0.14, z: -0.08, sides: 4 });
-    prism(g, { mat: M.coatDark, tw: 0.07, bw: 0.08, h: 0.15, y: -0.1, z: 0.03, rx: 0.3, sides: 4 });
+
+    if (art === 'launcher') {
+      // Engineer: Granatwerfer mit Trommelmagazin.
+      prism(g, { mat: M.metal, tw: 0.11, bw: 0.13, td: 0.5, bd: 0.44,
+                 h: 0.15, z: -0.16, sides: 5 });
+      // Trommel quer.
+      const tr = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.12, 8), M.coatDark);
+      tr.rotation.z = Math.PI / 2;
+      tr.position.set(0, -0.01, -0.06);
+      g.add(tr);
+      for (let i = 0; i < 5; i++) {
+        const a = (i / 5) * U.TAU;
+        prism(g, { mat: M.metal, tw: 0.026, bw: 0.026, td: 0.026, bd: 0.026,
+                   h: 0.13, y: -0.01 + Math.sin(a) * 0.07, z: -0.06 + Math.cos(a) * 0.07,
+                   rz: Math.PI / 2, sides: 6 });
+      }
+      // Weiter Lauf.
+      prism(g, { mat: M.metal, tw: 0.07, bw: 0.055, h: 0.34, z: -0.36,
+                 rx: -Math.PI / 2, sides: 8 });
+      prism(g, { mat: M.coatDark, tw: 0.085, bw: 0.075, h: 0.07, z: -0.5,
+                 rx: -Math.PI / 2, sides: 8 });
+      // Griff und Schulterstütze.
+      prism(g, { mat: M.coatDark, tw: 0.05, bw: 0.06, td: 0.09, bd: 0.1,
+                 h: 0.19, y: -0.14, z: 0.02, rx: 0.28, sides: 4 });
+      prism(g, { mat: M.coatDark, tw: 0.07, bw: 0.09, td: 0.1, bd: 0.14,
+                 h: 0.2, z: 0.16, rx: -Math.PI / 2, sides: 4 });
+      glow(g, 0.045, c.visor, 0, 0.08, -0.1);
+      muendung(0, 0, -0.56);
+      return g;
+    }
+
+    if (art === 'nailgun') {
+      // MUL-T: schwerer Nagler mit Zuführschiene und zwei Läufen.
+      prism(g, { mat: M.metal, tw: 0.15, bw: 0.17, td: 0.52, bd: 0.46,
+                 h: 0.2, z: -0.18, sides: 5 });
+      // Nagelschiene obenauf.
+      prism(g, { mat: M.coatDark, tw: 0.07, bw: 0.08, td: 0.34, bd: 0.3,
+                 h: 0.07, y: 0.12, z: -0.18, sides: 4 });
+      for (let i = 0; i < 6; i++) {
+        prism(g, { mat: M.metal, tw: 0.012, bw: 0.012, h: 0.09,
+                   x: -0.03 + (i % 3) * 0.03, y: 0.17, z: -0.06 - (i > 2 ? 0.06 : 0),
+                   sides: 4 });
+      }
+      for (let k = -1; k <= 1; k += 2) {
+        prism(g, { mat: M.metal, tw: 0.032, bw: 0.038, h: 0.36,
+                   x: k * 0.055, z: -0.44, rx: -Math.PI / 2, sides: 6 });
+      }
+      // Seitliche Druckflasche.
+      prism(g, { mat: M.coat, tw: 0.06, bw: 0.06, h: 0.24, x: 0.13, y: 0.02,
+                 z: -0.06, rz: 0.3, rx: -Math.PI / 2, sides: 7 });
+      prism(g, { mat: M.coatDark, tw: 0.06, bw: 0.07, td: 0.1, bd: 0.12,
+                 h: 0.2, y: -0.14, z: 0.02, rx: 0.3, sides: 4 });
+      muendung(0, 0, -0.63);
+      return g;
+    }
+
+    if (art === 'focus') {
+      /* Artificer: kein Stab, sondern eine Handschiene mit offenem Ring und
+         einem schwebenden Kristall darin. Der Stab sah aus wie ein Stock. */
+      prism(g, { mat: M.metal, tw: 0.09, bw: 0.11, td: 0.11, bd: 0.13,
+                 h: 0.26, z: 0.1, rx: -Math.PI / 2, sides: 6 });
+      for (let i = 0; i < 3; i++) {
+        prism(g, { mat: M.coatDark, tw: 0.115, bw: 0.115, h: 0.02,
+                   z: 0.16 - i * 0.06, rx: -Math.PI / 2, sides: 6 });
+      }
+      const ring = joint(g, 0, 0, -0.2);
+      const r = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.022, 5, 12), M.metal);
+      ring.add(r);
+      for (let i = 0; i < 3; i++) {
+        const a = (i / 3) * U.TAU;
+        prism(ring, { mat: M.metal, tw: 0.02, bw: 0.03, h: 0.1,
+                      x: Math.cos(a) * 0.09, y: Math.sin(a) * 0.09, z: 0.06,
+                      rx: -Math.PI / 2, sides: 4 });
+      }
+      const kristall = new THREE.Mesh(new THREE.OctahedronGeometry(0.075, 0),
+        new THREE.MeshBasicMaterial({ color: c.visor, transparent: true, opacity: 0.9,
+                                      depthWrite: false, blending: THREE.AdditiveBlending }));
+      kristall.userData.role = 'kristall';
+      ring.add(kristall);
+      ring.userData.role = 'ring';
+      g.userData.ring = ring;
+      muendung(0, 0, -0.3);
+      return g;
+    }
+
+    /* Pistole — auch als Zweitwaffe in der linken Hand. Rahmen, Schlitten,
+       Lauf, Abzugsbügel und ein Korn: fünf Teile, die zusammen als Pistole
+       lesbar sind, statt eines Kastens mit Stiel. */
+    prism(g, { mat: M.metal, tw: 0.055, bw: 0.062, td: 0.3, bd: 0.26,
+               h: 0.07, z: -0.09, sides: 4 });
+    prism(g, { mat: M.coatDark, tw: 0.05, bw: 0.058, td: 0.28, bd: 0.24,
+               h: 0.045, y: 0.055, z: -0.1, sides: 4 });
+    prism(g, { mat: M.metal, tw: 0.022, bw: 0.026, h: 0.14, z: -0.29,
+               rx: -Math.PI / 2, sides: 6 });
+    prism(g, { mat: M.metal, tw: 0.012, bw: 0.016, h: 0.03, y: 0.085, z: -0.2, sides: 4 });
+    // Griff, nach hinten unten geneigt.
+    prism(g, { mat: M.coatDark, tw: 0.05, bw: 0.055, td: 0.07, bd: 0.08,
+               h: 0.19, y: -0.11, z: 0.05, rx: 0.34, sides: 4 });
+    // Abzugsbügel.
+    const buegel = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.011, 4, 8, Math.PI), M.metal);
+    buegel.rotation.y = Math.PI / 2;
+    buegel.rotation.z = Math.PI;
+    buegel.position.set(0, -0.05, -0.05);
+    g.add(buegel);
+    muendung(0, 0.01, -0.36);
     return g;
   }
 
@@ -309,8 +467,18 @@
       }
 
       const gun = waffe(arms[1].elbow, b.weapon || 'pistol', M, c);
-      const flash = glow(arms[1].elbow, 0.16, 0xffe6a0, 0, -0.36, -0.32);
+      /* Der Mündungsblitz sitzt jetzt an der Mündung der Waffe und nicht mehr
+         an einem festen Punkt am Unterarm. Damit wandert er mit, wenn die
+         Waffe vom Rückstoß geworfen wird. */
+      const flash = glow(gun.userData.muendung || gun, 0.16, 0xffe6a0, 0, 0, 0);
       flash.material.opacity = 0;
+      // Zweitwaffe (Commando trägt zwei Pistolen).
+      const gunOff = b.weaponOff ? waffe(arms[0].elbow, b.weaponOff, M, c) : null;
+      let flashOff = null;
+      if (gunOff) {
+        flashOff = glow(gunOff.userData.muendung || gunOff, 0.16, 0xffe6a0, 0, 0, 0);
+        flashOff.material.opacity = 0;
+      }
 
       /* ----------------------------------------------------------- Beine */
 
@@ -344,7 +512,8 @@
       attach.head = neck;
       attach.orbit = joint(hips, 0, 0.55, 0);
 
-      return { root, hips, neck, arms, legs, gun, flash, attach, scale: S };
+      return { root, hips, neck, arms, legs, gun, flash, gunOff, flashOff,
+               nahkampf: !!gun.userData.nahkampf, attach, scale: S };
     }
   };
 })(window.ROR);

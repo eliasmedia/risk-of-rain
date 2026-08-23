@@ -80,7 +80,8 @@
     radius: 0.42, height: 1.85,
 
     /* Mantel mit Schößen, Mütze und Schal: der Soldat von der Stange. */
-    build: { torso: 'coat', head: 'cap', weapon: 'pistol', legs: 'normal', width: 1.0 },
+    build: { torso: 'coat', head: 'cap', weapon: 'pistol', weaponOff: 'pistol',
+             legs: 'normal', width: 1.0 },
 
     colors: {
       coat: 0x39485c, coatDark: 0x2a3648, skin: 0xc79a72,
@@ -255,7 +256,7 @@
 
     /* Breit, Brustplatte, Werkzeuggurt, Rucksack mit Turmteilen. Er sieht
        aus, als könnte er etwas hinstellen — und genau das tut er. */
-    build: { torso: 'armour', head: 'helmet', back: 'backpack', weapon: 'gauntlet',
+    build: { torso: 'armour', head: 'helmet', back: 'backpack', weapon: 'launcher',
              legs: 'normal', width: 1.2, pads: true, gauntlets: true },
 
     colors: { coat: 0xb4772e, coatDark: 0x6f471a, skin: 0xc79a72,
@@ -440,7 +441,7 @@
 
     /* Mantel bis zum Boden, keine sichtbaren Beine, Schubdüsen im Rücken
        und ein Stab mit Kern: sie steht nicht, sie schwebt. */
-    build: { torso: 'robe', head: 'mask', back: 'jets', weapon: 'wand',
+    build: { torso: 'robe', head: 'mask', back: 'jets', weapon: 'focus',
              legs: 'hover', width: 0.9 },
 
     colors: { coat: 0x8e3f7a, coatDark: 0x561f4a, skin: 0xd6a878,

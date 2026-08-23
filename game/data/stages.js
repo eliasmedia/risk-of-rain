@@ -19,7 +19,7 @@
       id: 'titanic_plains',
       name: 'Titanic Plains',
       mapSeed: 464660,   // festes Gelaende, siehe main.js
-      subtitle: 'Ebene der Riesen',
+      subtitle: 'Plain of the Giants',
       order: 1,
       size: 600,
       res: 340,
@@ -76,7 +76,7 @@
       id: 'abandoned_aqueduct',
       name: 'Abandoned Aqueduct',
       mapSeed: 174573,   // festes Gelaende, siehe main.js
-      subtitle: 'Verlassenes Aquädukt',
+      subtitle: 'Abandoned Aqueduct',
       order: 2,
       size: 560,
       res: 336,
@@ -181,7 +181,7 @@
       id: 'abyssal_depths',
       name: 'Abyssal Depths',
       mapSeed: 43989,   // festes Gelaende, siehe main.js
-      subtitle: 'Abgründige Tiefen',
+      subtitle: 'The Abyssal Depths',
       order: 4,
       size: 520,
       res: 332,

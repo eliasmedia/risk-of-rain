@@ -81,7 +81,7 @@
       Game.player = ROR.Player.create(def, {
         x: Game.stage.spawn.x, y: Game.stage.spawn.y + 0.5, z: Game.stage.spawn.z
       });
-      Game.player.onLevelUp = function (lvl) { ROR.HUD.toast('Stufe ' + lvl); };
+      Game.player.onLevelUp = function (lvl) { ROR.HUD.toast('Level ' + lvl); };
       Game.player.onDeath = function () { endRun(); };
       ROR.HUD.buildSkills(def);
       ROR.Menus.hideResults();
@@ -112,7 +112,7 @@
       b.equipment = merk.equipment;
       Game.player.exp = merk.exp;
       Game.player.gold = merk.gold;
-      Game.player.onLevelUp = function (lvl) { ROR.HUD.toast('Stufe ' + lvl); };
+      Game.player.onLevelUp = function (lvl) { ROR.HUD.toast('Level ' + lvl); };
       Game.player.onDeath = function () { endRun(); };
       ROR.Items.rebuild(b);
       b.setLevel(merk.level);
@@ -213,7 +213,7 @@
       if (rest > 0) {
         Game.player.gold = 0;
         Game.player.addExp(rest);
-        ROR.HUD.toast(rest + ' Gold  →  Erfahrung', 'gold');
+        ROR.HUD.toast(rest + ' gold  →  experience', 'gold');
       }
 
       Game.stagesCleared++;
@@ -235,12 +235,12 @@
       const canvas = document.getElementById('gl');
 
       if (!window.THREE) {
-        return fail('Three.js wurde nicht geladen. Liegt game/lib/three.min.js an seinem Platz?');
+        return fail('Three.js did not load. Is game/lib/three.min.js in place?');
       }
       try {
         ROR.Engine.init(canvas);
       } catch (e) {
-        return fail('WebGL lässt sich nicht starten: ' + e.message);
+        return fail('WebGL could not start: ' + e.message);
       }
 
       ROR.Save.load();
@@ -348,7 +348,7 @@
   function fail(message) {
     const box = document.getElementById('hint');
     box.classList.remove('hidden');
-    box.innerHTML = '<b>Start nicht möglich</b><br>' + message;
+    box.innerHTML = '<b>Cannot start</b><br>' + message;
     console.error('[ROR] ' + message);
   }
 

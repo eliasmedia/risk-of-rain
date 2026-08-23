@@ -69,7 +69,7 @@
 {
     id: 'commando',
     name: 'Commando',
-    subtitle: 'Der Anfang',
+    subtitle: 'Where it begins',
     growth: 'flat',
 
     health: 110, healthPerLevel: 33,
@@ -94,7 +94,7 @@
          volle Wirkung, ab 60 m die Hälfte. */
       primary: {
         id: 'double_tap', name: 'Double Tap', glyph: 'M1', color: 0xd8dee3,
-        desc: 'Feuert für 100 % Schaden.',
+        desc: 'Fires for 100 % damage.',
         mode: 'auto', rate: 6, cooldown: 0, charges: 0,
         fire(ctx) {
           ROR.Projectiles.bullet({
@@ -111,7 +111,7 @@
          Gegner um 40 % stärker. */
       secondary: {
         id: 'phase_round', name: 'Phase Round', glyph: 'M2', color: 0x8fd6e8,
-        desc: '300 % Schaden, durchschlägt. Je durchschlagenem Gegner +40 %.',
+        desc: '300 % damage, pierces. +40 % for every enemy it passes through.',
         mode: 'press', cooldown: 3, charges: 1,
         fire(ctx) {
           ROR.Projectiles.spawn({
@@ -129,7 +129,7 @@
       /* Rolle mit Unverwundbarkeit. „Agile": bricht den Sprint nicht ab. */
       utility: {
         id: 'tactical_dive', name: 'Tactical Dive', glyph: 'Shift', color: 0xa9c47a,
-        desc: 'Rolle ein Stück. Währenddessen unverwundbar.',
+        desc: 'Roll a short distance. Invulnerable while rolling.',
         mode: 'press', cooldown: 4, charges: 1, agile: true, cancelsSprint: false,
         fire(ctx) { ctx.player.startDive(); }
       },
@@ -138,7 +138,7 @@
          Dafür steht man dabei fast still. */
       special: {
         id: 'suppressive_fire', name: 'Suppressive Fire', glyph: 'R', color: 0xffc46b,
-        desc: '100 % Schaden je Kugel, betäubt. Eine Sekunde Sperrfeuer.',
+        desc: '100 % damage per bullet, stuns. One second of suppressing fire.',
         mode: 'stance', cooldown: 9, charges: 1, duration: 1.0, rate: 6,
         begin(ctx) { ROR.Buffs.apply(ctx.body, 'suppressing', 1.15); },
         end(ctx) { ROR.Buffs.clear(ctx.body, 'suppressing'); },
@@ -161,7 +161,7 @@
   {
     id: 'huntress',
     name: 'Huntress',
-    subtitle: 'Immer in Bewegung',
+    subtitle: 'Always moving',
     growth: 'flat',
     health: 90, healthPerLevel: 27,
     regen: 1,   regenPerLevel: 0.2,
@@ -184,7 +184,7 @@
     skills: {
       primary: {
         id: 'strafe', name: 'Strafe', glyph: 'M1', color: 0x7cf0c0,
-        desc: 'Zielsuchender Pfeil für 150 % Schaden, alle 0.5 s. Auch im Laufen.',
+        desc: 'Homing arrow for 150 % damage every 0.5 s. Can be fired on the move.',
         mode: 'auto', rate: 2, cooldown: 0, charges: 0, cancelsSprint: false,
         fire(ctx) {
           if (!ctx.lockedOn) return;
@@ -199,7 +199,7 @@
 
       secondary: {
         id: 'laser_glaive', name: 'Laser Glaive', glyph: 'M2', color: 0x9cffd8,
-        desc: '250 % Schaden, springt bis zu sechsmal weiter — je Sprung +10 %.',
+        desc: '250 % damage, bounces up to six times — +10 % per bounce.',
         mode: 'press', cooldown: 7, charges: 1,
         fire(ctx) {
           ROR.Projectiles.spawn({
@@ -214,7 +214,7 @@
 
       utility: {
         id: 'blink', name: 'Blink', glyph: 'Shift', color: 0xa9c47a,
-        desc: 'Verschwinden und ein Stück nach vorn setzen.',
+        desc: 'Vanish and reappear a short way ahead.',
         mode: 'press', cooldown: 7, charges: 1, agile: true, cancelsSprint: false,
         fire(ctx) {
           ctx.player.startDash({ time: 0.28, speed: 6.5, iframes: 0.34,
@@ -226,7 +226,7 @@
 
       special: {
         id: 'arrow_rain', name: 'Arrow Rain', glyph: 'R', color: 0xffc46b,
-        desc: 'Pfeilregen über sechs Sekunden, rund 2090 % Schaden gesamt.',
+        desc: 'Arrow rain over six seconds, around 2090 % damage in total.',
         mode: 'press', cooldown: 12, charges: 1,
         fire(ctx) {
           const ziel = bodenZiel(ctx, 45);
@@ -245,7 +245,7 @@
   {
     id: 'engineer',
     name: 'Engineer',
-    subtitle: 'Stellt sich auf',
+    subtitle: 'Sets up shop',
     growth: 'flat',
     health: 130, healthPerLevel: 39,
     regen: 1,    regenPerLevel: 0.2,
@@ -265,7 +265,7 @@
     skills: {
       primary: {
         id: 'bouncing_grenades', name: 'Bouncing Grenades', glyph: 'M1', color: 0xffd98a,
-        desc: 'Halten lädt bis zu acht Granaten zu je 100 % Schaden.',
+        desc: 'Hold to load up to eight grenades at 100 % damage each.',
         mode: 'charge', chargeTime: 2, cooldown: 0.6, charges: 1,
         fire(ctx, ladung) {
           const anzahl = Math.max(1, Math.round(ladung * 8));
@@ -287,7 +287,7 @@
 
       secondary: {
         id: 'pressure_mines', name: 'Pressure Mines', glyph: 'M2', color: 0xffb060,
-        desc: 'Zweistufige Mine: 300 % Schaden, voll scharf 900 %. Bis zu vier.',
+        desc: 'Two-stage mine: 300 % damage, 900 % once fully armed. Up to four.',
         mode: 'press', cooldown: 8, charges: 4,
         fire(ctx) {
           ROR.Deployables.spawn('mine', ctx.body, bodenZiel(ctx, 16), {
@@ -310,7 +310,7 @@
 
       special: {
         id: 'tr12_turret', name: 'TR12 Gauss Auto-Turret', glyph: 'R', color: 0x9fe4ff,
-        desc: 'Turm mit eigenem Leben. Er erbt alle Items seines Erbauers.',
+        desc: 'Turret with its own health. It inherits every item you carry.',
         mode: 'press', cooldown: 30, charges: 2,
         fire(ctx) {
           ROR.Deployables.spawn('turret', ctx.body, bodenZiel(ctx, 12), {
@@ -327,7 +327,7 @@
   {
     id: 'mult',
     name: 'MUL-T',
-    subtitle: 'Zwei Werkzeuge',
+    subtitle: 'Two tools, no patience',
     growth: 'flat',
     health: 200, healthPerLevel: 60,
     regen: 1,    regenPerLevel: 0.2,
@@ -349,7 +349,7 @@
     skills: {
       primary: {
         id: 'nailgun', name: 'Auto-Nailgun', glyph: 'M1', color: 0xffe066,
-        desc: '12 Nägel je Sekunde für je 70 % Schaden. Proc 0.6.',
+        desc: '12 nails per second for 70 % damage each. Proc 0.6.',
         mode: 'auto', rate: 12, cooldown: 0, charges: 0,
         fire(ctx) {
           ROR.Projectiles.bullet({
@@ -364,7 +364,7 @@
       /* Zweite Waffe desselben Platzes — Retool schaltet um. */
       primaryAlt: {
         id: 'rebar', name: 'Rebar Puncher', glyph: 'M1', color: 0xff9a4a,
-        desc: 'Durchschlagender Betonstahl für 600 % Schaden, alle 1.8 s.',
+        desc: 'Piercing rebar for 600 % damage every 1.8 s.',
         mode: 'auto', rate: 0.556, cooldown: 0, charges: 0,
         fire(ctx) {
           ROR.Projectiles.spawn({
@@ -378,7 +378,7 @@
 
       secondary: {
         id: 'blast_canister', name: 'Blast Canister', glyph: 'M2', color: 0xff7a4a,
-        desc: '220 % Schaden, verstreut fünf Bomben zu je 44 %.',
+        desc: '220 % damage, scatters five bombs at 44 % each.',
         mode: 'press', cooldown: 6, charges: 1,
         fire(ctx) {
           ROR.Projectiles.spawn({
@@ -406,7 +406,7 @@
 
       utility: {
         id: 'transport_mode', name: 'Transport Mode', glyph: 'Shift', color: 0xa9c47a,
-        desc: 'Vorwärtsstürmen mit 200 Rüstung, 250 % Schaden bei Berührung.',
+        desc: 'Charge forward with 200 armor, 250 % damage on contact.',
         mode: 'press', cooldown: 6, charges: 1, agile: true, cancelsSprint: false,
         fire(ctx) {
           ctx.player.startDash({
@@ -418,7 +418,7 @@
 
       special: {
         id: 'retool', name: 'Retool', glyph: 'R', color: 0xffe066,
-        desc: 'Wechselt zwischen Nagelpistole und Betonstahl.',
+        desc: 'Swap between nailgun and rebar.',
         mode: 'swap', cooldown: 0.4,
         fire(ctx) { ctx.player.swapPrimary(); }
       }
@@ -430,7 +430,7 @@
   {
     id: 'artificer',
     name: 'Artificer',
-    subtitle: 'Feuer, Eis und Wucht',
+    subtitle: 'Fire, ice and force',
     growth: 'flat',
     health: 110, healthPerLevel: 33,
     regen: 1,    regenPerLevel: 0.2,
@@ -450,7 +450,7 @@
     skills: {
       primary: {
         id: 'flame_bolt', name: 'Flame Bolt', glyph: 'M1', color: 0xff8a4a,
-        desc: '280 % Schaden und Brand. Bis zu vier Ladungen.',
+        desc: '280 % damage and ignite. Up to four charges.',
         mode: 'press', cooldown: 1.3, charges: 4,
         fire(ctx) {
           const b = ctx.body;
@@ -469,7 +469,7 @@
 
       secondary: {
         id: 'nano_bomb', name: 'Charged Nano-Bomb', glyph: 'M2', color: 0xb0a0ff,
-        desc: 'Aufladen für 400 bis 2000 % Schaden im Umkreis von 14 m.',
+        desc: 'Charge for 400 to 2000 % damage within 14 m.',
         mode: 'charge', chargeTime: 2, cooldown: 5, charges: 1,
         fire(ctx, ladung) {
           const koeff = 4 + 16 * ladung;
@@ -485,7 +485,7 @@
 
       utility: {
         id: 'snapfreeze', name: 'Snapfreeze', glyph: 'Shift', color: 0x9fe4ff,
-        desc: 'Eiswand, die für 100 % Schaden trifft und verlangsamt.',
+        desc: 'Wall of ice that hits for 100 % damage and slows.',
         mode: 'press', cooldown: 12, charges: 1,
         fire(ctx) {
           ROR.Deployables.spawn('zone', ctx.body, bodenZiel(ctx, 22), {
@@ -497,7 +497,7 @@
 
       special: {
         id: 'flamethrower', name: 'Flamethrower', glyph: 'R', color: 0xff6a2a,
-        desc: 'Drei Sekunden Flammenstrahl, rund 2095 % Schaden gesamt.',
+        desc: 'Three seconds of flame, around 2095 % damage in total.',
         mode: 'stance', cooldown: 5, charges: 1, duration: 3, rate: 7.33,
         begin(ctx) { ROR.Buffs.apply(ctx.body, 'suppressing', 3.2); },
         end(ctx) { ROR.Buffs.clear(ctx.body, 'suppressing'); },
@@ -521,7 +521,7 @@
   {
     id: 'mercenary',
     name: 'Mercenary',
-    subtitle: 'Nie am Boden',
+    subtitle: 'Never touches the ground',
     growth: 'flat',
     health: 110, healthPerLevel: 33,
     regen: 1,    regenPerLevel: 0.2,
@@ -541,7 +541,7 @@
     skills: {
       primary: {
         id: 'laser_sword', name: 'Laser Sword', glyph: 'M1', color: 0xbfe8ff,
-        desc: '130 % Schaden. Jeder dritte Streich trifft weit und für 200 %.',
+        desc: '130 % damage. Every third strike reaches wide and hits for 200 %.',
         mode: 'auto', rate: 1.8, cooldown: 0, charges: 0,
         fire(ctx) {
           const p = ctx.player;
@@ -555,7 +555,7 @@
 
       secondary: {
         id: 'whirlwind', name: 'Whirlwind', glyph: 'M2', color: 0x9fe4ff,
-        desc: 'Zwei Streiche ringsum für je 200 % Schaden.',
+        desc: 'Two sweeping strikes for 200 % damage each.',
         mode: 'press', cooldown: 2.5, charges: 1,
         fire(ctx) {
           schwung(ctx, 5.5, Math.PI, 2.0, 1);
@@ -567,7 +567,7 @@
 
       utility: {
         id: 'blinding_assault', name: 'Blinding Assault', glyph: 'Shift', color: 0xa9c47a,
-        desc: '300 % Schaden im Sprung. Ein Treffer gibt den Sprung zurück.',
+        desc: '300 % damage in a leap. A hit refunds the leap.',
         mode: 'press', cooldown: 8, charges: 3, agile: true, cancelsSprint: false,
         fire(ctx) {
           ctx.player.startDash({
@@ -580,7 +580,7 @@
 
       special: {
         id: 'eviscerate', name: 'Eviscerate', glyph: 'R', color: 0xff5a6a,
-        desc: 'Unangreifbar am nächsten Gegner haften und siebenmal für 110 % zuschlagen.',
+        desc: 'Latch onto the nearest enemy, untargetable, and strike seven times for 110 %.',
         mode: 'stance', cooldown: 6, charges: 1, duration: 1.3, rate: 5.4,
         begin(ctx) { ctx.body.invulnerable = Math.max(ctx.body.invulnerable, 1.9); },
         fire(ctx) {

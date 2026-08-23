@@ -25,7 +25,7 @@
     {
       id: 'blazing', name: 'Blazing', tier: 1, cost: 6,
       health: 4, damage: 2, color: 0xff6a20, glow: 0xffb060,
-      desc: 'Setzt in Brand und hinterlässt eine Feuerspur.',
+      desc: 'Ignites its target and leaves a trail of fire.',
       /* Der Brand ist an den Angriff gekoppelt, nicht an eine eigene
          Fähigkeit — dadurch wirkt er bei jeder Gegnerart. */
       onHit(m, opfer) {
@@ -43,7 +43,7 @@
       id: 'overloading', name: 'Overloading', tier: 1, cost: 6,
       health: 4, damage: 2, color: 0x5a8aff, glow: 0xb0d0ff,
       shieldInsteadOfHealth: true,
-      desc: 'Trägt Schild statt Leben und schlägt mit Blitzen um sich.',
+      desc: 'Carries shield instead of health and lashes out with lightning.',
       onHit(m, opfer) {
         // Ein Nachschlag im Umkreis: wer nahe steht, bekommt ihn mit.
         ROR.Damage.explode({
@@ -57,7 +57,7 @@
     {
       id: 'glacial', name: 'Glacial', tier: 1, cost: 6,
       health: 4, damage: 2, color: 0x9fe4ff, glow: 0xdff2ff,
-      desc: 'Verlangsamt und zerspringt beim Tod in einer Eisexplosion.',
+      desc: 'Slows its target and shatters into an ice blast on death.',
       onHit(m, opfer) { ROR.Buffs.apply(opfer, 'slow60', 2.5); },
       onDeath(m) {
         ROR.Damage.explode({
@@ -73,7 +73,7 @@
     {
       id: 'malachite', name: 'Malachite', tier: 2, cost: 36,
       health: 18, damage: 6, color: 0x6fd36f, glow: 0xc0ffa0,
-      desc: 'Verhindert Heilung und speit Stachelkugeln.',
+      desc: 'Blocks all healing and spits spiked orbs.',
       onHit(m, opfer) { ROR.Buffs.apply(opfer, 'no_heal', 8); },
       onInterval(m, dt) {
         m._stachel = (m._stachel || U.chaos.range(2, 5)) - dt;
@@ -97,7 +97,7 @@
     {
       id: 'celestine', name: 'Celestine', tier: 2, cost: 36,
       health: 18, damage: 6, color: 0xe8e0c0, glow: 0xfff4d0,
-      desc: 'Heilt seine Umgebung und blinzelt aus dem Beschuss.',
+      desc: 'Heals everything around it and blinks out of your fire.',
       onInterval(m, dt) {
         m._heil = (m._heil || 0) - dt;
         if (m._heil <= 0) {

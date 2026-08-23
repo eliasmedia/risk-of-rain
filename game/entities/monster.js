@@ -152,7 +152,7 @@
           const p2 = ROR.Game.player;
           for (const id in m.gestohlen) ROR.Items.give(p2.body, id, m.gestohlen[id]);
           ROR.Attire.refresh(p2);
-          ROR.HUD.toast('Du hast deine Items zurück', 'gold');
+          ROR.HUD.toast('Your items are yours again', 'gold');
           m.gestohlen = null;
         }
         if (def.isFinal && ROR.Game.onVictory) ROR.Game.onVictory();
@@ -187,7 +187,7 @@
       if (U.chaos.next() < 0.012) {
         ROR.Game.lunarCoins++;
         ROR.Game.muenzenGesammelt++;
-        ROR.HUD.toast('Mondmünze gefunden', 'gold');
+        ROR.HUD.toast('Lunar coin found', 'gold');
       }
     },
 

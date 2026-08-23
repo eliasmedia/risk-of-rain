@@ -19,13 +19,13 @@
      Bedingung und ihre Prüfung an einer Stelle liegen. */
   const BEDINGUNGEN = [
     { id: 'commando',  frei: true,  text: 'Von Anfang an dabei.' },
-    { id: 'huntress',  text: 'Erreiche in einem Durchlauf die dritte Stage.',
+    { id: 'huntress',  text: 'Reach the third stage in a single run.',
       pruef: (s, lauf) => lauf.stages >= 3 },
-    { id: 'mult',      text: 'Erreiche in einem Durchlauf die fünfte Stage.',
+    { id: 'mult',      text: 'Reach the fifth stage in a single run.',
       pruef: (s, lauf) => lauf.stages >= 5 },
-    { id: 'engineer',  text: 'Schließe insgesamt 20 Stages ab.',
+    { id: 'engineer',  text: 'Complete 20 stages in total.',
       pruef: (s) => s.stagesGesamt >= 20 },
-    { id: 'artificer', text: 'Sammle insgesamt 10 Mondmünzen.',
+    { id: 'artificer', text: 'Collect 10 lunar coins in total.',
       pruef: (s) => s.muenzenGesamt >= 10 },
     { id: 'mercenary', text: 'Besiege Mithrix.',
       pruef: (s, lauf) => !!lauf.sieg }
@@ -63,7 +63,7 @@
           if (g && g.version === VERSION) daten = Object.assign(leer(), g);
         }
       } catch (e) {
-        console.warn('[ROR] Spielstand nicht lesbar, fange neu an:', e.message);
+        console.warn('[ROR] Save data unreadable, starting fresh:', e.message);
       }
       return daten;
     },
@@ -77,7 +77,7 @@
       try {
         localStorage.setItem(PRAEFIX + 'save', JSON.stringify(daten));
       } catch (e) {
-        console.warn('[ROR] Spielstand nicht schreibbar:', e.message);
+        console.warn('[ROR] Save data not writable:', e.message);
       }
     },
 

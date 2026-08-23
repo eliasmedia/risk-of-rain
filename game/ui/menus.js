@@ -26,7 +26,7 @@
 
   function survivorCard(def) {
     const frei = ROR.Save.istFrei(def.id);
-    const c = el('button', 'card' + (frei ? '' : ' gesperrt'));
+    const c = el('button', 'card' + (frei ? '' : ' locked'));
     c.dataset.id = def.id;
     const skills = ['primary', 'secondary', 'utility', 'special']
       .map(function (slot) {
@@ -39,7 +39,7 @@
         + ';--skin:' + farbe(def.colors.skin) + ';--visor:' + farbe(def.colors.visor) + '"></span>'
       + '<b>' + def.name + '</b>'
       + '<em>' + (def.subtitle || '') + '</em>'
-      + '<span class="werte">' + def.health + ' LP  ·  ' + def.damage + ' SCH  ·  '
+      + '<span class="werte">' + def.health + ' HP  ·  ' + def.damage + ' DMG  ·  '
         + def.moveSpeed + ' m/s</span>'
       + '<span class="skills">' + skills + '</span>'
       + (frei ? '' : '<span class="sperre">' + (ROR.Save.bedingung(def.id) || {}).text + '</span>');
@@ -57,10 +57,10 @@
   /* ---------------------------------------------------------- Artefakte */
 
   function artifactTile(def) {
-    const t = el('button', 'artefakt' + (def.locked ? ' gesperrt' : ''));
+    const t = el('button', 'artefakt' + (def.locked ? ' locked' : ''));
     t.dataset.id = def.id;
     t.innerHTML = '<i>' + def.glyph + '</i><b>' + def.name + '</b><span>' + def.desc
-      + (def.locked ? '<u>kommt mit ' + def.locked + '</u>' : '') + '</span>';
+      + (def.locked ? '<u>unlocks with ' + def.locked + '</u>' : '') + '</span>';
     if (!def.locked) {
       t.addEventListener('click', function () {
         ROR.Artifacts.toggle(def.id);
@@ -74,7 +74,7 @@
   function zaehlerAktualisieren() {
     const n = ROR.Artifacts.count();
     root.querySelector('#artefakt-zahl').textContent =
-      n === 0 ? 'keine aktiv' : n === 1 ? '1 aktiv' : n + ' aktiv';
+      n === 0 ? 'none active' : n === 1 ? '1 active' : n + ' active';
   }
 
   /* ------------------------------------------------------------- Aufbau */
@@ -87,19 +87,19 @@
     innen.appendChild(el('h1', null, 'RISK <span>of</span> RAIN'));
     innen.appendChild(el('p', 'unter', 'HTML Edition'));
 
-    innen.appendChild(el('h2', null, 'Figur'));
+    innen.appendChild(el('h2', null, 'Survivor'));
     const reihe = el('div', 'reihe');
     reihe.id = 'menu-survivors';
     ROR.Data.Survivors.forEach(function (d) { reihe.appendChild(survivorCard(d)); });
     innen.appendChild(reihe);
 
-    innen.appendChild(el('h2', null, 'Regen'));
+    innen.appendChild(el('h2', null, 'Rain'));
     const dif = el('div', 'reihe schmal');
     dif.id = 'menu-diff';
     ROR.Difficulty.MODES.forEach(function (m) {
       const b = el('button', 'stufe' + (m.id === schwierigkeit ? ' an' : ''));
       b.dataset.id = m.id;
-      b.innerHTML = '<b>' + m.name + '</b><span>Zeitfaktor ×' + m.value + '</span>';
+      b.innerHTML = '<b>' + m.name + '</b><span>Time factor ×' + m.value + '</span>';
       b.addEventListener('click', function () {
         schwierigkeit = m.id;
         dif.querySelectorAll('.stufe').forEach(function (n) {
@@ -110,10 +110,10 @@
     });
     innen.appendChild(dif);
 
-    const kopf = el('h2', null, 'Artefakte <small id="artefakt-zahl">keine aktiv</small>');
+    const kopf = el('h2', null, 'Artifacts <small id="artefakt-zahl">none active</small>');
     innen.appendChild(kopf);
     innen.appendChild(el('p', 'notiz',
-      'Artefakte ändern die Regeln, nicht die Stärke. Alle sind von Anfang an verfügbar.'));
+      'Artifacts change the rules, not your power. All of them are available from the start.'));
     const gitter = el('div', 'artefakte');
     ROR.Artifacts.DEFS.forEach(function (d) { gitter.appendChild(artifactTile(d)); });
     innen.appendChild(gitter);
@@ -122,8 +122,8 @@
        stellt, spielt die Figuren frei — der Rest spielt einfach. */
     const schalterZeile = el('div', 'schalter');
     const schalter = el('button', 'kippe' + (ROR.Save.data.alleFrei ? ' an' : ''));
-    schalter.innerHTML = '<i></i><b>Alles freigeschaltet</b>'
-      + '<span>Aus: Figuren müssen erspielt werden</span>';
+    schalter.innerHTML = '<i></i><b>Everything unlocked</b>'
+      + '<span>Off: survivors have to be earned</span>';
     schalter.addEventListener('click', function () {
       ROR.Save.setAlleFrei(!ROR.Save.data.alleFrei);
       baue();
@@ -132,7 +132,7 @@
     schalterZeile.appendChild(schalter);
 
     const ton = el('button', 'kippe' + (ROR.Audio.an ? ' an' : ''));
-    ton.innerHTML = '<i></i><b>Ton</b><span>Musik wächst mit dem Schwierigkeitsgrad</span>';
+    ton.innerHTML = '<i></i><b>Sound</b><span>Music grows with the difficulty</span>';
     ton.addEventListener('click', function () {
       ROR.Audio.setAn(!ROR.Audio.an);
       ton.classList.toggle('an', ROR.Audio.an);
@@ -143,10 +143,10 @@
     const fuss = el('div', 'fuss');
     const seed = el('input', 'seed');
     seed.type = 'text';
-    seed.placeholder = 'Seed (leer = zufällig)';
+    seed.placeholder = 'Seed (empty = random)';
     seed.id = 'menu-seed';
     fuss.appendChild(seed);
-    const start = el('button', 'start', 'Durchlauf starten');
+    const start = el('button', 'start', 'Start run');
     start.addEventListener('click', function () { Menus.start(); });
     fuss.appendChild(start);
     innen.appendChild(fuss);
@@ -155,16 +155,16 @@
        zustellen. */
     const stat = ROR.Save.data.stats;
     const details = el('details', 'logbuch');
-    details.innerHTML = '<summary>Logbuch und Statistik</summary>';
+    details.innerHTML = '<summary>Logbook and statistics</summary>';
     const inhalt = el('div', 'logbuch-inhalt');
     inhalt.innerHTML =
-      '<p class="bilanz">' + stat.laeufe + ' Durchläufe · ' + stat.siege + ' Siege · '
-      + stat.kills + ' Kills · ' + stat.stagesGesamt + ' Stages · beste Stage '
-      + stat.besteStage + ' · höchste Stufe ' + stat.hoechsteStufe + '</p>';
+      '<p class="bilanz">' + stat.laeufe + ' runs · ' + stat.siege + ' wins · '
+      + stat.kills + ' kills · ' + stat.stagesGesamt + ' stages · best stage '
+      + stat.besteStage + ' · highest level ' + stat.hoechsteStufe + '</p>';
 
     const gefunden = Object.keys(ROR.Save.data.logbuch.items);
-    inhalt.appendChild(el('h3', null, 'Gefundene Items  <small>' + gefunden.length
-      + ' von ' + ROR.Items.all().filter(function (i) { return !i.scrap; }).length + '</small>'));
+    inhalt.appendChild(el('h3', null, 'Items found  <small>' + gefunden.length
+      + ' of ' + ROR.Items.all().filter(function (i) { return !i.scrap; }).length + '</small>'));
     const gitterI = el('div', 'logliste');
     ROR.Items.all().forEach(function (it) {
       if (it.scrap) return;
@@ -172,15 +172,15 @@
       const e = el('i', kennt ? 'bekannt' : 'unbekannt');
       e.style.setProperty('--c', '#' + (ROR.Loot.TIER_COLOR[it.tier] || 0xffffff)
         .toString(16).padStart(6, '0'));
-      e.title = kennt ? it.name + ' — ' + it.desc : 'Noch nicht gefunden';
+      e.title = kennt ? it.name + ' — ' + it.desc : 'Not found yet';
       e.textContent = kennt ? it.name.charAt(0) : '?';
       gitterI.appendChild(e);
     });
     inhalt.appendChild(gitterI);
 
     const getoetet = Object.keys(ROR.Save.data.logbuch.gegner);
-    inhalt.appendChild(el('h3', null, 'Besiegte Gegner  <small>' + getoetet.length
-      + ' von ' + ROR.Data.Monsters.length + '</small>'));
+    inhalt.appendChild(el('h3', null, 'Monsters defeated  <small>' + getoetet.length
+      + ' of ' + ROR.Data.Monsters.length + '</small>'));
     const listeG = el('div', 'logliste breit');
     ROR.Data.Monsters.forEach(function (mo) {
       const kennt = ROR.Save.kennt('gegner', mo.id);
@@ -194,13 +194,13 @@
     inhalt.appendChild(listeG);
 
     if (ROR.Save.data.rekorde.length) {
-      inhalt.appendChild(el('h3', null, 'Letzte Durchläufe'));
+      inhalt.appendChild(el('h3', null, 'Recent runs'));
       const tab = el('div', 'rekorde');
       ROR.Save.data.rekorde.slice(0, 8).forEach(function (r) {
         tab.appendChild(el('div', r.sieg ? 'sieg' : '',
-          (r.sieg ? '★ ' : '') + r.figur + '  ·  Stage ' + r.stages + '  ·  Stufe ' + r.stufe
+          (r.sieg ? '★ ' : '') + r.figur + '  ·  stage ' + r.stages + '  ·  level ' + r.stufe
           + '  ·  ' + Math.floor(r.zeit / 60) + ':' + String(Math.floor(r.zeit % 60)).padStart(2, '0')
-          + '  ·  ' + r.kills + ' Kills'));
+          + '  ·  ' + r.kills + ' kills'));
       });
       inhalt.appendChild(tab);
     }
@@ -208,9 +208,9 @@
     innen.appendChild(details);
 
     innen.appendChild(el('p', 'hinweis',
-      '<b>W A S D</b> laufen · <b>Maus</b> zielen · <b>Leertaste</b> springen · '
-      + '<b>Strg</b> sprinten · <b>E</b> benutzen · <b>Q</b> Ausrüstung · '
-      + '<b>M</b> Pause · <b>F3</b> Technik'));
+      '<b>W A S D</b> move · <b>Mouse</b> aim · <b>Space</b> jump · '
+      + '<b>Ctrl</b> sprint · <b>E</b> interact · <b>Q</b> equipment · '
+      + '<b>M</b> pause · <b>F3</b> debug'));
 
     root.appendChild(innen);
     const ersteFreie = ROR.Data.Survivors.filter(function (d) { return ROR.Save.istFrei(d.id); })[0];
@@ -233,7 +233,7 @@
     }
 
     chooserFertig = fertig;
-    chooser.innerHTML = '<h3>' + tier.toUpperCase() + ' — wähle</h3>';
+    chooser.innerHTML = '<h3>' + tier.toUpperCase() + ' — choose</h3>';
     const reihe = el('div', 'reihe');
     auswahl.forEach(function (d) {
       const b = el('button', 'wahl');
@@ -274,23 +274,23 @@
     box.innerHTML =
       '<div class="ergebnis-innen">'
       + '<b class="' + (lauf.sieg ? 'sieg' : 'tod') + '">'
-      + (lauf.sieg ? 'MITHRIX BESIEGT' : 'GESTORBEN') + '</b>'
+      + (lauf.sieg ? 'MITHRIX DEFEATED' : 'GESTORBEN') + '</b>'
       + '<p class="wer">' + lauf.figur + '  ·  ' + lauf.schwer + '</p>'
       + '<div class="zahlen">'
       +   '<div><b>' + zeit(lauf.zeit) + '</b><span>Zeit</span></div>'
       +   '<div><b>' + lauf.stages + '</b><span>Stages</span></div>'
-      +   '<div><b>' + lauf.stufe + '</b><span>Stufe</span></div>'
+      +   '<div><b>' + lauf.stufe + '</b><span>Level</span></div>'
       +   '<div><b>' + lauf.kills + '</b><span>Kills</span></div>'
       +   '<div><b>' + lauf.items + '</b><span>Items</span></div>'
       +   '<div><b>' + lauf.coeff.toFixed(1) + '</b><span>Koeffizient</span></div>'
       + '</div>'
       + '<div class="beute">' + items + '</div>'
-      + (neuFrei.length ? '<p class="frei">Freigeschaltet: '
+      + (neuFrei.length ? '<p class="frei">Unlocked: '
           + neuFrei.map(function (id) { return ROR.Data.survivor(id).name; }).join(', ')
           + '</p>' : '')
       + '<div class="knoepfe">'
-      +   '<button data-tun="neu">Noch einmal</button>'
-      +   '<button data-tun="menu">Zum Menü</button>'
+      +   '<button data-tun="neu">Play again</button>'
+      +   '<button data-tun="menu">Main menu</button>'
       + '</div></div>';
 
     box.querySelector('[data-tun="neu"]').addEventListener('click', function () {
@@ -316,14 +316,14 @@
       box.innerHTML =
         '<div class="pause-innen">'
         + '<b>PAUSE</b>'
-        + '<p>' + p.def.name + '  ·  Stufe ' + p.body.level + '  ·  Stage '
+        + '<p>' + p.def.name + '  ·  level ' + p.body.level + '  ·  stage '
         + (ROR.Game.stagesCleared + 1) + '  ·  ' + zeit(ROR.Difficulty.runTime) + '</p>'
         + '<div class="knoepfe">'
-        +   '<button data-tun="weiter">Weiter</button>'
-        +   '<button data-tun="menu">Durchlauf aufgeben</button>'
+        +   '<button data-tun="weiter">Resume</button>'
+        +   '<button data-tun="menu">Abandon run</button>'
         + '</div>'
-        + '<p class="klein">W A S D laufen · Maus zielen · Leertaste springen · '
-        + 'Strg sprinten · E benutzen · Q Ausrüstung · F3 Technik</p>'
+        + '<p class="klein">W A S D move · Mouse aim · Space jump · '
+        + 'Ctrl sprint · E interact · Q equipment · F3 debug</p>'
         + '</div>';
       box.querySelector('[data-tun="weiter"]').addEventListener('click', function () {
         Menus.hidePause();

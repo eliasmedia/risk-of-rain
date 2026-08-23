@@ -229,7 +229,7 @@
       if (!Teleporter.entdeckt &&
           (Teleporter.distance < 55 || Teleporter.state !== 'idle')) {
         Teleporter.entdeckt = true;
-        ROR.HUD.toast('Teleporter gefunden');
+        ROR.HUD.toast('Teleporter found');
       }
       const sicht = U.clamp((kameraNah - 12) / 28, 0, 1);
       p.strahl.material.opacity = Teleporter.state === 'used' ? 0
@@ -284,7 +284,7 @@
       if (Teleporter.state === 'idle') return { text: 'Teleporter aktivieren', ok: true };
       if (Teleporter.state === 'ready') {
         return { text: ROR.Game.bazaarOffen ? 'Blaues Portal — in den Bazaar'
-                                            : 'Nächste Stage betreten', ok: true };
+                                            : 'Enter the next stage', ok: true };
       }
       return null;
     },

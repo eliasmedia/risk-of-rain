@@ -148,9 +148,9 @@
         el.tpfill.style.width = (T.charge * 100).toFixed(1) + '%';
         const txt = T.state === 'idle' ? 'Teleporter  ·  ' + Math.round(T.distance) + ' m'
           : T.state === 'charging'
-            ? (T.inRange ? 'lädt  ' + Math.round(T.charge * 100) + ' %'
-                         : 'ZURÜCK IN DEN UMKREIS  ·  ' + Math.round(T.distance) + ' m')
-          : T.state === 'waiting' ? 'Boss besiegen'
+            ? (T.inRange ? 'charging  ' + Math.round(T.charge * 100) + ' %'
+                         : 'RETURN TO THE ZONE  ·  ' + Math.round(T.distance) + ' m')
+          : T.state === 'waiting' ? 'Defeat the boss'
           : 'bereit';
         set(el.tptext, txt);
         el.tpwrap.classList.toggle('warn', T.state === 'charging' && !T.inRange);
@@ -284,7 +284,7 @@
       el.target.style.transform = 'translate(' + (x | 0) + 'px,' + (y | 0) + 'px) translate(-50%,-100%)';
       el.target.style.opacity = '1';
       el.targetfill.style.width = (U.clamp(t.combinedFraction, 0, 1) * 100).toFixed(1) + '%';
-      set(el.targetname, t.name + '  ·  Stufe ' + t.level);
+      set(el.targetname, t.name + '  ·  level ' + t.level);
     },
 
     _target: null,
@@ -309,10 +309,10 @@
       if (zeigen) {
         const bezug = Math.max(S.maxShield, schutz, 1);
         el.shieldfill.style.width = (U.clamp(schutz / bezug, 0, 1) * 100) + '%';
-        set(el.shieldtext, Math.ceil(schutz) + (b.barrier > 0.5 ? ' schild + barriere' : ' schild'));
+        set(el.shieldtext, Math.ceil(schutz) + (b.barrier > 0.5 ? ' shield + barrier' : ' shield'));
       }
       set(el.hptext, Math.ceil(b.health) + ' / ' + Math.round(S.maxHealth));
-      set(el.levelout, 'Stufe ' + b.level);
+      set(el.levelout, 'Level ' + b.level);
       set(el.gold, '$' + Math.floor(p.gold));
       el.lunar.style.display = game.lunarCoins > 0 ? '' : 'none';
       set(el.lunar, '☾ ' + game.lunarCoins);
@@ -375,20 +375,20 @@
         const s = ROR.Engine.stats;
         const pos = p.position;
         set(el.debug, [
-          'fps      ' + s.fps + '   (' + s.frameMs.toFixed(1) + ' ms, ' + s.steps + ' schritte)',
-          'zeichnen ' + s.draws + ' aufrufe, ' + (s.tris / 1000).toFixed(0) + 'k dreiecke',
+          'fps      ' + s.fps + '   (' + s.frameMs.toFixed(1) + ' ms, ' + s.steps + ' steps)',
+          'draw     ' + s.draws + ' calls, ' + (s.tris / 1000).toFixed(0) + 'k tris',
           'position ' + pos.x.toFixed(1) + ' / ' + pos.y.toFixed(1) + ' / ' + pos.z.toFixed(1),
-          'tempo    ' + Math.hypot(p.velocity.x, p.velocity.z).toFixed(2) + ' m/s'
-            + (p.sprinting ? '  sprint' : '') + (p.grounded ? '' : '  luft'),
-          'schaden  ' + S.damage.toFixed(1) + '   tempo ' + S.attackSpeed.toFixed(2)
+          'speed    ' + Math.hypot(p.velocity.x, p.velocity.z).toFixed(2) + ' m/s'
+            + (p.sprinting ? '  sprint' : '') + (p.grounded ? '' : '  air'),
+          'damage   ' + S.damage.toFixed(1) + '   rate  ' + S.attackSpeed.toFixed(2)
             + '   crit ' + S.crit.toFixed(0) + '%',
-          'rüstung  ' + S.armor.toFixed(0) + '   regen ' + S.regen.toFixed(2) + '/s',
-          'coeff    ' + ROR.Difficulty.coeff.toFixed(2) + '   gegnerstufe '
+          'armor    ' + S.armor.toFixed(0) + '   regen ' + S.regen.toFixed(2) + '/s',
+          'coeff    ' + ROR.Difficulty.coeff.toFixed(2) + '   enemy level '
             + ROR.Difficulty.enemyLevel.toFixed(1) + '   ' + ROR.Difficulty.tierName,
           ROR.Director.debugLine(),
           'gold/xp  ' + Math.floor(p.gold) + ' / ' + Math.floor(p.exp)
-            + '   nächste stufe bei ' + Math.floor(ROR.Stats.expForLevel(b.level + 1)),
-          'items    ' + ROR.Items.total(b) + '   glück ' + ROR.Items.luck(b)
+            + '   next level at ' + Math.floor(ROR.Stats.expForLevel(b.level + 1)),
+          'items    ' + ROR.Items.total(b) + '   luck  ' + ROR.Items.luck(b)
             + '   drops ' + ROR.Loot.pending,
           'bodies   ' + ROR.Body.all.length + '   buffs ' + b.buffs.length,
           'stage    ' + game.stageOrder + '/5   loop ' + game.loop

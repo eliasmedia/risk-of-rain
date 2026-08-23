@@ -1110,7 +1110,7 @@
     BAUPLAENE: BAUPLAENE,
     build(def) {
       const bau = BAUPLAENE[def.shape.kind];
-      if (!bau) throw new Error('Unbekannte Gegner-Bauart: ' + def.shape.kind);
+      if (!bau) throw new Error('Unknown monster build: ' + def.shape.kind);
       return bau(def.shape);
     }
   };

@@ -15,7 +15,7 @@
   const DEFS = {
     /* Betäubung: keine Bewegung, keine Fähigkeiten. */
     stun: {
-      name: 'Betäubt', color: 0xffe066, stacks: false,
+      name: 'Stunned', color: 0xffe066, stacks: false,
       modify(body, out) { out.moveSpeed = 0; }
     },
     /* Chronobauble und Verwandte. -60 % Bewegung. */
@@ -59,7 +59,7 @@
     },
     /* Shattering Justice bricht die Rüstung. */
     armor_break: {
-      name: 'Rüstung gebrochen', color: 0xffa030, stacks: false,
+      name: 'Armor Broken', color: 0xffa030, stacks: false,
       modify(body, out) { out.armor -= 60; }
     },
     /* Predatory Instincts, bis zu drei Stapel. */

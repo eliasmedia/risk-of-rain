@@ -20,58 +20,58 @@
 
   const DEFS = [
     { id: 'sacrifice', name: 'Sacrifice', glyph: '☠',
-      desc: 'Gegner lassen Items fallen. Dafür gibt es keine Kisten mehr.' },
+      desc: 'Monsters drop items. In exchange, there are no chests.' },
 
     { id: 'command', name: 'Command', glyph: '❖',
-      desc: 'Statt eines zufälligen Items wählt man aus drei Vorschlägen.' },
+      desc: 'Instead of a random item you pick one of three offers.' },
 
     { id: 'glass', name: 'Glass', glyph: '◈',
-      desc: 'Fünffacher Schaden — bei einem Zehntel Gesundheit.' },
+      desc: 'Five times the damage — at one tenth of the health.' },
 
     { id: 'godmode', name: 'Godmode', glyph: '✵',
-      desc: 'Vierfacher Schaden — und man nimmt nur ein Zehntel davon.' },
+      desc: 'Four times the damage — and you only take a tenth of it.' },
 
     { id: 'swarms', name: 'Swarms', glyph: '⁂',
-      desc: 'Doppelt so viele Gegner, dafür mit halber Gesundheit.' },
+      desc: 'Twice as many monsters, at half the health.' },
 
     { id: 'kin', name: 'Kin', glyph: '≡',
-      desc: 'Auf jeder Stage erscheint nur eine einzige Gegnerart.' },
+      desc: 'Every stage spawns a single monster type.' },
 
     { id: 'dissonance', name: 'Dissonance', glyph: '✧',
-      desc: 'Gegner aller Stages können überall erscheinen.' },
+      desc: 'Monsters from every stage can appear anywhere.' },
 
     { id: 'evolution', name: 'Evolution', glyph: '⇞',
-      desc: 'Gegner erhalten mit jeder Stage ein Item mehr.' },
+      desc: 'Monsters gain one more item with every stage.' },
 
     { id: 'spite', name: 'Spite', glyph: '✹',
-      desc: 'Getötete Gegner lassen Bomben fallen.' },
+      desc: 'Slain monsters drop bombs.' },
 
     { id: 'soul', name: 'Soul', glyph: '❂',
-      desc: 'Aus getöteten Gegnern steigen Irrlichter auf.' },
+      desc: 'Wisps rise from slain monsters.' },
 
     { id: 'chaos', name: 'Chaos', glyph: '⚡',
       desc: 'Eigenbeschuss: alles trifft alles.' },
 
     { id: 'frailty', name: 'Frailty', glyph: '↓',
-      desc: 'Sturzschaden ist doppelt so hoch — und tödlich.' },
+      desc: 'Fall damage is doubled — and lethal.' },
 
     { id: 'enigma', name: 'Enigma', glyph: '?',
-      desc: 'Man beginnt mit zufälliger Ausrüstung, die sich bei jeder Nutzung ändert.' },
+      desc: 'You start with random equipment that changes on every use.' },
 
     { id: 'rebirth', name: 'Rebirth', glyph: '♺',
       desc: "Man startet mit einem Dio's Best Friend." },
 
     { id: 'metamorphosis', name: 'Metamorphosis', glyph: '∞',
-      desc: 'Auf jeder Stage wird eine zufällige Figur zugeteilt.' },
+      desc: 'Every stage assigns you a random survivor.' },
 
     /* Beide brauchen Elite-Gegner beziehungsweise den Doppelgänger — beides
        kommt in Stufe 7. Sie stehen schon in der Liste, damit man sieht, was
        noch fehlt, sind aber nicht wählbar. */
     { id: 'honor', name: 'Honor', glyph: '✦',
-      desc: 'Es erscheinen ausschließlich Elite-Gegner.' },
+      desc: 'Only elite monsters spawn.' },
 
     { id: 'vengeance', name: 'Vengeance', glyph: '☯',
-      desc: 'Auf jeder Stage erscheint ein Doppelgänger mit deinen Items.' }
+      desc: 'Every stage spawns a doppelganger carrying your items.' }
   ];
 
   const active = {};

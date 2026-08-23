@@ -281,31 +281,31 @@
       const p = ROR.Game.player;
       switch (d.kind) {
         case 'shrine_blood':
-          return { text: d.name + ' — 50 % des Lebens für Gold',
+          return { text: d.name + ' — 50 % of your health for gold',
                    ok: body.health > body.stats.maxHealth * 0.1, uses: 2 - o.uses };
         case 'shrine_mountain':
-          return { text: d.name + ' — ein Bosskampf mehr, eine Belohnung mehr',
+          return { text: d.name + ' — one more boss, one more reward',
                    ok: o.uses < 1, uses: 1 - o.uses };
         case 'printer': {
           const futter = Interactables.feedFor(body, d.tier);
           return { text: '3D-Drucker: ' + (o.payload ? o.payload.name : '—')
-                     + (futter ? '  ←  ' + futter.name : '  (nichts zum Einwerfen)'),
+                     + (futter ? '  ←  ' + futter.name : '  (nothing to insert)'),
                    ok: !!futter && !!o.payload };
         }
         case 'scrapper': {
           const ziel = Interactables.scrapFor(body);
-          return { text: 'Scrapper: ' + (ziel ? ziel.name + ' → Schrott' : 'nichts zum Zerlegen'),
+          return { text: 'Scrapper: ' + (ziel ? ziel.name + ' → Schrott' : 'nothing to scrap'),
                    ok: !!ziel };
         }
         case 'shrine_chance':
           return { text: d.name + ' — $' + o.cost, ok: p.gold >= o.cost, uses: 2 - o.uses };
         case 'newt':
-          return { text: 'Newt-Altar — 1 Mondmünze (öffnet den Bazaar)',
+          return { text: 'Newt Altar — 1 lunar coin (opens the Bazaar)',
                    ok: ROR.Game.lunarCoins >= 1 };
         case 'lunar':
-          return { text: 'Mondkapsel — 1 Mondmünze', ok: ROR.Game.lunarCoins >= 1 };
+          return { text: 'Lunar Pod — 1 lunar coin', ok: ROR.Game.lunarCoins >= 1 };
         case 'cleanse':
-          return { text: 'Reinigungsbecken — ein Lunar-Item gegen eine Münze',
+          return { text: 'Cleansing Pool — a lunar item for a coin',
                    ok: Interactables.lunarBesitz(body) !== null };
         default:
           return { text: d.name + ' — $' + o.cost, ok: p.gold >= o.cost };
@@ -402,7 +402,7 @@
           ROR.Items.take(body, weg.id, 1);
           ROR.Game.lunarCoins++;
           ROR.Attire.markDirty();
-          ROR.HUD.toast(weg.name + ' abgelegt  ·  +1 Mondmünze', 'gold');
+          ROR.HUD.toast(weg.name + ' scrapped  ·  +1 lunar coin', 'gold');
           break;
         }
 
@@ -410,7 +410,7 @@
           ROR.Game.lunarCoins--;
           o.used = true;
           ROR.Game.bazaarOffen = true;
-          ROR.HUD.toast('Das blaue Portal wird sich öffnen');
+          ROR.HUD.toast('The blue portal will open');
           break;
 
         case 'shrine_mountain':

@@ -119,6 +119,7 @@
       b.health = b.stats.maxHealth * merk.anteil;
       ROR.HUD.buildSkills(def);
       ROR.Attire.refresh(Game.player);
+      ROR.CharFX.setSurvivor(def);
       ROR.Camera.init(Game.player);
       ROR.HUD.toast('Du bist jetzt ' + def.name);
     },
@@ -152,6 +153,10 @@
          macht die Vorlage aus — feste Karte, wechselnder Inhalt. */
       Game.stage = ROR.Stage.load(theme, theme.mapSeed !== undefined ? theme.mapSeed : seed);
       ROR.Projectiles.init();
+      /* Die Figureffekte hängen an der Szene und müssen mit ihr neu entstehen.
+         Die Nachbilder werden dabei für die aktuelle Figur neu gebaut. */
+      ROR.CharFX.init();
+      if (Game.player) ROR.CharFX.setSurvivor(Game.player.def);
       ROR.Loot.init();
       ROR.Deployables.init();
       ROR.Director.beginStage(order, seed);
@@ -176,6 +181,10 @@
       p.spawn.y = Game.stage.spawn.y;
       p.spawn.z = Game.stage.spawn.z;
       p.velocity.set(0, 0, 0);
+      /* Ein Blink über den Stagewechsel hinweg ließe die Figur unsichtbar
+         zurück — der Blink selbst ist mit der alten Szene weg. */
+      p._blink = null;
+      p.model.root.visible = true;
       p.body.position = p.object.position;
       if (ROR.Body.all.indexOf(p.body) < 0) ROR.Body.all.push(p.body);
       ROR.Items.rebuild(p.body);
@@ -285,6 +294,7 @@
       ROR.Engine.onUpdate(function () { ROR.Save.tick(); }, 99);
       ROR.Engine.onUpdate(function (dt) { ROR.Deployables.update(dt); }, 19);
       ROR.Engine.onUpdate(function (dt) { ROR.Projectiles.update(dt); }, 20);
+      ROR.Engine.onUpdate(function (dt) { ROR.CharFX.update(dt); }, 21);
       ROR.Engine.onUpdate(function (dt) { ROR.Body.updateAll(dt); }, 30);
 
       /* Flanken erst ganz am Ende verwerfen, damit sie jeder Schritt sieht —

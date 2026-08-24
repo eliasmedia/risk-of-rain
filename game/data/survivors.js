@@ -10,7 +10,15 @@
      'stance' geht für `duration` in eine Haltung und feuert dort mit `rate`
 
    `rate` wird immer mit dem Angriffstempo multipliziert, Abklingzeiten nie —
-   genau wie in der Vorlage. */
+   genau wie in der Vorlage.
+
+   Zu den Farben: Die Paletten sind deutlich heller, als es am Bildschirm
+   „richtig" aussieht, wenn man sie einzeln betrachtet. Der Grund ist die
+   Beleuchtung der Stages — ein Sonnenlicht von hinten oben und ACES-
+   Tonwertkurve. Ein Mantel in 0x2a3648 ist darunter kein dunkles Blau mehr,
+   sondern Schwarz, und die ganze Figur fällt zu einem Umriss ohne Innenzeichnung
+   zusammen. Als Faustregel: die Grundfarbe muss mindestens so hell sein wie das
+   Gras, auf dem die Figur steht. */
 (function (ROR) {
   'use strict';
 
@@ -81,12 +89,17 @@
 
     /* Mantel mit Schößen, Mütze und Schal: der Soldat von der Stange. */
     build: { torso: 'coat', head: 'cap', weapon: 'pistol', weaponOff: 'pistol',
-             legs: 'normal', width: 1.0 },
+             legs: 'normal', width: 1.0, shoulder: 0.47 },
 
     colors: {
-      coat: 0x39485c, coatDark: 0x2a3648, skin: 0xc79a72,
-      visor: 0x8fd6e8, pants: 0x4a4335, boots: 0x2b2723, metal: 0x6a6f75
+      coat: 0x5c7492, coatDark: 0x35455c, skin: 0xd9a97c,
+      visor: 0x9fe4ff, pants: 0x6b6350, boots: 0x3a352e, metal: 0x9aa3ab,
+      accent: 0xe2622f, muzzle: 0xffd68a
     },
+
+    /* Gangbild: der Maßstab, an dem sich alle anderen messen. Mittlere
+       Schrittweite, mittleres Wippen, leichte Vorlage. */
+    gait: { stride: 1.0, tempo: 1.0, bob: 1.0, lean: 0.08, arm: 0.6, sprintLean: 0.26 },
 
     skills: {
       /* Sechs Schuss je Sekunde bei Grundtempo, 100 % Schaden, voller
@@ -176,10 +189,19 @@
     /* Schmal, Kapuze, Umhang, kein Gesicht. Alles an ihr sagt: leicht und
        schnell — und dass sie im Nahbereich nichts zu verlieren hat. */
     build: { torso: 'light', head: 'hood', back: 'cape', weapon: 'bogen',
-             legs: 'normal', width: 0.86, scale: 0.97 },
+             legs: 'normal', width: 0.86, scale: 0.97, shoulder: 0.47 },
 
-    colors: { coat: 0x2f4f4a, coatDark: 0x1e3733, skin: 0xd6a878,
-              visor: 0x7cf0c0, pants: 0x3a3c44, boots: 0x22242a, metal: 0x8a9aa4 },
+    /* Das Wiki nennt zu ihrem Aussehen genau ein Merkmal: den **roten
+       Schal**. Der sitzt deshalb in der Akzentfarbe und trägt Umhang,
+       Köchergurt und Halsknoten — auf zwanzig Metern ist er das Einzige,
+       woran man sie erkennt. */
+    colors: { coat: 0x4e7d70, coatDark: 0x2f5348, skin: 0xe0b184,
+              visor: 0x7cf0c0, pants: 0x545764, boots: 0x33363e, metal: 0xa8b6bd,
+              accent: 0xe23b46, muzzle: 0x9cffd8 },
+
+    /* „Always moving": kurze, schnelle Schritte, kräftiges Wippen, deutlich
+       nach vorn gelehnt. Sie soll aussehen, als bremse sie ungern. */
+    gait: { stride: 1.12, tempo: 1.3, bob: 1.35, lean: 0.17, arm: 0.75, sprintLean: 0.38 },
 
     skills: {
       primary: {
@@ -227,15 +249,16 @@
         }
       },
 
+      /* „Disappear and teleport forward." Kein Dash — sie verschwindet.
+         Die Fallgeschwindigkeit wird dabei zurückgesetzt, genau wie im
+         Original: aus dem Blink heraus fällt man von neuem, was ihn zum
+         Rettungsanker über jedem Abgrund macht. */
       utility: {
-        id: 'blink', name: 'Blink', glyph: 'Shift', color: 0xa9c47a,
-        desc: 'Vanish and reappear a short way ahead.',
+        id: 'blink', name: 'Blink', glyph: 'Shift', color: 0x7cf0c0,
+        desc: 'Disappear and teleport forward. Resets vertical momentum.',
         mode: 'press', cooldown: 7, charges: 1, agile: true, cancelsSprint: false,
         fire(ctx) {
-          ctx.player.startDash({ time: 0.28, speed: 6.5, iframes: 0.34,
-                                 towardAim: true, pose: 'leap' });
-          ROR.Projectiles.spark(ctx.player.position.clone().setY(ctx.player.position.y + 1),
-                                0x7cf0c0, 1.6);
+          ctx.player.startBlink({ distance: 24, time: 0.2, color: 0x7cf0c0 });
         }
       },
 
@@ -249,7 +272,12 @@
             radius: 9, life: 6, interval: 0.32, coefficient: 1.1, proc: 0.2,
             slow: 0.6, color: 0x9cffd8
           });
-          ctx.player.startDash({ time: 0.2, speed: 0, iframes: 0.3, pose: 'leap' });
+          /* „Teleport into the sky." Der Satz nach oben ist kein Zierat: er
+             holt sie aus dem Nahkampf heraus, und genau dafür wird die
+             Fähigkeit im Original gedrückt. */
+          ctx.player.launch(13, 0.55);
+          ROR.CharFX.ring(ziel.clone().setY(ziel.y + 0.1), 0x9cffd8, 1, 9, 0.6);
+          ROR.Camera.addShake(0.25);
         }
       }
     }
@@ -272,10 +300,15 @@
     /* Breit, Brustplatte, Werkzeuggurt, Rucksack mit Turmteilen. Er sieht
        aus, als könnte er etwas hinstellen — und genau das tut er. */
     build: { torso: 'armour', head: 'helmet', back: 'backpack', weapon: 'launcher',
-             legs: 'normal', width: 1.2, pads: true, gauntlets: true },
+             legs: 'normal', width: 1.2, pads: true, gauntlets: true, shoulder: 0.5 },
 
-    colors: { coat: 0xb4772e, coatDark: 0x6f471a, skin: 0xc79a72,
-              visor: 0xffd98a, pants: 0x40444a, boots: 0x2a2c30, metal: 0x8a8f95 },
+    colors: { coat: 0xd8933a, coatDark: 0x8a5a1e, skin: 0xd9a97c,
+              visor: 0xffd98a, pants: 0x565b63, boots: 0x35383d, metal: 0xa8adb4,
+              accent: 0x3fa6d8, muzzle: 0xffd070 },
+
+    /* Schwer beladen: kurze Schritte, wenig Armschwung, kaum Vorlage. Er
+       geht, wie jemand geht, der einen Rucksack voller Turmteile trägt. */
+    gait: { stride: 0.86, tempo: 0.86, bob: 0.85, lean: 0.05, arm: 0.4, sprintLean: 0.18 },
 
     skills: {
       primary: {
@@ -356,10 +389,26 @@
        die zwei Werkzeuge gleichzeitig trägt. */
     build: { torso: 'chassis', head: 'sensor', back: 'tanks', weapon: 'nailgun',
              legs: 'treads', width: 1.32, pads: true, gauntlets: true,
-             shoulder: 0.42, neckHeight: 0.82 },
+             shoulder: 0.52, neckHeight: 0.82 },
 
-    colors: { coat: 0xc23a2a, coatDark: 0x7a2018, skin: 0x9aa2a8,
-              visor: 0xffe066, pants: 0x5a5f66, boots: 0x2c2f34, metal: 0xa8b0b8 },
+    /* Das Wiki beschreibt MUL-T als *bright yellow robot* mit *dented head*.
+       Vorher war er rot — das war schlicht falsch. Gelb als Grundfarbe, Rot
+       nur noch als Warnstreifen, und der Sensor wird cyan: auf einem gelben
+       Körper verschwindet ein gelbes Auge. */
+    colors: { coat: 0xf0b62c, coatDark: 0xa07214, skin: 0xa8b0b6,
+              visor: 0x6ff0ff, pants: 0x6d737c, boots: 0x3a3e44, metal: 0xbcc4cc,
+              accent: 0xd8432f, muzzle: 0xffe066 },
+
+    /* Eine Maschine auf Stelzen: lange, langsame Schritte, kaum Armschwung,
+       dafür ein hartes Stampfen bei jedem Aufsetzen. `stomp` löst dabei
+       Staub aus. */
+    gait: { stride: 0.74, tempo: 0.72, bob: 1.8, lean: 0.02, arm: 0.16,
+            sprintLean: 0.1, stomp: true },
+
+    passive: {
+      name: 'Two Tools', glyph: 'R',
+      desc: 'Carries two primary weapons at once. Retool swaps between them.'
+    },
 
     skills: {
       primary: {
@@ -428,6 +477,8 @@
             time: 0.9, speed: 3.2, armor: 200, towardAim: true, pose: 'charge',
             radius: 3.0, damage: { coefficient: 2.5, proc: 1 }
           });
+          ROR.CharFX.staub(ctx.player.position.clone(), 8, 3.4, 0xc8b898);
+          ROR.Camera.addShake(0.3);
         }
       },
 
@@ -457,10 +508,27 @@
     /* Mantel bis zum Boden, keine sichtbaren Beine, Schubdüsen im Rücken
        und ein Stab mit Kern: sie steht nicht, sie schwebt. */
     build: { torso: 'robe', head: 'mask', back: 'jets', weapon: 'focus',
-             legs: 'hover', width: 0.9 },
+             legs: 'hover', width: 0.9, shoulder: 0.48 },
 
-    colors: { coat: 0x8e3f7a, coatDark: 0x561f4a, skin: 0xd6a878,
-              visor: 0xffb0e8, pants: 0x3c3350, boots: 0x241e30, metal: 0xc0a8d8 },
+    colors: { coat: 0xa8508f, coatDark: 0x6d2c5e, skin: 0xe0b184,
+              visor: 0xffb0e8, pants: 0x4e4368, boots: 0x322a44, metal: 0xd0bce4,
+              accent: 0xf0d456, muzzle: 0xff9a5a },
+
+    /* Sie geht nicht, sie schwebt: kein Schrittzyklus, dafür ein langsames
+       Auf und Ab und eine deutliche Neigung in die Bewegungsrichtung. */
+    gait: { stride: 0, tempo: 0.5, bob: 0.5, lean: 0.2, arm: 0.25,
+            sprintLean: 0.3, hover: true },
+
+    /* Das Passiv, das ihr ganzes Spielgefühl trägt und bisher schlicht
+       gefehlt hat. Im Original heißt es ENV Suit: Sprungtaste in der Luft
+       gedrückt halten, und sie fällt nicht mehr, sondern sinkt. Ohne das ist
+       sie eine Zauberin ganz ohne Fortbewegung — sie hat weder Dash noch
+       Doppelsprung, das Schweben *ist* ihre Mobilität. */
+    passive: {
+      name: 'ENV Suit', glyph: 'Space',
+      desc: 'Hold Jump in the air to hover.',
+      hover: { fallSpeed: 1.4, drift: 1.25, control: 34 }
+    },
 
     skills: {
       primary: {
@@ -548,10 +616,24 @@
     /* Wespentaille, glatter Visierschädel, Energieklinge. Kein Gramm zu
        viel — die Silhouette einer Figur, die nie stehen bleibt. */
     build: { torso: 'sleek', head: 'visor', weapon: 'sword',
-             legs: 'normal', width: 0.94, pads: true },
+             legs: 'normal', width: 0.94, pads: true, shoulder: 0.48 },
 
-    colors: { coat: 0xd8dde2, coatDark: 0x9aa4ae, skin: 0xd6a878,
-              visor: 0xff5a6a, pants: 0x2e3238, boots: 0x1c1f23, metal: 0xbfe8ff },
+    colors: { coat: 0xe4e9ee, coatDark: 0x9aa4ae, skin: 0xe0b184,
+              visor: 0xff5a6a, pants: 0x3d434b, boots: 0x282c31, metal: 0xd0eaff,
+              accent: 0xe2404c, muzzle: 0xbfe8ff },
+
+    /* Federnd und auf den Fußballen: große Schritte, hohes Tempo, starke
+       Vorlage. Er soll wirken, als stünde er nie ganz auf dem Boden. */
+    gait: { stride: 1.15, tempo: 1.2, bob: 0.95, lean: 0.14, arm: 0.7, sprintLean: 0.34 },
+
+    /* `jumpCount: 2` gab es schon — im HUD stand davon nur nichts. Der
+       zweite Sprung ist im Original ausdrücklich flacher als der erste;
+       `secondJump` sagt, mit wie viel Kraft er ausgeführt wird. */
+    passive: {
+      name: 'Cybernetic Enhancements', glyph: '2×',
+      desc: 'The Mercenary can jump twice.',
+      secondJump: 0.86
+    },
 
     skills: {
       primary: {
@@ -590,6 +672,9 @@
             radius: 3.2, damage: { coefficient: 3.0, proc: 1 },
             resetOnHit: true, slot: 'utility'
           });
+          ROR.CharFX.ring(ctx.player.position.clone().setY(ctx.player.position.y + 1),
+                          0xff5a6a, 0.4, 2.8, 0.28);
+          ROR.Camera.addShake(0.16);
         }
       },
 

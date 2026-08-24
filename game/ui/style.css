@@ -814,3 +814,15 @@ body.touch-an #diffwrap { top: 30px; width: min(220px, 26vw); }
 @media (orientation: portrait) and (pointer: coarse) {
   body.touch-an #drehen { display: flex; }
 }
+
+/* Das Passivfeld ist kein Knopf: keine Abklingzeit, kein Vorrat, deshalb
+   flacher gehalten als die vier Fähigkeitsfelder. Der Abstand danach trennt
+   es sichtbar von dem, was man tatsächlich drücken kann. */
+.skill.passive {
+  width: 44px;
+  background: transparent;
+  border-style: dashed;
+  opacity: 0.8;
+  margin-right: 6px;
+}
+.skill.passive .key { font-size: 12px; }

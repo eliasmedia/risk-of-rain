@@ -29,7 +29,7 @@ Commencement, Elites, Mithrix, Spielstand, Klang und Touch-Steuerung.
 | 11a | Weltform je Stage, Steigungsgrenze | ✅ fertig |
 | 11b | Bewuchs und Detailschicht je Biom | ✅ fertig |
 | 11c | Gegnermodelle mit eigener Silhouette | offen |
-| 11d | Figuren und Waffen mit Bewegung | offen |
+| 11d | Figuren: Gesichter, Gangbilder, Nachbilder, Passivfähigkeiten | ✅ fertig |
 
 ## Steuerung
 
@@ -120,6 +120,10 @@ game/
     attire.js              Items am Körper, Stapeln, Kisten-Enthüllung
     deployable.js          Türme, Minen, Schildkuppel, Wirkbereiche
     dummy.js               Trainingspuppen mit 0, 20 und 100 Rüstung
+  fx/
+    audio.js               WebAudio: prozedurale Musik und Effekte
+    postfx.js              Leuchten, Vignette, Farbgraduierung, Korn
+    charfx.js              Nachbilder, Bodenringe, Staub — Effekte am Körper
   ui/
     style.css              Oberfläche
     hud.js                 Balken, Fähigkeiten, Schadenszahlen, Technikanzeige
@@ -130,6 +134,10 @@ game/
 
 Die Ladereihenfolge in `risk-of-rain.html` **ist** die Abhängigkeitsreihenfolge.
 Neue Dateien dort eintragen.
+
+Woran eine Spielfigur gemessen wird — 31 Abnahmekriterien für Optik,
+Animation, Effekte, Fortbewegung und Wiki-Treue, dazu der Stand je Figur und
+die nächsten drei Survivors — steht in [`docs/CHARAKTERE.md`](docs/CHARAKTERE.md).
 
 ### Die Ideen, auf denen alles aufbaut
 

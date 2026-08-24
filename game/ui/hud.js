@@ -61,6 +61,22 @@
     /* Baut die vier Fähigkeitsfelder aus der Figurendefinition auf. */
     buildSkills(def) {
       el.skills.innerHTML = '';
+
+      /* Das Passiv steht links vor den vier Feldern und ist bewusst kein
+         Knopf: es hat keine Abklingzeit und keine Ladung. Trotzdem gehört es
+         ins Bild — Artificers Schweben und Mercenarys Doppelsprung waren
+         bisher nirgends erklärt, und wer sie nicht aus dem Original kennt,
+         findet sie sonst nie. */
+      if (def.passive) {
+        const pw = document.createElement('div');
+        pw.className = 'skill passive ready';
+        pw.innerHTML = '<b class="key">' + def.passive.glyph + '</b>';
+        pw.style.setProperty('--tint',
+          '#' + def.colors.visor.toString(16).padStart(6, '0'));
+        pw.title = def.passive.name + ' — ' + def.passive.desc;
+        el.skills.appendChild(pw);
+      }
+
       SLOTS.forEach(function (slot) {
         const s = def.skills[slot];
         const wrap = document.createElement('div');

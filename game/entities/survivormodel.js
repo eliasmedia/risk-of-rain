@@ -90,53 +90,214 @@
     return m;
   }
 
+  /* Mündungsblitz.
+
+     Vorher war das ein einzelnes Leuchtvieleck, das größer und kleiner wurde —
+     aus zwei Metern eine Kugel, aus zwanzig ein Punkt. Ein Blitz besteht aber
+     aus drei Dingen, die verschieden schnell vergehen: dem Kegel aus dem Lauf,
+     dem Stern quer dazu und dem heißen Kern. Erst zusammen liest sich das als
+     Schuss statt als aufblinkende Murmel.
+
+     Alle drei Materialien merken sich in `userData.max`, wie hell sie
+     höchstens werden dürfen — so bleibt der Kern weiß und der Kegel farbig,
+     obwohl beide von derselben Zahl gesteuert werden. */
+  function muendungsblitz(parent, farbe) {
+    const g = new THREE.Group();
+    g.visible = false;
+    const mats = [];
+
+    function teil(geo, max, color) {
+      const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+        color: color, transparent: true, opacity: 0, depthWrite: false,
+        blending: THREE.AdditiveBlending
+      }));
+      m.material.userData.max = max;
+      mats.push(m.material);
+      g.add(m);
+      return m;
+    }
+
+    // Kegel aus dem Lauf, entlang −Z.
+    const kegel = new THREE.ConeGeometry(0.11, 0.38, 6);
+    kegel.rotateX(-Math.PI / 2);
+    kegel.translate(0, 0, -0.15);
+    teil(kegel, 0.85, farbe);
+
+    // Stern quer zum Lauf: zwei flache Balken über Kreuz.
+    for (let i = 0; i < 2; i++) {
+      const b = new THREE.BoxGeometry(i ? 0.05 : 0.42, i ? 0.42 : 0.05, 0.02);
+      teil(b, 0.7, farbe);
+    }
+
+    // Heißer Kern — bleibt weiß, sonst wirkt der Blitz wie ein Farbklecks.
+    teil(new THREE.IcosahedronGeometry(0.075, 0), 1.0, 0xfff6e0);
+
+    g.userData.mats = mats;
+    parent.add(g);
+    return g;
+  }
+
   /* ------------------------------------------------------------- Köpfe */
 
+  /* Die Köpfe.
+
+     Vorsicht mit der Tiefe: `prism` skaliert die Grundgeometrie mit Radius
+     0.5 auf `bw`/`bd`, das Ergebnis reicht also bis ±bd in die Tiefe — nicht
+     bis ±bd/2. Genau daran sind vorher sämtliche Gesichter gescheitert: Visier
+     und Augen saßen bei z = −0.15, der Schädel reichte aber bis −0.28, und
+     damit steckte jedes Gesicht *im* Kopf. Alle sechs Figuren hatten deshalb
+     eine leere Fläche vorn — das auffälligste Einzelproblem am ganzen
+     Figurenbau, und keins, das man beim Lesen des Codes sieht.
+
+     Deshalb hier durchgehend: Kopfkörper bis `bd`, Gesichtsteile davor. */
   function kopf(neck, art, M, c) {
-    const s = 1;
     if (art === 'hood') {
-      // Kapuze: hinten hoch, vorn offen — die Huntress hat kein Gesicht.
-      prism(neck, { mat: M.coat, tw: 0.30, bw: 0.34, h: 0.34, y: 0.17, sides: 6 });
-      prism(neck, { mat: M.coatDark, tw: 0.10, bw: 0.36, td: 0.30, bd: 0.40,
-                    h: 0.40, y: 0.24, z: 0.04, sides: 6 });
-      glow(neck, 0.055, c.visor, 0.075, 0.16, -0.15);
-      glow(neck, 0.055, c.visor, -0.075, 0.16, -0.15);
-      // Zopf
-      const z = joint(neck, 0, 0.22, 0.16);
-      prism(z, { mat: M.coatDark, tw: 0.09, bw: 0.05, h: 0.42, y: -0.21, rx: 0.35, sides: 5 });
+      /* Kapuze: hinten hoch, vorn offen — die Huntress hat kein Gesicht,
+         nur zwei Lichtpunkte in der Dunkelheit darunter. */
+      prism(neck, { mat: M.coatDark, tw: 0.24, bw: 0.26, h: 0.32, y: 0.16, sides: 6 });
+      // Der Schlund der Kapuze, weiter als der Kopf und weiter hinten offen.
+      prism(neck, { mat: M.coat, tw: 0.12, bw: 0.32, td: 0.26, bd: 0.34,
+                    h: 0.42, y: 0.25, z: 0.05, sides: 6 });
+      // Rand der Kapuze, damit die Öffnung eine Kante hat.
+      prism(neck, { mat: M.coatDark, tw: 0.28, bw: 0.3, td: 0.1, bd: 0.11,
+                    h: 0.3, y: 0.17, z: -0.24, rx: 0.12, sides: 5 });
+      glow(neck, 0.05, c.visor, 0.08, 0.17, -0.29);
+      glow(neck, 0.05, c.visor, -0.08, 0.17, -0.29);
+      // Zopf, der hinten aus der Kapuze fällt.
+      const z = joint(neck, 0, 0.2, 0.2);
+      prism(z, { mat: M.coatDark, tw: 0.08, bw: 0.05, h: 0.44, y: -0.22, rx: 0.4, sides: 5 });
+
     } else if (art === 'helmet') {
-      prism(neck, { mat: M.metal, tw: 0.30, bw: 0.34, h: 0.32, y: 0.16, sides: 6 });
-      slab(neck, 0.36, 0.09, 0.36, M.coatDark, 0, 0.33, 0);
-      slab(neck, 0.30, 0.08, 0.05, M.visor, 0, 0.16, -0.17);
-      // Helmlampe
-      glow(neck, 0.07, c.visor, 0, 0.30, -0.14);
+      // Engineer: Bauhelm mit breitem Schirm und Stirnlampe.
+      prism(neck, { mat: M.metal, tw: 0.24, bw: 0.27, h: 0.3, y: 0.15, sides: 6 });
+      prism(neck, { mat: M.coat, tw: 0.2, bw: 0.29, td: 0.2, bd: 0.29,
+                    h: 0.16, y: 0.31, sides: 6 });
+      // Schirm nach vorn — das Merkmal, an dem man den Helm erkennt.
+      slab(neck, 0.34, 0.05, 0.22, M.coat, 0, 0.27, -0.22, -0.14);
+      slab(neck, 0.28, 0.09, 0.05, M.visor, 0, 0.15, -0.28);
+      glow(neck, 0.06, c.visor, 0, 0.3, -0.25);
+      // Atemmaske unter dem Visier.
+      prism(neck, { mat: M.coatDark, tw: 0.14, bw: 0.12, td: 0.1, bd: 0.09,
+                    h: 0.12, y: 0.05, z: -0.24, sides: 5 });
+
     } else if (art === 'sensor') {
-      // MUL-T hat keinen Kopf, sondern einen Sensorbalken.
-      prism(neck, { mat: M.metal, tw: 0.46, bw: 0.40, td: 0.22, bd: 0.26, h: 0.20, y: 0.10, sides: 4 });
-      slab(neck, 0.44, 0.07, 0.04, M.visor, 0, 0.12, -0.14);
-      glow(neck, 0.05, c.visor, 0.16, 0.12, -0.15);
-      prism(neck, { mat: M.coatDark, tw: 0.03, bw: 0.05, h: 0.28, y: 0.32, x: 0.16, sides: 4 });
-      glow(neck, 0.045, c.visor, 0.16, 0.46, 0);
+      /* MUL-T hat keinen Kopf, sondern einen Sensorbalken — und laut Wiki
+         einen *verbeulten* Schädel. Die Beule ist kein Zierat: sie ist das
+         Einzige, was diesen Kasten von jedem anderen Kasten unterscheidet,
+         und sie erzählt, dass die Maschine schon einiges hinter sich hat. */
+      prism(neck, { mat: M.metal, tw: 0.42, bw: 0.36, td: 0.2, bd: 0.24, h: 0.22, y: 0.11, sides: 4 });
+      prism(neck, { mat: M.coat, tw: 0.28, bw: 0.34, td: 0.15, bd: 0.19,
+                    h: 0.1, y: 0.24, sides: 4 });
+      // Die Delle: eingedrückte Platte, schräg, dunkler als das Blech.
+      prism(neck, { mat: M.coatDark, tw: 0.15, bw: 0.12, td: 0.13, bd: 0.11,
+                    h: 0.08, x: -0.19, y: 0.2, z: 0.02, rz: 0.6, rx: 0.22, sides: 5 });
+      prism(neck, { mat: M.metal, tw: 0.1, bw: 0.14, td: 0.1, bd: 0.13,
+                    h: 0.12, x: 0.2, y: 0.18, z: 0.04, rz: -0.32, sides: 4 });
+      // Der Sensorbalken selbst, quer über die ganze Breite.
+      slab(neck, 0.46, 0.09, 0.05, M.visor, 0, 0.13, -0.26);
+      slab(neck, 0.5, 0.04, 0.04, M.accent, 0, 0.03, -0.25);
+      glow(neck, 0.06, c.visor, 0.17, 0.13, -0.28);
+      glow(neck, 0.045, c.visor, -0.13, 0.13, -0.28);
+      // Antenne mit Warnlicht, leicht abgeknickt.
+      prism(neck, { mat: M.coatDark, tw: 0.025, bw: 0.045, h: 0.3, y: 0.38, x: 0.17, rz: -0.2, sides: 4 });
+      glow(neck, 0.05, c.accent, 0.14, 0.53, 0);
+
     } else if (art === 'mask') {
-      // Artificer: Maske ohne Augen, dafür ein Diadem.
-      prism(neck, { mat: M.skin, tw: 0.24, bw: 0.28, h: 0.30, y: 0.15, sides: 6 });
-      prism(neck, { mat: M.coatDark, tw: 0.26, bw: 0.22, td: 0.20, bd: 0.16,
-                    h: 0.22, y: 0.16, z: -0.06, sides: 5 });
-      glow(neck, 0.05, c.visor, 0, 0.34, 0);
-      spike(neck, 0.06, 0.22, M.metal, 0, 0.42, 0);
+      // Artificer: Maske ohne Augen, dafür Diadem und leuchtende Stirnzier.
+      prism(neck, { mat: M.skin, tw: 0.21, bw: 0.24, h: 0.29, y: 0.15, sides: 6 });
+      // Kapuze/Haar hinten, damit der Kopf nicht als Kugel dasteht.
+      prism(neck, { mat: M.coatDark, tw: 0.24, bw: 0.26, td: 0.19, bd: 0.2,
+                    h: 0.3, y: 0.17, z: 0.08, sides: 5 });
+      // Die Maske selbst — glatte Platte vor dem Gesicht.
+      prism(neck, { mat: M.coat, tw: 0.16, bw: 0.2, td: 0.05, bd: 0.06,
+                    h: 0.26, y: 0.14, z: -0.21, sides: 5 });
+      glow(neck, 0.045, c.visor, 0.07, 0.18, -0.26);
+      glow(neck, 0.045, c.visor, -0.07, 0.18, -0.26);
+      // Diadem mit Kristall.
+      prism(neck, { mat: M.accent, tw: 0.26, bw: 0.24, td: 0.24, bd: 0.22,
+                    h: 0.05, y: 0.31, sides: 6 });
+      glow(neck, 0.06, c.visor, 0, 0.34, -0.2);
+      spike(neck, 0.055, 0.2, M.metal, 0, 0.44, 0);
+
     } else if (art === 'visor') {
       // Mercenary: glatter Cyborgschädel mit einem roten Schlitz.
-      prism(neck, { mat: M.coat, tw: 0.22, bw: 0.30, td: 0.26, bd: 0.30, h: 0.34, y: 0.17, sides: 6 });
-      slab(neck, 0.31, 0.055, 0.05, M.visor, 0, 0.17, -0.15);
-      prism(neck, { mat: M.coatDark, tw: 0.05, bw: 0.10, h: 0.30, y: 0.30, z: 0.10, rx: -0.5, sides: 4 });
+      prism(neck, { mat: M.coat, tw: 0.2, bw: 0.25, td: 0.22, bd: 0.26, h: 0.32, y: 0.16, sides: 6 });
+      // Kieferplatte, die nach vorn läuft — daraus entsteht das Profil.
+      prism(neck, { mat: M.coatDark, tw: 0.15, bw: 0.17, td: 0.1, bd: 0.11,
+                    h: 0.16, y: 0.08, z: -0.2, rx: 0.2, sides: 5 });
+      slab(neck, 0.3, 0.05, 0.05, M.visor, 0, 0.19, -0.25);
+      glow(neck, 0.04, c.visor, 0, 0.19, -0.27);
+      // Nackenkabel, das schräg nach hinten steht.
+      prism(neck, { mat: M.coatDark, tw: 0.05, bw: 0.09, h: 0.3, y: 0.28, z: 0.15, rx: -0.55, sides: 4 });
+
     } else {
-      // Commando: Mütze und Schal.
-      prism(neck, { mat: M.skin, tw: 0.27, bw: 0.30, h: 0.30, y: 0.15, sides: 5 });
-      slab(neck, 0.32, 0.10, 0.06, M.visor, 0, 0.17, -0.15);
-      prism(neck, { mat: M.coatDark, tw: 0.34, bw: 0.30, h: 0.11, y: 0.33, sides: 6 });
-      slab(neck, 0.36, 0.05, 0.30, M.coatDark, 0, 0.34, 0.03);
-      prism(neck, { mat: M.coat, tw: 0.34, bw: 0.28, h: 0.12, y: -0.03, sides: 6 });
+      /* Commando: Mütze, Schutzbrille, Schal.
+
+         Der Schal ist der Akzent — bei einer Figur, die sonst nur aus
+         Marineblau besteht, ist er das Einzige, was auf zwanzig Metern noch
+         Farbe hat. Er bekommt deshalb ein loses Ende, das hinter ihr
+         hersteht, statt nur ein Kragenring zu sein. */
+      prism(neck, { mat: M.skin, tw: 0.22, bw: 0.25, h: 0.3, y: 0.15, sides: 5 });
+      // Mütze: Kopfteil und Schirm.
+      prism(neck, { mat: M.coatDark, tw: 0.26, bw: 0.28, h: 0.12, y: 0.32, sides: 6 });
+      slab(neck, 0.3, 0.045, 0.24, M.coatDark, 0, 0.3, -0.2, -0.12);
+      // Schutzbrille: zwei Gläser und der Riemen ringsum.
+      slab(neck, 0.3, 0.045, 0.5, M.coatDark, 0, 0.19, 0);
+      slab(neck, 0.3, 0.09, 0.05, M.coatDark, 0, 0.19, -0.25);
+      glow(neck, 0.052, c.visor, 0.075, 0.19, -0.28);
+      glow(neck, 0.052, c.visor, -0.075, 0.19, -0.28);
+      // Schal: Kragen plus loses Ende nach hinten.
+      prism(neck, { mat: M.accent, tw: 0.3, bw: 0.26, h: 0.13, y: -0.02, sides: 6 });
+      prism(neck, { mat: M.accent, tw: 0.12, bw: 0.08, td: 0.04, bd: 0.035,
+                    h: 0.42, y: -0.14, z: 0.2, rx: -0.55, sides: 4 });
     }
+  }
+
+  /* Mündungsblitz.
+
+     Vorher war das ein einzelnes Leuchtvieleck, das größer und kleiner wurde —
+     aus zwei Metern eine Kugel, aus zwanzig ein Punkt. Ein Blitz besteht aber
+     aus drei Dingen, die verschieden schnell vergehen: dem Kegel aus dem Lauf,
+     dem Stern quer dazu und dem heißen Kern. Erst zusammen liest sich das als
+     Schuss statt als aufblinkende Murmel.
+
+     Alle drei Materialien merken sich in `userData.max`, wie hell sie
+     höchstens werden dürfen — so bleibt der Kern weiß und der Kegel farbig,
+     obwohl beide von derselben Zahl gesteuert werden. */
+  function muendungsblitz(parent, farbe) {
+    const g = new THREE.Group();
+    g.visible = false;
+    const mats = [];
+
+    function teil(geo, max, color) {
+      const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+        color: color, transparent: true, opacity: 0, depthWrite: false,
+        blending: THREE.AdditiveBlending
+      }));
+      m.material.userData.max = max;
+      mats.push(m.material);
+      g.add(m);
+      return m;
+    }
+
+    // Kegel aus dem Lauf, entlang −Z.
+    const kegel = new THREE.ConeGeometry(0.11, 0.38, 6);
+    kegel.rotateX(-Math.PI / 2);
+    kegel.translate(0, 0, -0.15);
+    teil(kegel, 0.85, farbe);
+
+    // Stern quer zum Lauf: zwei flache Balken über Kreuz.
+    for (let i = 0; i < 2; i++) {
+      const b = new THREE.BoxGeometry(i ? 0.05 : 0.42, i ? 0.42 : 0.05, 0.02);
+      teil(b, 0.7, farbe);
+    }
+
+    // Heißer Kern — bleibt weiß, sonst wirkt der Blitz wie ein Farbklecks.
+    teil(new THREE.IcosahedronGeometry(0.075, 0), 1.0, 0xfff6e0);
+
+    g.userData.mats = mats;
+    parent.add(g);
+    return g;
   }
 
   /* ------------------------------------------------------------- Waffen */
@@ -406,7 +567,12 @@
       const M = {
         coat: mat(c.coat), coatDark: mat(c.coatDark), skin: mat(c.skin),
         visor: mat(c.visor, 0.7), pants: mat(c.pants), boots: mat(c.boots),
-        metal: mat(c.metal)
+        metal: mat(c.metal),
+        /* Der Akzent ist der eine Farbfleck, der eine Figur auf Entfernung
+           kenntlich macht — Huntress' roter Schal, MUL-Ts Warnstreifen. Fehlt
+           er im Datensatz, tritt der Dunkelton an seine Stelle und nichts
+           ändert sich. */
+        accent: mat(c.accent === undefined ? c.coatDark : c.accent)
       };
       const S = b.scale || 1;
       const breit = b.width || 1;
@@ -414,67 +580,115 @@
       const hips = joint(root, 0, 0.92 * S, 0);
       hips.scale.setScalar(S);
 
+      /* Zwischen Hüfte und allem darüber sitzt ein eigenes Gelenk.
+
+         Vorher hingen Rumpf, Arme und Kopf direkt an der Hüfte, und jede
+         Neigung des Oberkörpers kippte damit auch die Beine mit. Damit war
+         „nach oben zielen" nicht darstellbar, ohne die Figur umzuwerfen.
+         Mit dem Torso-Gelenk trägt die Hüfte das Wippen des Laufs, der Torso
+         die Neigung zum Ziel — beides überlagert sich, statt sich zu
+         widersprechen. */
+      const torso = joint(hips, 0, 0, 0);
+
       /* --------------------------------------------------------- Rumpf */
 
       const rumpf = b.torso || 'coat';
       if (rumpf === 'chassis') {
         // MUL-T: ein Fahrgestell mit Ladefläche, keine Taille.
-        prism(hips, { mat: M.coat, tw: 0.78 * breit, bw: 0.7 * breit, td: 0.5, bd: 0.46,
+        prism(torso, { mat: M.coat, tw: 0.54 * breit, bw: 0.48 * breit, td: 0.42, bd: 0.38,
                       h: 0.6, y: 0.3, sides: 6 });
-        prism(hips, { mat: M.coatDark, tw: 0.86 * breit, bw: 0.8 * breit, td: 0.56, bd: 0.52,
+        prism(torso, { mat: M.coatDark, tw: 0.6 * breit, bw: 0.56 * breit, td: 0.46, bd: 0.42,
                       h: 0.16, y: 0.66, sides: 6 });
-        slab(hips, 0.5 * breit, 0.1, 0.3, M.metal, 0, 0.76, 0.06);
+        slab(torso, 0.42 * breit, 0.1, 0.3, M.metal, 0, 0.76, 0.06);
+        // Warnstreifen quer über die Brust: drei schräge Balken.
+        for (let i = -1; i <= 1; i++) {
+          prism(torso, { mat: M.accent, tw: 0.09, bw: 0.09, td: 0.04, bd: 0.04,
+                        h: 0.34, x: i * 0.16, y: 0.3, z: -0.42, rz: 0.5, sides: 4 });
+        }
       } else if (rumpf === 'robe') {
         // Artificer: Mantel, der nach unten weiter wird und die Beine verdeckt.
-        prism(hips, { mat: M.coat, tw: 0.44, bw: 0.3, td: 0.3, bd: 0.24, h: 0.66, y: 0.33, sides: 6 });
-        prism(hips, { mat: M.coatDark, tw: 0.34, bw: 0.62, td: 0.28, bd: 0.5,
+        prism(torso, { mat: M.coat, tw: 0.4, bw: 0.29, td: 0.28, bd: 0.23, h: 0.66, y: 0.33, sides: 6 });
+        prism(torso, { mat: M.coatDark, tw: 0.34, bw: 0.62, td: 0.28, bd: 0.5,
                       h: 0.72, y: -0.3, sides: 7 });
-        slab(hips, 0.5, 0.08, 0.34, M.metal, 0, 0.62, 0);
+        // Saum und Schärpe in der Akzentfarbe.
+        prism(torso, { mat: M.accent, tw: 0.63, bw: 0.6, td: 0.51, bd: 0.49,
+                      h: 0.07, y: -0.63, sides: 7 });
+        prism(torso, { mat: M.accent, tw: 0.36, bw: 0.44, td: 0.26, bd: 0.31,
+                      h: 0.12, y: 0.06, sides: 6 });
+        slab(torso, 0.5, 0.08, 0.34, M.metal, 0, 0.62, 0);
       } else if (rumpf === 'armour') {
         // Engineer: breite Brustplatte, schmale Hüfte.
-        prism(hips, { mat: M.coat, tw: 0.66 * breit, bw: 0.44, td: 0.42, bd: 0.32,
+        prism(torso, { mat: M.coat, tw: 0.5 * breit, bw: 0.38, td: 0.36, bd: 0.3,
                       h: 0.64, y: 0.32, sides: 6 });
-        prism(hips, { mat: M.coatDark, tw: 0.74 * breit, bw: 0.68 * breit, td: 0.46, bd: 0.44,
+        prism(torso, { mat: M.coatDark, tw: 0.55 * breit, bw: 0.52 * breit, td: 0.4, bd: 0.38,
                       h: 0.2, y: 0.66, sides: 6 });
+        // Akzentstreifen über die Brustplatte — ein Bauhelm-Signal.
+        slab(torso, 0.11, 0.5, 0.06, M.accent, 0, 0.36, -0.36);
         // Werkzeuggurt
-        slab(hips, 0.52, 0.12, 0.36, M.coatDark, 0, 0.06, 0);
+        slab(torso, 0.52, 0.12, 0.36, M.coatDark, 0, 0.06, 0);
         for (let i = -1; i <= 1; i += 2) {
-          slab(hips, 0.1, 0.16, 0.1, M.metal, i * 0.24, 0.02, -0.16);
+          slab(torso, 0.1, 0.16, 0.1, M.metal, i * 0.24, 0.02, -0.16);
         }
       } else if (rumpf === 'sleek') {
         // Mercenary: Wespentaille, hohe Schulterpartie.
-        prism(hips, { mat: M.coat, tw: 0.5, bw: 0.34, td: 0.3, bd: 0.24, h: 0.6, y: 0.3, sides: 7 });
-        prism(hips, { mat: M.coatDark, tw: 0.56, bw: 0.5, td: 0.34, bd: 0.3, h: 0.22, y: 0.66, sides: 7 });
+        prism(torso, { mat: M.coat, tw: 0.44, bw: 0.32, td: 0.28, bd: 0.23, h: 0.6, y: 0.3, sides: 7 });
+        prism(torso, { mat: M.coatDark, tw: 0.49, bw: 0.45, td: 0.32, bd: 0.29, h: 0.22, y: 0.66, sides: 7 });
         for (let i = -1; i <= 1; i += 2) {
-          slab(hips, 0.05, 0.26, 0.07, M.visor, i * 0.2, 0.4, -0.16);
+          slab(torso, 0.05, 0.26, 0.07, M.visor, i * 0.19, 0.4, -0.28);
         }
       } else if (rumpf === 'light') {
         // Huntress: schmal, kurze Weste, freie Taille.
-        prism(hips, { mat: M.coat, tw: 0.42, bw: 0.32, td: 0.26, bd: 0.22, h: 0.5, y: 0.32, sides: 6 });
-        prism(hips, { mat: M.coatDark, tw: 0.46, bw: 0.42, td: 0.3, bd: 0.28, h: 0.18, y: 0.62, sides: 6 });
-        slab(hips, 0.3, 0.22, 0.2, M.skin, 0, 0.14, 0);
+        prism(torso, { mat: M.coat, tw: 0.37, bw: 0.29, td: 0.24, bd: 0.21, h: 0.5, y: 0.32, sides: 6 });
+        prism(torso, { mat: M.coatDark, tw: 0.41, bw: 0.38, td: 0.28, bd: 0.26, h: 0.18, y: 0.62, sides: 6 });
+        /* Der rote Schal liegt auch vorn um den Hals, nicht nur als Umhang
+           hinten. Sonst ist ihr einziges Wiki-Merkmal von vorne unsichtbar —
+           und von vorn sieht man sie im Spiel die meiste Zeit. */
+        prism(torso, { mat: M.accent, tw: 0.3, bw: 0.34, td: 0.24, bd: 0.27,
+                      h: 0.13, y: 0.76, sides: 6 });
+        prism(torso, { mat: M.accent, tw: 0.11, bw: 0.07, td: 0.05, bd: 0.04,
+                      h: 0.34, x: -0.13, y: 0.6, z: -0.27, rz: 0.3, rx: -0.2, sides: 4 });
+        slab(torso, 0.3, 0.22, 0.2, M.skin, 0, 0.14, 0);
+        // Köchergurt quer über die Brust, in der Akzentfarbe.
+        prism(torso, { mat: M.accent, tw: 0.08, bw: 0.08, td: 0.04, bd: 0.04,
+                      h: 0.56, y: 0.38, z: -0.25, rz: 0.6, sides: 4 });
       } else {
         // Commando: Mantel mit Schößen.
-        prism(hips, { mat: M.coat, tw: 0.5, bw: 0.4, td: 0.32, bd: 0.28, h: 0.6, y: 0.3, sides: 6 });
-        prism(hips, { mat: M.coatDark, tw: 0.56, bw: 0.5, td: 0.36, bd: 0.32, h: 0.22, y: 0.66, sides: 6 });
+        prism(torso, { mat: M.coat, tw: 0.44, bw: 0.37, td: 0.3, bd: 0.27, h: 0.6, y: 0.3, sides: 6 });
+        prism(torso, { mat: M.coatDark, tw: 0.49, bw: 0.45, td: 0.34, bd: 0.31, h: 0.22, y: 0.66, sides: 6 });
         for (let i = -1; i <= 1; i += 2) {
-          prism(hips, { mat: M.coat, tw: 0.2, bw: 0.16, td: 0.1, bd: 0.08, h: 0.42,
+          prism(torso, { mat: M.coat, tw: 0.2, bw: 0.16, td: 0.1, bd: 0.08, h: 0.42,
                         x: i * 0.16, y: -0.16, z: 0.06, sides: 4 });
+        }
+        // Aufschlag am Revers: schmal, aber es bricht die dunkle Fläche.
+        for (let i = -1; i <= 1; i += 2) {
+          prism(torso, { mat: M.accent, tw: 0.07, bw: 0.1, td: 0.04, bd: 0.04,
+                        h: 0.34, x: i * 0.12, y: 0.42, z: -0.29, rz: i * 0.22, sides: 4 });
         }
       }
 
       /* --------------------------------------------------------- Rücken */
 
       const attach = {};
-      const ruecken = joint(hips, 0, 0.42, 0.2);
+      const ruecken = joint(torso, 0, 0.42, 0.2);
       attach.back = ruecken;
       if (b.back === 'backpack') {
         prism(ruecken, { mat: M.coatDark, tw: 0.5, bw: 0.44, td: 0.26, bd: 0.24, h: 0.6, y: 0.05, sides: 5 });
         slab(ruecken, 0.16, 0.4, 0.16, M.metal, 0.2, 0.1, 0.14);
         glow(ruecken, 0.06, c.visor, -0.2, 0.24, 0.14);
       } else if (b.back === 'cape') {
-        prism(ruecken, { mat: M.coatDark, tw: 0.44, bw: 0.56, td: 0.06, bd: 0.1,
-                         h: 0.95, y: -0.38, z: 0.04, rx: -0.12, sides: 4 });
+        /* Der Umhang trägt die Akzentfarbe — bei der Huntress ist das ihr
+           roter Schal, das einzige Merkmal, das das Wiki überhaupt zu ihrem
+           Aussehen nennt. Drei Glieder statt eines Brettes, damit er sich
+           später im Lauf bewegen lässt. */
+        let glied = ruecken;
+        for (let i = 0; i < 3; i++) {
+          prism(glied, { mat: M.accent, tw: 0.42 - i * 0.04, bw: 0.46 - i * 0.06,
+                         td: 0.07, bd: 0.09, h: 0.36, y: -0.18, z: 0.02,
+                         rx: -0.05, sides: 4 });
+          glied = joint(glied, 0, -0.36, 0.01);
+        }
+        // Der Knoten am Hals, an dem der Schal sitzt.
+        prism(ruecken, { mat: M.accent, tw: 0.15, bw: 0.11, h: 0.14, y: 0.12, sides: 5 });
       } else if (b.back === 'jets') {
         for (let i = -1; i <= 1; i += 2) {
           prism(ruecken, { mat: M.metal, tw: 0.12, bw: 0.16, h: 0.42, x: i * 0.2, y: -0.05, sides: 6 });
@@ -489,15 +703,38 @@
 
       /* ----------------------------------------------------------- Kopf */
 
-      const neck = joint(hips, 0, b.neckHeight === undefined ? 0.86 : b.neckHeight, 0);
-      kopf(neck, b.head || 'cap', M, c);
+      const neckY = b.neckHeight === undefined ? 0.86 : b.neckHeight;
+      /* Ein Hals. Ohne ihn klaffte zwischen Schulterpartie (endet bei 0.76)
+         und Kopf (beginnt bei 0.86) eine Lücke, durch die man hindurchsah —
+         am deutlichsten bei Artificer, deren Robe keine Schulterplatte hat.
+         Der Kopf wirkte dadurch, als schwebe er über der Figur. */
+      if (b.head !== 'sensor') {
+        prism(torso, { mat: M.coatDark, tw: 0.13, bw: 0.16, td: 0.12, bd: 0.15,
+                       h: (neckY - 0.58), y: (neckY + 0.58) / 2, sides: 5 });
+      }
+      const neck = joint(torso, 0, neckY, 0);
+      /* Der Kopf sitzt in einem eigenen Gelenk im Nacken. Der Nacken trägt
+         das, was der ganze Oberkörper tut; der Kopf darf zusätzlich zum Ziel
+         schauen und sich im Leerlauf umsehen. */
+      const head = joint(neck, 0, 0, 0);
+      kopf(head, b.head || 'cap', M, c);
 
       /* ----------------------------------------------------------- Arme */
 
       const arms = [];
-      const schulterBreite = (b.shoulder || 0.36) * breit;
+      /* Die Schultern müssen *außerhalb* des Rumpfes sitzen.
+
+         Das war der stillste und folgenschwerste Fehler im Figurenbau: der
+         Standardabstand war 0.36 mal Breite, während Engineer und MUL-T einen
+         Rumpf von 0.66 bzw. 0.78 halber Breite trugen. Beide Arme steckten
+         damit vollständig im Körper — samt Waffe. Man sah es nicht als Fehler,
+         sondern hielt die Figuren für „kompakt gebaut".
+
+         Deshalb steht der Wert jetzt in jedem Datensatz, und wer ihn vergisst,
+         bekommt wenigstens einen Abstand, der zur Breite passt. */
+      const schulterBreite = (b.shoulder || 0.42) * breit;
       for (let s = -1; s <= 1; s += 2) {
-        const shoulder = joint(hips, s * schulterBreite, 0.70, 0);
+        const shoulder = joint(torso, s * schulterBreite, 0.70, 0);
         if (b.pads) {
           prism(shoulder, { mat: M.coatDark, tw: 0.26 * breit, bw: 0.22 * breit,
                             td: 0.24, bd: 0.2, h: 0.2, y: 0.02, sides: 6 });
@@ -514,15 +751,12 @@
       /* Der Mündungsblitz sitzt jetzt an der Mündung der Waffe und nicht mehr
          an einem festen Punkt am Unterarm. Damit wandert er mit, wenn die
          Waffe vom Rückstoß geworfen wird. */
-      const flash = glow(gun.userData.muendung || gun, 0.16, 0xffe6a0, 0, 0, 0);
-      flash.material.opacity = 0;
+      const blitzFarbe = c.muzzle === undefined ? 0xffd68a : c.muzzle;
+      const flash = muendungsblitz(gun.userData.muendung || gun, blitzFarbe);
       // Zweitwaffe (Commando trägt zwei Pistolen).
       const gunOff = b.weaponOff ? waffe(arms[0].elbow, b.weaponOff, M, c) : null;
-      let flashOff = null;
-      if (gunOff) {
-        flashOff = glow(gunOff.userData.muendung || gunOff, 0.16, 0xffe6a0, 0, 0, 0);
-        flashOff.material.opacity = 0;
-      }
+      const flashOff = gunOff
+        ? muendungsblitz(gunOff.userData.muendung || gunOff, blitzFarbe) : null;
 
       /* ----------------------------------------------------------- Beine */
 
@@ -551,13 +785,14 @@
         legs.push({ hip: hip, knee: knee, side: s });
       }
 
-      attach.chest = joint(hips, 0, 0.6, -0.2);
+      attach.chest = joint(torso, 0, 0.6, -0.2);
       attach.hip = joint(hips, 0, 0.04, 0);
-      attach.head = neck;
-      attach.orbit = joint(hips, 0, 0.55, 0);
+      attach.head = head;
+      attach.orbit = joint(torso, 0, 0.55, 0);
 
-      return { root, hips, neck, arms, legs, gun, flash, gunOff, flashOff,
-               nahkampf: !!gun.userData.nahkampf, attach, scale: S };
+      return { root, hips, torso, neck, head, arms, legs, gun, flash, gunOff, flashOff,
+               nahkampf: !!gun.userData.nahkampf,
+               wurf: !!gun.userData.wurf, attach, scale: S };
     }
   };
 })(window.ROR);

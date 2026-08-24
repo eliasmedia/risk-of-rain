@@ -103,19 +103,34 @@
         return out;
       })();
 
+      /* Die Spur eines fliegenden Geschosses.
+
+         Ohne sie sieht man bei 120 m/s nur ein Flimmern: das Geschoss legt je
+         Bild zwei Meter zurück und ist an keinem Ort lange genug, um gesehen
+         zu werden. Die Spur schließt diese Lücke — ein Stab, der jedes Bild
+         von der alten zur neuen Position gespannt wird und dabei nach hinten
+         dünner ausläuft.
+
+         Gebaut entlang −Z und um den Ursprung nach hinten verschoben, damit
+         `scale.z` die Länge ist und der Kopf am Geschoss bleibt. */
+      const spurGeo = new THREE.CylinderGeometry(0.5, 0.06, 1, 5, 1, true);
+      spurGeo.rotateX(-Math.PI / 2);
+      spurGeo.translate(0, 0, 0.5);
+
       shots = [];
       for (let i = 0; i < SHOTS; i++) {
-        const bau = function (geo) {
+        const bau = function (geo, deck) {
           const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
-            color: 0xffffff, transparent: true, opacity: 0.95, depthWrite: false,
-            blending: THREE.AdditiveBlending
+            color: 0xffffff, transparent: true, opacity: deck === undefined ? 0.95 : deck,
+            depthWrite: false, blending: THREE.AdditiveBlending
           }));
           m.visible = false;
           m.frustumCulled = false;
           group.add(m);
           return m;
         };
-        shots.push({ mesh: bau(shotGeo), pfeil: bau(pfeilGeo), active: false, hit: [] });
+        shots.push({ mesh: bau(shotGeo), pfeil: bau(pfeilGeo),
+                     spur: bau(spurGeo, 0.5), active: false, hit: [] });
       }
     },
 
@@ -277,6 +292,16 @@
       s.mesh.material.color.setHex(opts.color === undefined ? 0xffd070 : opts.color);
       s.mesh.material.opacity = 0.95;
       s.mesh.visible = true;
+      s.hatSpur = opts.trail !== false && s.speed >= 20;
+      if (s.hatSpur) {
+        s.spur.material.color.setHex(
+          opts.trailColor === undefined
+            ? (opts.color === undefined ? 0xffd070 : opts.color) : opts.trailColor);
+        s.spurBreite = (opts.trailWidth || 1) * s.radius;
+        s.spur.visible = false;   // erst ab dem zweiten Bild, vorher fehlt die Strecke
+      } else {
+        s.spur.visible = false;
+      }
       return s;
     },
 
@@ -388,6 +413,18 @@
 
         s.mesh.position.addScaledVector(s.dir, step);
         s.travelled += step;
+
+        if (s.hatSpur) {
+          /* Die Spur reicht drei Schritte zurück und wird höchstens so lang
+             wie die bisher geflogene Strecke — sonst steht beim ersten Bild
+             ein Balken im Nichts, der aus der Mündung herausragt. */
+          const laenge = Math.min(s.travelled, step * 3.2 + s.radius);
+          s.spur.position.copy(s.mesh.position);
+          s.spur.quaternion.setFromUnitVectors(_vorn, s.dir);
+          s.spur.scale.set(s.spurBreite, s.spurBreite, laenge);
+          s.spur.material.opacity = 0.45 * Math.min(1, s.life * 3);
+          s.spur.visible = laenge > 0.05;
+        }
       }
     }
   };
@@ -402,11 +439,18 @@
         proc: s.explode.proc
       });
       Projectiles.spark(at || s.mesh.position, 0xffb060, s.explode.radius * 0.7);
+      /* Ein Funken allein sagt nichts über die Reichweite einer Explosion.
+         Der Ring zeigt sie — und zwar genau so groß, wie sie wirkt. */
+      if (ROR.CharFX) {
+        ROR.CharFX.ring(_p.copy(at || s.mesh.position), s.mesh.material.color.getHex(),
+                        s.explode.radius * 0.3, s.explode.radius, 0.36);
+      }
     } else if (impact) {
       Projectiles.spark(at || s.mesh.position, 0xffc98a, 0.6);
     }
     s.active = false;
     s.mesh.visible = false;
+    s.spur.visible = false;
   }
 
   ROR.Projectiles = Projectiles;

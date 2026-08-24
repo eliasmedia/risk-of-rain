@@ -167,6 +167,14 @@
     afterStage() {
       const p = Game.player;
       p.position.set(Game.stage.spawn.x, Game.stage.spawn.y + 0.5, Game.stage.spawn.z);
+      /* Auch den Rettungspunkt mitziehen. Er wurde bisher nur einmal bei der
+         Figurerstellung gesetzt, also zeigte er den ganzen Durchlauf auf die
+         Koordinaten von Stage 1. Wer runterfiel, landete auf einer anderen
+         Karte an derselben Stelle — auf der kleinen Bazaar-Insel liegt die
+         ausserhalb, und man fiel endlos weiter. */
+      p.spawn.x = Game.stage.spawn.x;
+      p.spawn.y = Game.stage.spawn.y;
+      p.spawn.z = Game.stage.spawn.z;
       p.velocity.set(0, 0, 0);
       p.body.position = p.object.position;
       if (ROR.Body.all.indexOf(p.body) < 0) ROR.Body.all.push(p.body);

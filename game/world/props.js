@@ -341,6 +341,70 @@
 
   /* ----------------------------------------------------------- Streuen */
 
+  /* ------------------------------------------------ Kachelweise streuen */
+
+  /* Warum ueberhaupt Kacheln?
+
+     Ein InstancedMesh hat genau *eine* Bounding Sphere fuer alle Instanzen.
+     Three.js kann daran nur die ganze Gruppe verwerfen oder gar nichts — und
+     eine Gruppe, die den halben Kartenrand beruehrt, ist immer im Bild. Auf
+     der 600-Meter-Karte hiess das: der komplette Grasteppich wurde jedes Bild
+     eingereicht, 8.9 Millionen Dreiecke, obwohl man ein Zwanzigstel davon
+     sieht.
+
+     Der Sammler zerlegt die Streuung deshalb in ein Raster. Jede Kachel wird
+     ein eigenes Mesh mit eigener Bounding Sphere, und damit greift das
+     normale Frustum-Culling wieder. Dazu kommt eine Sichtweite je Schicht:
+     Grashalme jenseits von hundert Metern sind kleiner als ein Pixel.
+
+     Zwei Durchgaenge, weil sonst die Groesse jeder Kachel vorab geraten
+     werden muesste — und Ueberallokation bei einer Viertelmillion Objekten
+     kostet zweistellige Megabyte. */
+  function Streuer(geo, castShadow, leuchtet, kachel, half) {
+    const eintraege = new Map();
+    const spalten = Math.max(1, Math.ceil((half * 2) / kachel));
+    return {
+      /* Sammelt nur ein; gebaut wird in `fertig`. */
+      setze(x, y, z, sx, sy, sz, rotY, tilt, color) {
+        const cx = U.clamp(((x + half) / kachel) | 0, 0, spalten - 1);
+        const cz = U.clamp(((z + half) / kachel) | 0, 0, spalten - 1);
+        const k = cz * spalten + cx;
+        let liste = eintraege.get(k);
+        if (!liste) { liste = []; eintraege.set(k, liste); }
+        /* Farbe als drei Zahlen statt als geklontes Color-Objekt: bei einer
+           Viertelmillion Instanzen war genau dieses Klonen der Grund, warum
+           der Aufbau von 650 auf 1300 ms sprang. */
+        liste.push(x, y, z, sx, sy, sz, rotY,
+                   tilt ? tilt.x : 0, tilt ? tilt.z : 0,
+                   color ? color.r : 1, color ? color.g : 1, color ? color.b : 1);
+        return true;
+      },
+      fertig(gruppe, sichtweite) {
+        const raus = [];
+        const farbe = new THREE.Color();
+        const neigung = { x: 0, z: 0 };
+        eintraege.forEach(function (liste) {
+          // Zwoelf Zahlen je Eintrag, flach im selben Feld.
+          const mesh = instanced(geo, liste.length / 12, castShadow, leuchtet);
+          for (let i = 0; i < liste.length; i += 12) {
+            neigung.x = liste[i + 7]; neigung.z = liste[i + 8];
+            farbe.setRGB(liste[i + 9], liste[i + 10], liste[i + 11]);
+            place(mesh, liste[i], liste[i + 1], liste[i + 2],
+                  liste[i + 3], liste[i + 4], liste[i + 5], liste[i + 6],
+                  neigung, farbe);
+          }
+          mesh.instanceMatrix.needsUpdate = true;
+          if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+          mesh.computeBoundingSphere();
+          if (sichtweite) mesh.userData.sichtweite = sichtweite;
+          gruppe.add(mesh);
+          raus.push(mesh);
+        });
+        return raus;
+      }
+    };
+  }
+
   function instanced(geo, count, castShadow, leuchtet) {
     const mat = new THREE.MeshLambertMaterial({
       color: 0xffffff, flatShading: true,
@@ -381,6 +445,7 @@
       const solids = [];
       const tint = new THREE.Color();
       const meshes = [];
+      const streuerListe = [];
 
       /* --------------------------------------------- Große Streuobjekte */
 
@@ -388,8 +453,10 @@
         const art = BAUARTEN[eintrag.kind];
         if (!art || eintrag.count <= 0) return;
         const geo = art.geo(noise, P);
-        const mesh = instanced(geo, eintrag.count, true, art.leuchtet);
-        meshes.push(mesh);
+        // 110-m-Kacheln: gross genug, dass wenige Meshes entstehen, klein
+        // genug, dass hinter dem Ruecken nichts mehr eingereicht wird.
+        const streuer = Streuer(geo, true, art.leuchtet, 85, terrain.half);
+        streuerListe.push({ s: streuer, sicht: 330 });
 
         /* Die Kollisionsform kommt aus der Geometrie, nicht aus einer
            geschaetzten Zahl. Vorher stand in `solid` ein handgesetzter Radius,
@@ -434,8 +501,8 @@
             if (art.kopfueber) rx = Math.PI + rng.range(-0.3, 0.3);
           }
 
-          if (!place(mesh, spot.x, y, spot.z, breit, s, breit,
-                     rng.range(0, U.TAU), { x: rx, z: rz }, tint)) break;
+          streuer.setze(spot.x, y, spot.z, breit, s, breit,
+                        rng.range(0, U.TAU), { x: rx, z: rz }, tint);
 
           // Kleine Steine sind Dekoration; erst ab `solidAb` stehen sie im Weg.
           if (art.solid && s >= (art.solidAb || 0)) {
@@ -458,10 +525,12 @@
           { geo: prism(0.0, 0.04, 0.34, 3), y: 0.17, x: -0.05, z: 0.04, rz: 0.4 }
         ]);
         const kiesGeo = new THREE.IcosahedronGeometry(0.5, 0);
-        const halme = instanced(halmGeo, Math.round(detail * 0.85), false);
-        const kies = instanced(kiesGeo, Math.round(detail * 0.4), false);
-        halme.receiveShadow = false; kies.receiveShadow = false;
-        meshes.push(halme, kies);
+        /* Kleinere Kacheln als bei den grossen Objekten und eine harte
+           Sichtweite: ein Grashalm auf hundert Metern ist kleiner als ein
+           Pixel, kostet aber dieselben Dreiecke wie einer vor den Fuessen. */
+        const halme = Streuer(halmGeo, false, 0, 38, terrain.half);
+        const kies = Streuer(kiesGeo, false, 0, 38, terrain.half);
+        streuerListe.push({ s: halme, sicht: 72 }, { s: kies, sicht: 72 });
 
         const cGrass = new THREE.Color(P.grass);
         const cGrassDark = new THREE.Color(P.grassDark);
@@ -490,29 +559,26 @@
               tint.copy(cGrass).lerp(cGrassDark, rng.next());
               /* Knapp knöcheltief. Höhere Halme lesen sich aus der
                  Verfolgerkamera als Speere im Boden, nicht als Gras. */
-              place(halme, x, y, z,
-                    rng.range(0.6, 1.25), rng.range(0.45, 1.15), rng.range(0.6, 1.25),
-                    rng.range(0, U.TAU), null, tint);
+              halme.setze(x, y, z,
+                          rng.range(0.6, 1.25), rng.range(0.45, 1.15), rng.range(0.6, 1.25),
+                          rng.range(0, U.TAU), null, tint);
             } else {
               tint.copy(cRock).lerp(cRockDark, rng.next());
               const g = rng.range(0.12, 0.40);
-              place(kies, x, y + g * 0.28, z, g, g * rng.range(0.5, 0.9), g,
-                    rng.range(0, U.TAU),
-                    { x: rng.range(-0.4, 0.4), z: rng.range(-0.4, 0.4) }, tint);
+              kies.setze(x, y + g * 0.28, z, g, g * rng.range(0.5, 0.9), g,
+                         rng.range(0, U.TAU),
+                         { x: rng.range(-0.4, 0.4), z: rng.range(-0.4, 0.4) }, tint);
             }
           }
         }
       }
 
-      meshes.forEach(function (m) {
-        if (m.count === 0) return;
-        m.instanceMatrix.needsUpdate = true;
-        if (m.instanceColor) m.instanceColor.needsUpdate = true;
-        m.computeBoundingSphere();
-        group.add(m);
+      const kacheln = [];
+      streuerListe.forEach(function (e) {
+        e.s.fertig(group, e.sicht).forEach(function (m) { kacheln.push(m); });
       });
 
-      return { group: group, solids: solids };
+      return { group: group, solids: solids, kacheln: kacheln };
     }
   };
 })(window.ROR);

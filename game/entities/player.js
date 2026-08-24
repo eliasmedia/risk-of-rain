@@ -470,7 +470,12 @@
     // sonst könnte man auf dem Meeresgrund um die ganze Insel spazieren.
     if (p.position.y < stage.terrain.seaLevel - 3) {
       nonLethal(p, p.body.stats.maxHealth * 0.1 * ROR.Artifacts.fallDamageMult());
-      p.position.set(p.spawn.x, p.spawn.y + 1, p.spawn.z);
+      /* Zweite Absicherung: liegt der gemerkte Punkt aus irgendeinem Grund
+         nicht auf festem Boden, nimm den Startpunkt der aktuellen Stage.
+         Sonst faellt man aus dem Rettungspunkt gleich wieder heraus. */
+      let ziel = p.spawn;
+      if (!stage.terrain.isWalkable(ziel.x, ziel.z, 0.6)) ziel = stage.spawn;
+      p.position.set(ziel.x, ziel.y + 1, ziel.z);
       p.velocity.set(0, 0, 0);
       p._lastFallSpeed = 0;
     }

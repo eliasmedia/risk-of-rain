@@ -183,6 +183,7 @@
       current = {
         theme, terrain, root, sun, hemi, seed,
         solids: props.solids,
+        kacheln: props.kacheln || [],
         frei: frei,
         findeFreiePosition: findeFreiePosition,
         spawn: null,
@@ -315,6 +316,7 @@
         },
 
         dispose() {
+          if (current && current._sichtHaken) ROR.Engine.offUpdate(current._sichtHaken);
           scene.remove(root);
           root.traverse((o) => {
             if (o.geometry) o.geometry.dispose();
@@ -331,6 +333,31 @@
       }) || { x: 0, y: terrain.heightAt(0, 0), z: 0 };
 
       ROR.Camera.clearance = current.clearance;
+
+      /* Sichtweite je Kachel. Das Frustum-Culling erledigt Three.js selbst,
+         sobald die Streuung in Kacheln zerlegt ist; hier faellt nur noch weg,
+         was zwar im Blickfeld liegt, aber zu weit weg ist, um etwas
+         beizutragen. Ein Vergleich der quadrierten Abstaende reicht — es
+         laeuft ueber alle Kacheln, jedes Bild. */
+      if (current.kacheln.length) {
+        const kam = ROR.Engine.camera;
+        current._sichtHaken = function () {
+          const liste = current.kacheln;
+          for (let i = 0; i < liste.length; i++) {
+            const m = liste[i];
+            const w = m.userData.sichtweite;
+            if (!w) continue;
+            const b = m.boundingSphere;
+            if (!b) continue;
+            const dx = kam.position.x - b.center.x;
+            const dz = kam.position.z - b.center.z;
+            const grenze = w + b.radius;
+            m.visible = dx * dx + dz * dz < grenze * grenze;
+          }
+        };
+        ROR.Engine.onUpdate(current._sichtHaken, 26);
+      }
+
       return current;
     },
 

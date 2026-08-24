@@ -207,15 +207,60 @@
       });
       let guard = 400;
 
+      /* Kisten stehen in Gruppen, nicht gleichmaessig ueber die Karte
+         verteilt.
+
+         Gleichverteilt gestreut hatte jede Kiste dieselbe Chance auf jeden
+         Punkt — auf einer 300-Meter-Karte fiel das kaum auf, auf der
+         vierfachen Flaeche steht dann alles einzeln irgendwo herum und man
+         laeuft von Fundstueck zu Fundstueck. In Gruppen entstehen Orte, an
+         denen sich das Hinlaufen lohnt: man findet drei Kisten auf einmal,
+         entscheidet welche man sich leisten kann, und geht weiter.
+
+         Die Ankerpunkte werden zuerst gesucht und ueber die Karte verteilt;
+         danach setzt sich jede Kiste in die Naehe eines davon. */
+      const anker = [];
+      const ankerZahl = U.clamp(Math.round(stage.terrain.half / 34), 4, 12);
+      for (let i = 0; i < ankerZahl * 4 && anker.length < ankerZahl; i++) {
+        const a = stage.findeFreiePosition(rng, {
+          rMin: 14, rMax: stage.terrain.half * 0.82, maxSlope: 0.13, tries: 20, platz: 5
+        });
+        if (!a) continue;
+        // Ankerpunkte sollen nicht aufeinander liegen.
+        let weitGenug = true;
+        for (let k = 0; k < anker.length; k++) {
+          if (U.dist2(a.x, a.z, anker[k].x, anker[k].z) < 55 * 55) { weitGenug = false; break; }
+        }
+        if (weitGenug) anker.push(a);
+      }
+
       while (budget > 0 && guard-- > 0) {
         const bezahlbar = defs.filter(function (d) {
           return d.directorCost <= budget && ROR.Artifacts.allowsInteractable(d);
         });
         if (!bezahlbar.length) break;
         const def = rng.weighted(bezahlbar);
-        const spot = stage.findeFreiePosition(rng, {
-          rMin: 6, rMax: stage.terrain.half * 0.85, maxSlope: 0.16, tries: 30, platz: 2.6
-        });
+
+        let spot = null;
+        if (anker.length) {
+          /* Um einen Anker herum suchen. Klappt das nicht — steiler Hang,
+             Felsen im Weg —, weicht die Suche auf die ganze Karte aus, damit
+             das Budget nicht ungenutzt verfaellt. */
+          const a = anker[(rng.next() * anker.length) | 0];
+          for (let v = 0; v < 14 && !spot; v++) {
+            const w = rng.next() * U.TAU;
+            const d = 4 + Math.sqrt(rng.next()) * 20;
+            const x = a.x + Math.cos(w) * d, z = a.z + Math.sin(w) * d;
+            if (!stage.terrain.isWalkable(x, z, 0.16)) continue;
+            if (!stage.frei(x, z, 2.6)) continue;
+            spot = { x: x, y: stage.terrain.heightAt(x, z), z: z };
+          }
+        }
+        if (!spot) {
+          spot = stage.findeFreiePosition(rng, {
+            rMin: 6, rMax: stage.terrain.half * 0.85, maxSlope: 0.16, tries: 30, platz: 2.6
+          });
+        }
         if (!spot) continue;
         // Nicht ineinander stellen.
         let frei = true;

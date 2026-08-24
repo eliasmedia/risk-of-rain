@@ -74,7 +74,12 @@
   /* Credits des Scene Directors je Stage — aus dem Wiki. */
   ROR.Data.InteractableBudget = {
     0: 70,                                   // Bazaar: ein paar Kapseln
-    1: 220, 2: 220, 3: 320, 4: 400, 5: 520,
+    /* Die Karten sind seit der Vergroesserung viermal so gross. Das Budget
+       waechst bewusst nur um das 1.8-fache mit: viermal so viele Kisten
+       waeren viermal so viele Items, und daran haengt die ganze
+       Schwierigkeitskurve. Den Rest macht die Gruppierung wett — man findet
+       weniger Orte, dafuer an jedem Ort mehr. */
+    1: 400, 2: 400, 3: 580, 4: 720, 5: 940,
     6: 0                                     // Commencement: nur Mithrix
   };
 })(window.ROR);

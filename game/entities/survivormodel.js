@@ -203,6 +203,50 @@
       return g;
     }
 
+    if (art === 'bogen') {
+      /* Ein Bogen, kein Stab mit Reifen: zwei geschwungene Wurfarme, ein
+         Griffstueck in der Mitte und eine Sehne dazwischen. Der Schwung
+         entsteht aus drei Gliedern je Arm — ein gerader Arm liest sich als
+         Stange, erst die Kruemmung macht daraus einen Bogen. */
+      g.userData.wurf = true;
+      prism(g, { mat: M.coatDark, tw: 0.05, bw: 0.06, td: 0.035, bd: 0.045,
+                 h: 0.3, sides: 6 });
+      for (let i = 0; i < 3; i++) {
+        prism(g, { mat: M.metal, tw: 0.055, bw: 0.055, h: 0.02,
+                   y: 0.09 - i * 0.09, sides: 6 });
+      }
+      const enden = [];
+      for (let k = -1; k <= 1; k += 2) {
+        let glied = joint(g, 0, k * 0.15, 0);
+        for (let i = 0; i < 3; i++) {
+          glied.rotation.x = k * 0.34;
+          prism(glied, { mat: M.coatDark, tw: 0.028 - i * 0.006, bw: 0.036 - i * 0.006,
+                         td: 0.02, bd: 0.026, h: 0.26, y: k * 0.13, sides: 5 });
+          const naechst = joint(glied, 0, k * 0.26, 0);
+          glied = naechst;
+        }
+        enden.push(glied);
+      }
+      /* Die Sehne wird zwischen die beiden Wurfarmenden gespannt. Ihre Laenge
+         steht nicht fest — sie ergibt sich aus der Kruemmung, also messe ich
+         sie, statt sie zu raten. */
+      g.updateMatrixWorld(true);
+      const a = new THREE.Vector3(), b = new THREE.Vector3();
+      enden[0].getWorldPosition(a);
+      enden[1].getWorldPosition(b);
+      g.worldToLocal(a); g.worldToLocal(b);
+      const sehne = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.007, 0.007, a.distanceTo(b), 4),
+        new THREE.MeshBasicMaterial({ color: c.visor, transparent: true, opacity: 0.7,
+                                      depthWrite: false, blending: THREE.AdditiveBlending }));
+      sehne.position.copy(a).add(b).multiplyScalar(0.5);
+      sehne.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0),
+        b.clone().sub(a).normalize());
+      g.add(sehne);
+      muendung(0, 0, -0.34);
+      return g;
+    }
+
     if (art === 'glaive') {
       /* Kein Nahkampf: die Huntress wirft die Glaive und schießt zielsuchende
          Pfeile. Statt eines Hiebbogens bekommt sie deshalb eine Wurfbewegung —

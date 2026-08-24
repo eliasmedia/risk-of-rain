@@ -175,7 +175,7 @@
 
     /* Schmal, Kapuze, Umhang, kein Gesicht. Alles an ihr sagt: leicht und
        schnell — und dass sie im Nahbereich nichts zu verlieren hat. */
-    build: { torso: 'light', head: 'hood', back: 'cape', weapon: 'glaive',
+    build: { torso: 'light', head: 'hood', back: 'cape', weapon: 'bogen',
              legs: 'normal', width: 0.86, scale: 0.97 },
 
     colors: { coat: 0x2f4f4a, coatDark: 0x1e3733, skin: 0xd6a878,
@@ -188,10 +188,25 @@
         mode: 'auto', rate: 2, cooldown: 0, charges: 0, cancelsSprint: false,
         fire(ctx) {
           if (!ctx.lockedOn) return;
+          /* Ein Bogenschuss, kein Laserstrahl: der Pfeil geht nach vorn und
+             leicht nach oben, faellt unterwegs und zieht erst danach auf sein
+             Ziel. Die Reihenfolge ist der ganze Trick — sucht der Pfeil sofort,
+             zieht ihn die Lenkung auf die Sichtlinie und der Bogen ist weg.
+
+             Der Steigungswinkel waechst mit der Entfernung, damit auch weite
+             Schuesse ankommen statt vorher in den Boden zu gehen. */
+          const ziel = ctx.lockedOn;
+          const weite = Math.hypot(ziel.position.x - ctx.origin.x,
+                                   ziel.position.z - ctx.origin.z);
+          const steigung = ROR.Util.clamp(weite * 0.006, 0.05, 0.30);
+          const richtung = ctx.dir.clone();
+          richtung.y += steigung;
+          richtung.normalize();
           ROR.Projectiles.spawn({
-            attacker: ctx.body, team: ctx.body.team, origin: ctx.origin, dir: ctx.dir,
-            speed: 80, life: 2.5, radius: 0.26, coefficient: 1.5, proc: 1,
-            color: 0x9cffd8, homing: ctx.lockedOn, turn: 14
+            attacker: ctx.body, team: ctx.body.team, origin: ctx.origin, dir: richtung,
+            speed: 62, life: 3, radius: 0.26, coefficient: 1.5, proc: 1,
+            color: 0x9cffd8, form: 'pfeil',
+            gravity: 26, homing: ziel, turn: 7, homingDelay: 0.22
           });
           ctx.player.recoil(0.3);
         }

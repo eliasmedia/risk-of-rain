@@ -24,6 +24,7 @@
 
   let group = null;
   let tracers = [], sparks = [], shots = [];
+  const _vorn = new THREE.Vector3(0, 0, -1);
   let tracerNext = 0, sparkNext = 0;
 
   function makePool(n, geo, color, fn) {
@@ -56,16 +57,65 @@
       sparks = makePool(SPARKS, new THREE.IcosahedronGeometry(1, 0), 0xfff0c0);
 
       const shotGeo = new THREE.IcosahedronGeometry(1, 1);
+
+      /* Ein Pfeil ist keine Kugel. Schaft, Spitze und zwei Federn — mehr
+         braucht es nicht, damit man auf zwanzig Metern erkennt, was da
+         fliegt, und woher es kommt. Die Form zeigt entlang −Z, damit sie
+         sich wie alles andere im Spiel an der Flugrichtung ausrichten
+         laesst. */
+      const pfeilGeo = (function () {
+        const teile = [];
+        const schaft = new THREE.CylinderGeometry(0.055, 0.055, 1.5, 5);
+        schaft.rotateX(Math.PI / 2);
+        teile.push(schaft);
+        const spitze = new THREE.ConeGeometry(0.13, 0.34, 5);
+        spitze.rotateX(-Math.PI / 2);
+        spitze.translate(0, 0, -0.9);
+        teile.push(spitze);
+        for (let k = -1; k <= 1; k += 2) {
+          const feder = new THREE.BoxGeometry(0.02, 0.22, 0.34);
+          feder.rotateZ(k * 0.6);
+          feder.translate(k * 0.05, 0, 0.62);
+          teile.push(feder);
+        }
+        // Von Hand zusammenlegen — BufferGeometryUtils liegt unter examples/.
+        let n = 0;
+        for (let i = 0; i < teile.length; i++) {
+          const g = teile[i];
+          n += g.index ? g.index.count : g.attributes.position.count;
+        }
+        const pos = new Float32Array(n * 3);
+        let o = 0;
+        for (let i = 0; i < teile.length; i++) {
+          const g = teile[i], a = g.attributes.position.array;
+          const idx = g.index ? g.index.array : null;
+          const anz = idx ? idx.length : g.attributes.position.count;
+          for (let k = 0; k < anz; k++) {
+            const q = idx ? idx[k] : k;
+            pos[o * 3] = a[q * 3]; pos[o * 3 + 1] = a[q * 3 + 1]; pos[o * 3 + 2] = a[q * 3 + 2];
+            o++;
+          }
+          g.dispose();
+        }
+        const out = new THREE.BufferGeometry();
+        out.setAttribute('position', new THREE.BufferAttribute(pos.subarray(0, o * 3), 3));
+        out.computeVertexNormals();
+        return out;
+      })();
+
       shots = [];
       for (let i = 0; i < SHOTS; i++) {
-        const m = new THREE.Mesh(shotGeo, new THREE.MeshBasicMaterial({
-          color: 0xffffff, transparent: true, opacity: 0.95, depthWrite: false,
-          blending: THREE.AdditiveBlending
-        }));
-        m.visible = false;
-        m.frustumCulled = false;
-        group.add(m);
-        shots.push({ mesh: m, active: false, hit: [] });
+        const bau = function (geo) {
+          const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+            color: 0xffffff, transparent: true, opacity: 0.95, depthWrite: false,
+            blending: THREE.AdditiveBlending
+          }));
+          m.visible = false;
+          m.frustumCulled = false;
+          group.add(m);
+          return m;
+        };
+        shots.push({ mesh: bau(shotGeo), pfeil: bau(pfeilGeo), active: false, hit: [] });
       }
     },
 
@@ -200,6 +250,11 @@
          treffen — dadurch sieht man sie fliegen und kann sie zuordnen. */
       s.homing = opts.homing || null;
       s.turn = opts.turn || 7;
+      /* Verzoegerte Zielsuche: erst fliegen, dann lenken. Ohne die Verzoegerung
+         zieht die Zielsuche das Geschoss sofort auf die Sichtlinie und der
+         Bogen, den die Schwerkraft erzeugt, ist wieder weg. */
+      s.homingDelay = opts.homingDelay || 0;
+      s.alter = 0;
       /* Abpraller: das Laser Glaive springt von Gegner zu Gegner und wird
          dabei staerker. `hit` merkt sich, wen es schon erwischt hat. */
       s.bounces = opts.bounces || 0;
@@ -209,8 +264,16 @@
       s.onHit = opts.onHit || null;   // z. B. Brand anlegen
       s.travelled = 0;
       s.hit.length = 0;
+      /* Kugel oder Pfeil. Beide haengen am selben Eintrag; sichtbar ist
+         immer nur einer, und `s.mesh` zeigt auf den benutzten. */
+      const kugel = s.mesh === s.pfeil ? s.kugel : s.mesh;
+      s.kugel = s.kugel || kugel;
+      s.mesh = opts.form === 'pfeil' ? s.pfeil : s.kugel;
+      s.kugel.visible = false;
+      s.pfeil.visible = false;
+      s.istPfeil = opts.form === 'pfeil';
       s.mesh.position.copy(opts.origin);
-      s.mesh.scale.setScalar(s.radius);
+      s.mesh.scale.setScalar(s.istPfeil ? Math.max(0.6, s.radius * 1.6) : s.radius);
       s.mesh.material.color.setHex(opts.color === undefined ? 0xffd070 : opts.color);
       s.mesh.material.opacity = 0.95;
       s.mesh.visible = true;
@@ -254,8 +317,9 @@
         s.life -= dt;
         if (s.life <= 0) { finish(s, false); continue; }
 
+        s.alter += dt;
         if (s.gravity) { s.dir.y -= s.gravity * dt / s.speed; s.dir.normalize(); }
-        if (s.homing && s.homing.alive) {
+        if (s.homing && s.homing.alive && s.alter >= s.homingDelay) {
           _p.set(s.homing.position.x - s.mesh.position.x,
                  s.homing.position.y + s.homing.height * 0.5 - s.mesh.position.y,
                  s.homing.position.z - s.mesh.position.z).normalize();
@@ -265,6 +329,10 @@
           s.dir.z += (_p.z - s.dir.z) * t;
           s.dir.normalize();
         }
+        // Ein Pfeil zeigt dorthin, wohin er fliegt — sonst wirkt er wie ein
+        // Stab, den jemand quer durch die Luft schiebt.
+        if (s.istPfeil) s.mesh.quaternion.setFromUnitVectors(_vorn, s.dir);
+
         const step = s.speed * dt;
         _o.copy(s.mesh.position);
 

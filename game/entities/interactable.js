@@ -13,6 +13,8 @@
   'use strict';
 
   const U = ROR.Util;
+  const _w = new THREE.Vector3();
+  const _blick = new THREE.Vector3();
   const REACH = 4.5;
   const list = [];
   let group = null;
@@ -54,10 +56,13 @@
 
   function buildMultishop(def) {
     const g = new THREE.Group();
-    box(g, 2.4, 0.22, 1.0, 0x39424a, 0, 0.11, 0);
+    box(g, 3.6, 0.22, 1.0, 0x39424a, 0, 0.11, 0);
     for (let i = -1; i <= 1; i++) {
       const t = new THREE.Group();
-      t.position.set(i * 0.85, 0.22, 0);
+      /* 1.35 m Abstand statt 0.85: bei drei Terminals muss eindeutig sein,
+         vor welchem man steht. Bei 0.85 war der Nachbar oft naeher als das
+         Terminal, auf das man schaute. */
+      t.position.set(i * 1.35, 0.22, 0);
       t.userData.role = 'terminal' + (i + 1);
       g.add(t);
       box(t, 0.62, 1.05, 0.5, def.color, 0, 0.52, 0);
@@ -189,6 +194,44 @@
       /* Drucker legen zu Beginn fest, was sie herstellen — wie in der Vorlage.
          Man sieht also schon von weitem, ob sich der Weg lohnt. */
       if (def.kind === 'printer') o.payload = ROR.Loot.randomItem(def.tier);
+
+      /* Das Multishop-Terminal war bisher eine Kiste mit anderem Modell: ein
+         Kauf, ein zufaelliges Item, fertig. Der Unterschied zur Kiste ist aber
+         gerade, dass man *sieht*, was drin ist, und sich fuer eines von drei
+         entscheidet — die anderen beiden schalten danach ab. Aus "ein
+         unbekanntes Item" wird "eines von drei bekannten". */
+      if (def.kind === 'multishop') {
+        o.angebot = [];
+        for (let i = 0; i < 3; i++) {
+          // Aus derselben Tabelle wie eine Kiste — sonst waere das Terminal
+          // nur eine Kiste mit garantiert weissem Item.
+          const tier = ROR.Loot.pickTier(ROR.Loot[def.table] || ROR.Loot.CHEST);
+          const item = tier ? ROR.Loot.randomItem(tier) : null;
+          const halter = o.parts['terminal' + i];
+          o.angebot.push({ item: item, halter: halter, aus: false, vorschau: null });
+          if (item && halter) {
+            const v = ROR.Attire.pickupModel(item);
+            v.scale.setScalar(0.62);
+            v.position.set(0, 1.35, 0);
+            halter.add(v);
+            o.angebot[i].vorschau = v;
+          }
+        }
+      }
+
+      /* Im Bazaar gilt dasselbe, aus einem anderen Grund: Mondkapseln geben
+         Lunar-Items, und die greifen so tief in den Durchlauf ein, dass man
+         vor dem Bezahlen wissen muss, was man bekommt. */
+      if (def.kind === 'lunar') {
+        o.payload = ROR.Loot.randomItem('lunar');
+        if (o.payload) {
+          const v = ROR.Attire.pickupModel(o.payload);
+          v.scale.setScalar(0.7);
+          v.position.set(0, 1.5, 0);
+          model.add(v);
+          o.vorschau = v;
+        }
+      }
       list.push(o);
       return o;
     },
@@ -320,6 +363,39 @@
     },
 
     /* Text für die Aufforderung und ob sie erfüllbar ist. */
+    /* Welches der drei Terminals ist gemeint? Das naechstgelegene.
+
+       Das Zielsystem kennt nur ganze Interaktive, keine Unterteile. Statt es
+       dafuer umzubauen, entscheidet der Standort: man stellt sich vor das
+       Terminal, das man will, und drueckt. Das ist auch genau die Geste, die
+       die Vorlage verlangt. */
+    nahesTerminal(o) {
+      if (!o.angebot) return null;
+      const p = ROR.Game.player;
+      /* Gemeint ist das Terminal, das man *ansieht*, nicht das naechste. Bei
+         drei Kaesten nebeneinander ist der Abstand fast gleich, die
+         Blickrichtung dagegen eindeutig — und sie ist auch das, was der
+         Spieler als Absicht empfindet. Der Abstand entscheidet nur noch bei
+         gleichem Winkel. */
+      ROR.Camera.forward(_blick);
+      _blick.y = 0;
+      if (_blick.lengthSq() < 1e-6) _blick.set(0, 0, -1);
+      _blick.normalize();
+      let best = null, bestWert = -Infinity;
+      for (let i = 0; i < o.angebot.length; i++) {
+        const a = o.angebot[i];
+        if (a.aus || !a.halter || !a.item) continue;
+        a.halter.getWorldPosition(_w);
+        const dx = _w.x - p.position.x, dz = _w.z - p.position.z;
+        const laenge = Math.hypot(dx, dz) || 1e-4;
+        const ausrichtung = (dx / laenge) * _blick.x + (dz / laenge) * _blick.z;
+        // Ausrichtung zaehlt stark, Naehe nur als Stichentscheid.
+        const wert = ausrichtung * 4 - laenge * 0.1;
+        if (wert > bestWert) { bestWert = wert; best = a; }
+      }
+      return best;
+    },
+
     prompt(o, body) {
       if (o.isTeleporter) return ROR.Teleporter.prompt();
       const d = o.def;
@@ -347,8 +423,14 @@
         case 'newt':
           return { text: 'Newt Altar — 1 lunar coin (opens the Bazaar)',
                    ok: ROR.Game.lunarCoins >= 1 };
+        case 'multishop': {
+          const t = Interactables.nahesTerminal(o);
+          return { text: t ? t.item.name + ' — $' + o.cost : d.name,
+                   ok: !!t && p.gold >= o.cost };
+        }
         case 'lunar':
-          return { text: 'Lunar Pod — 1 lunar coin', ok: ROR.Game.lunarCoins >= 1 };
+          return { text: 'Lunar Pod: ' + (o.payload ? o.payload.name : '—') + ' — 1 lunar coin',
+                   ok: ROR.Game.lunarCoins >= 1 && !!o.payload };
         case 'cleanse':
           return { text: 'Cleansing Pool — a lunar item for a coin',
                    ok: Interactables.lunarBesitz(body) !== null };
@@ -373,9 +455,26 @@
           break;
 
         case 'multishop': {
+          /* Das gewaehlte Terminal gibt sein Item aus, die beiden anderen
+             schalten ab — sichtbar, nicht nur im Zustand. Genau das ist der
+             Unterschied zur Kiste: man gibt zwei bekannte Items auf, um eines
+             zu bekommen. */
+          const t = Interactables.nahesTerminal(o);
+          if (!t) break;
           p.gold -= o.cost;
           o.used = true;
-          ROR.Loot.dropFrom(ROR.Loot.CHEST, pos, body);
+          ROR.Loot.drop(pos, t.item);
+          for (let i = 0; i < o.angebot.length; i++) {
+            const a = o.angebot[i];
+            a.aus = true;
+            if (a.vorschau) a.vorschau.visible = false;
+            const glas = o.parts['glow' + i];
+            if (glas && glas.material) {
+              glas.material = glas.material.clone();
+              glas.material.emissive = new THREE.Color(0x101418);
+              glas.material.color = new THREE.Color(0x2a3238);
+            }
+          }
           break;
         }
 
@@ -435,10 +534,13 @@
         }
 
         case 'lunar': {
+          /* Ausgegeben wird das Item, das oben schwebt — nicht ein frisch
+             gewuerfeltes. Sonst waere die Vorschau eine Luege. */
+          if (!o.payload) break;
           ROR.Game.lunarCoins--;
           o.used = true;
-          const def2 = ROR.Loot.randomItem('lunar');
-          if (def2) ROR.Loot.drop(o.model.position.clone(), def2);
+          if (o.vorschau) o.vorschau.visible = false;
+          ROR.Loot.drop(o.model.position.clone(), o.payload);
           break;
         }
 

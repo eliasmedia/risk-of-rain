@@ -76,6 +76,16 @@
       drops.length = 0;
     },
 
+    /* Stufe aus einer Beutetabelle ziehen — dieselbe Tabelle, aus der eine
+       Kiste zieht. Das Multishop braucht das, weil es sein Angebot beim
+       Aufbau festlegt und nicht erst beim Kauf. */
+    pickTier(table, body) {
+      /* Beim Aufbau der ersten Stage gibt es die Figur noch nicht — die
+         Interaktiven werden vor ihr gesetzt. Dann zaehlt Glueck 0. */
+      const wer = body || (ROR.Game.player && ROR.Game.player.body);
+      return pickTier(table, wer ? ROR.Items.luck(wer) : 0);
+    },
+
     randomItem(tier) {
       const pool = ROR.Items.ofTier(tier);
       return pool.length ? U.chaos.pick(pool) : null;

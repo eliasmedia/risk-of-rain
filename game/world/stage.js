@@ -112,6 +112,8 @@
 
       // Nebelfarbe = Horizontfarbe: dadurch geht das Wasser nahtlos in den
       // Himmel über und seine Kante ist nie zu sehen.
+      // Der Lichtramp gehoert zur Stimmung wie Nebel und Farbkorrektur.
+      if (ROR.Toon) ROR.Toon.ausPalette(P);
       if (ROR.PostFX) ROR.PostFX.applyPalette(P);
       scene.fog = new THREE.FogExp2(P.fog, P.fogDensity);
       scene.add(root);

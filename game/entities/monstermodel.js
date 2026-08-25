@@ -625,8 +625,7 @@
       kern.userData.role = 'glow';
       const schale = new THREE.Mesh(
         new THREE.IcosahedronGeometry(s.size * 1.15, 1),
-        new THREE.MeshLambertMaterial({ color: c.main, flatShading: true,
-                                        transparent: true, opacity: 0.55 }));
+        ROR.Toon.material({ color: c.main, transparent: true, opacity: 0.55 }));
       core.add(schale);
       const ring = Sh.joint(core, 0, 0, 0);
       ring.userData.role = 'ring';
@@ -666,8 +665,7 @@
       core.userData.role = 'core';
       const dome = new THREE.Mesh(
         new THREE.SphereGeometry(s.size, 12, 7, 0, U.TAU, 0, Math.PI * 0.6),
-        new THREE.MeshLambertMaterial({ color: c.main, flatShading: true,
-                                        transparent: true, opacity: 0.85 }));
+        ROR.Toon.material({ color: c.main, transparent: true, opacity: 0.85 }));
       dome.castShadow = true;
       core.add(dome);
       // Ein Wulst am Schirmrand, damit die Kuppel nicht wie eine Halbkugel endet.

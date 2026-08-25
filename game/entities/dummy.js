@@ -20,7 +20,7 @@
 
   function buildModel(color) {
     const g = new THREE.Group();
-    const mat = (c) => new THREE.MeshLambertMaterial({ color: c, flatShading: true });
+    const mat = (c) => ROR.Toon.material({ color: c });
 
     const post = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.17, 1.1, 6), mat(0x5a4a35));
     post.position.y = 0.55; post.castShadow = true; g.add(post);

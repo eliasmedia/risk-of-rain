@@ -104,7 +104,7 @@
       root.position.copy(Teleporter.position);
       ROR.Engine.scene.add(root);
 
-      const stein = new THREE.MeshLambertMaterial({ color: 0x4e5560, flatShading: true });
+      const stein = ROR.Toon.material({ color: 0x4e5560 });
       const sockel = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 3.8, 0.5, 9), stein);
       sockel.position.y = 0.25; sockel.receiveShadow = true; root.add(sockel);
 

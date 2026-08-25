@@ -15,8 +15,8 @@
   const _v = new THREE.Vector3();
 
   function mat(c, leuchtet) {
-    return new THREE.MeshLambertMaterial({
-      color: c, flatShading: true,
+    return ROR.Toon.material({
+      color: c,
       emissive: leuchtet ? c : 0x000000, emissiveIntensity: 0.4
     });
   }

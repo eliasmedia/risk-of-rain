@@ -20,8 +20,11 @@
   const U = ROR.Util;
 
   function mat(color, glanz) {
-    return new THREE.MeshLambertMaterial({
-      color: color, flatShading: true,
+    /* Toon statt Lambert: dieselbe Angabe, aber das Licht faellt jetzt in
+       Baendern statt stufenlos. Ohne abgestimmte Rampe ist sie linear und das
+       Ergebnis ist von vorher nicht zu unterscheiden. */
+    return ROR.Toon.material({
+      color: color,
       emissive: glanz ? color : 0x000000, emissiveIntensity: glanz || 0
     });
   }

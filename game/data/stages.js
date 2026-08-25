@@ -54,9 +54,27 @@
         grade: { saettigung: 0.94, kontrast: 1.05, leuchten: 0.75, vignette: 0.40, hauch: 0x203040 },
         sky: 0x7ba2c2, horizon: 0xdcdfd2,
         fog: 0xdcdfd2, fogDensity: 0.00130,
-        sun: 0xffe6bc, sunIntensity: 2.5,
-        ambientSky: 0xc0d2dc, ambientGround: 0x6d6a48, ambientIntensity: 1.9,
+        sun: 0xffe6bc, sunIntensity: 3.0,
+        ambientSky: 0xc0d2dc, ambientGround: 0x6d6a48, ambientIntensity: 1.05,
         fillIntensity: 0.6,
+
+        /* Lichtbaender statt stufenlosem Verlauf.
+
+           Der Ramp allein bringt nichts — das war die Erkenntnis aus dem
+           Versuch. Bei Umgebungslicht 1.9 gegen Sonne 2.5 stand fast jede
+           Flaeche schon am oberen Anschlag, und alle Baender fielen auf
+           dasselbe. Erst mit dem gedrehten Verhaeltnis (Umgebung 1.05, Sonne
+           3.0) faechert sich das Licht ueber die Rampe auf.
+
+           Das dunkelste Band ist bewusst kuehl und nicht bloss dunkel: ein
+           Schatten, der nur die Helligkeit senkt, sieht schmutzig aus; einer,
+           der ins Blaue kippt, sieht nach Tageslicht aus. */
+        rampe: [
+          [0.00, 0.60, 0.64, 0.74],
+          [0.34, 0.79, 0.80, 0.78],
+          [0.58, 0.92, 0.92, 0.88],
+          [0.80, 1.00, 1.00, 0.97]
+        ],
         grass: 0x77913f, grassDark: 0x415725,
         rock: 0x9e937b, rockDark: 0x5a5245,
         dirt: 0x7f6d4c,

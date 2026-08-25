@@ -232,7 +232,8 @@
       }
       geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
 
-      const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }));
+      const mesh = new THREE.Mesh(geo, new THREE.MeshToonMaterial({
+        vertexColors: true, gradientMap: ROR.Toon.textur }));
       mesh.receiveShadow = true;
       mesh.name = 'terrain';
 
@@ -262,8 +263,8 @@
           dcol[k * 3] = c.r; dcol[k * 3 + 1] = c.g; dcol[k * 3 + 2] = c.b;
         }
         dgeo.setAttribute('color', new THREE.BufferAttribute(dcol, 3));
-        decke = new THREE.Mesh(dgeo, new THREE.MeshLambertMaterial({
-          vertexColors: true, flatShading: true, side: THREE.DoubleSide
+        decke = new THREE.Mesh(dgeo, new THREE.MeshToonMaterial({
+          vertexColors: true, gradientMap: ROR.Toon.textur, side: THREE.DoubleSide
         }));
         decke.name = 'decke';
         decke.receiveShadow = true;

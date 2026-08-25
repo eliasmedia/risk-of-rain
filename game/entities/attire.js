@@ -26,7 +26,7 @@
   const matCache = {};
   function mat(color) {
     if (!matCache[color]) {
-      matCache[color] = new THREE.MeshLambertMaterial({ color: color, flatShading: true });
+      matCache[color] = ROR.Toon.material({ color: color });
     }
     return matCache[color];
   }

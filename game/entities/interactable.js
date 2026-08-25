@@ -21,8 +21,8 @@
   let focus = null;
 
   function mat(color, emissive) {
-    return new THREE.MeshLambertMaterial({
-      color: color, flatShading: true,
+    return ROR.Toon.material({
+      color: color,
       emissive: emissive === undefined ? 0x000000 : emissive,
       emissiveIntensity: 0.5
     });

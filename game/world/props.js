@@ -406,8 +406,8 @@
   }
 
   function instanced(geo, count, castShadow, leuchtet) {
-    const mat = new THREE.MeshLambertMaterial({
-      color: 0xffffff, flatShading: true,
+    const mat = new THREE.MeshToonMaterial({
+      color: 0xffffff, gradientMap: ROR.Toon.textur,
       vertexColors: !!geo.attributes.color,
       emissive: leuchtet ? 0xffffff : 0x000000,
       emissiveIntensity: leuchtet || 0

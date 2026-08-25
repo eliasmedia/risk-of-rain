@@ -111,8 +111,8 @@
   function staubPool() {
     const geo = new THREE.IcosahedronGeometry(1, 0);
     for (let i = 0; i < STAUB; i++) {
-      const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({
-        color: 0xbfae92, transparent: true, opacity: 0, flatShading: true
+      const m = new THREE.Mesh(geo, ROR.Toon.material({
+        color: 0xbfae92, transparent: true, opacity: 0
       }));
       m.visible = false;
       m.frustumCulled = false;

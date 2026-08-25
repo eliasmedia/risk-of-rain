@@ -668,7 +668,7 @@
         mode: 'press', cooldown: 8, charges: 3, agile: true, cancelsSprint: false,
         fire(ctx) {
           ctx.player.startDash({
-            time: 0.34, speed: 5.5, iframes: 0.6, towardAim: true, pose: 'leap',
+            time: 0.34, speed: 5.5, iframes: 0.6, raum: true, pose: 'leap',
             radius: 3.2, damage: { coefficient: 3.0, proc: 1 },
             resetOnHit: true, slot: 'utility'
           });

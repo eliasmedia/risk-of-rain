@@ -165,7 +165,15 @@
           o = o || {};
           const len = Math.hypot(p.velocity.x, p.velocity.z);
           const dir = new THREE.Vector3();
-          if (o.towardAim) ROR.Camera.forward(dir);
+          if (o.raum) {
+            /* Raeumlicher Satz: dorthin, wohin man schaut, Hoehe eingeschlossen.
+               `Camera.forward` liefert bewusst eine flache Richtung fuer WASD —
+               fuer einen Sprung ueber eine Kante braucht es `Camera.aim`, das
+               die Neigung mitnimmt. */
+            ROR.Camera.aim(dir);
+            // Steil nach unten wuerde nur in den Boden rammen.
+            if (dir.y < -0.55) { dir.y = -0.55; dir.normalize(); }
+          } else if (o.towardAim) ROR.Camera.forward(dir);
           else if (len > 0.5) dir.set(p.velocity.x / len, 0, p.velocity.z / len);
           else ROR.Camera.forward(dir);
 
@@ -179,6 +187,7 @@
             hit: [],
             slot: o.slot || null,
             resetOnHit: !!o.resetOnHit,
+            raum: !!o.raum,
             pose: o.pose || 'roll'
           };
           if (o.iframes) body.invulnerable = Math.max(body.invulnerable, o.iframes);
@@ -462,6 +471,8 @@
       }
       p.velocity.x = g.dir.x * S.moveSpeed * g.speed;
       p.velocity.z = g.dir.z * S.moveSpeed * g.speed;
+      // Nur ein raeumlicher Satz traegt auch nach oben; die Rolle bleibt flach.
+      if (g.raum) p.velocity.y = g.dir.y * S.moveSpeed * g.speed;
 
       /* Ein Sprintangriff, der wehtut, trifft jeden Gegner höchstens einmal —
          sonst würde ein einziger Satz durch eine Gruppe alles auslöschen. */
@@ -484,6 +495,9 @@
       }
 
       if (g.left <= 0) {
+        /* Ein Teil des Schwungs bleibt, sonst faellt man am Ende eines
+           Aufwaertssatzes wie ein Stein senkrecht nach unten. */
+        if (g.raum) p.velocity.y = Math.max(0, p.velocity.y) * 0.35;
         p._dash = null;
         if (p.body.dashArmor) { p.body.dashArmor = 0; p.body.statsDirty = true; }
       }
@@ -533,6 +547,10 @@
       p.velocity.y = U.approach(p.velocity.y, steig * 9, 40 * dt);
     } else if (p._blink) {
       p.velocity.y = 0;
+    } else if (p._dash && p._dash.raum) {
+      /* Waehrend des Satzes keine Schwerkraft: sonst zieht sie die Bahn schon
+         auf halber Strecke wieder herunter und aus dem Sprung ueber die Kante
+         wird ein Sprung gegen die Kante. */
     } else {
       p.velocity.y -= GRAVITY * dt;
       if (p.velocity.y < -90) p.velocity.y = -90;

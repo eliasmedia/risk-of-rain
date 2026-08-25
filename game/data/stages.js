@@ -54,9 +54,9 @@
         grade: { saettigung: 0.94, kontrast: 1.05, leuchten: 0.75, vignette: 0.40, hauch: 0x203040 },
         sky: 0x7ba2c2, horizon: 0xdcdfd2,
         fog: 0xdcdfd2, fogDensity: 0.00130,
-        sun: 0xffe6bc, sunIntensity: 3.0,
-        ambientSky: 0xc0d2dc, ambientGround: 0x6d6a48, ambientIntensity: 1.05,
-        fillIntensity: 0.6,
+        sun: 0xffe6bc, sunIntensity: 2.1,
+        ambientSky: 0xc0d2dc, ambientGround: 0x6d6a48, ambientIntensity: 0.50,
+        fillIntensity: 0.42,
 
         /* Lichtbaender statt stufenlosem Verlauf.
 
@@ -126,9 +126,20 @@
         grade: { saettigung: 0.92, kontrast: 1.06, leuchten: 0.72, vignette: 0.38, hauch: 0x2a2418 },
         sky: 0x9fb4c8, horizon: 0xf0e2c4,
         fog: 0xf0e2c4, fogDensity: 0.00130,
-        sun: 0xfff0cc, sunIntensity: 2.7,
-        ambientSky: 0xe0d8c0, ambientGround: 0x8a7550, ambientIntensity: 2.0,
-        fillIntensity: 0.7,
+        sun: 0xfff0cc, sunIntensity: 1.5,
+        ambientSky: 0xe0d8c0, ambientGround: 0x8a7550, ambientIntensity: 0.26,
+        fillIntensity: 0.28,
+
+        /* Auf hellem Sand muss die Rampe haerter arbeiten als auf Gras: das
+           Grundmaterial ist schon fast weiss, ein zu zaghaftes Schattenband
+           faellt darin gar nicht auf. Deshalb geht es hier bis 0.44 hinunter
+           und kippt deutlich ins Kuehle — Wuestenschatten sind blau. */
+        rampe: [
+          [0.00, 0.44, 0.47, 0.64],
+          [0.32, 0.66, 0.67, 0.72],
+          [0.56, 0.86, 0.85, 0.82],
+          [0.78, 1.00, 0.99, 0.92]
+        ],
         grass: 0xb2a267, grassDark: 0x84744a,
         rock: 0xc4a878, rockDark: 0x7e6640,
         dirt: 0xa8905c,

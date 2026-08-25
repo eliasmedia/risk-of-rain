@@ -57,14 +57,44 @@
 
   const COMPOSITE = `
     uniform sampler2D tSzene; uniform sampler2D tLeuchten;
+    uniform highp sampler2D tTiefe;
     uniform float uLeuchtstaerke, uVignette, uKorn, uZeit, uSaettigung, uKontrast;
     uniform vec3 uHauch;
     uniform float uSchaden, uBelichtung;
+    uniform vec2 uPixel;
+    uniform float uKontur, uKonturSchwelle, uNah, uFern;
     varying vec2 vUv;
 
     // Filmische Tonwertkurve (ACES, genäherte Fassung).
     vec3 aces(vec3 x) {
       return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0);
+    }
+
+    /* Der Tiefenpuffer ist nicht linear — nahe Werte drängen sich zusammen,
+       ferne spreizen. Ohne Linearisierung säßen alle erkannten Kanten am
+       Horizont und keine einzige vor den Füßen. */
+    float tiefeLinear(vec2 uv) {
+      float d = texture2D(tTiefe, uv).x;
+      return (2.0 * uNah * uFern) / (uFern + uNah - (2.0 * d - 1.0) * (uFern - uNah));
+    }
+
+    /* Konturen aus Tiefensprüngen. Das ist der Kern des Vorbilds: eine dunkle
+       Linie dort, wo ein Körper vor einem anderen endet. Der Sprung wird an
+       der eigenen Entfernung gemessen, sonst verschwinden ferne Kanten
+       vollständig und nahe werden zu Balken. */
+    float kante() {
+      if (uKontur <= 0.0) return 0.0;
+      /* Roberts-Cross: zwei Diagonalen statt eines vollen 3x3-Fensters. Vier
+         Abtastungen statt neun, und bei einer Linie von einem Pixel Breite
+         sieht man den Unterschied nicht — die neun kosteten gemessen 4.5 ms
+         je Bild, das war der halbe Bildaufwand fuer eine Kontur. */
+      float a = tiefeLinear(vUv - uPixel);
+      float b = tiefeLinear(vUv + uPixel);
+      float c1 = tiefeLinear(vUv + vec2( uPixel.x, -uPixel.y));
+      float d1 = tiefeLinear(vUv + vec2(-uPixel.x,  uPixel.y));
+      float summe = abs(a - b) + abs(c1 - d1);
+      float rel = summe / max(min(min(a, b), min(c1, d1)), 1.0);
+      return smoothstep(uKonturSchwelle, uKonturSchwelle * 2.6, rel);
     }
 
     void main() {
@@ -98,17 +128,31 @@
       /* Echte sRGB-Kurve statt pow(1/2.2). Der Unterschied sitzt genau in
          den Tiefen, und auf dunklen Stages ist das der Unterschied zwischen
          „stimmungsvoll" und „schwarz". */
+      /* Die Kontur kommt zuletzt, nach Tonwertkurve und Farbstimmung. Läge
+         sie davor, würde das Leuchten sie überstrahlen und die Linie
+         verschwände genau an den hellen Kanten, an denen man sie am meisten
+         braucht. */
+      c = mix(c, c * 0.16, kante() * uKontur);
+
       c = max(c, 0.0);
       vec3 hell = 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055;
       vec3 dunkel = c * 12.92;
       gl_FragColor = vec4(mix(dunkel, hell, step(vec3(0.0031308), c)), 1.0);
     }`;
 
-  function ziel(w, h) {
-    return new THREE.WebGLRenderTarget(w, h, {
+  function ziel(w, h, mitTiefe) {
+    const o = {
       minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter,
       type: THREE.HalfFloatType, depthBuffer: true, stencilBuffer: false
-    });
+    };
+    /* Nur das Szenenziel braucht eine auslesbare Tiefe — die Unschärfestufen
+       arbeiten auf halber Auflösung und hätten davon nichts. */
+    if (mitTiefe) {
+      const t = new THREE.DepthTexture(w, h);
+      t.type = THREE.UnsignedIntType;
+      o.depthTexture = t;
+    }
+    return new THREE.WebGLRenderTarget(w, h, o);
   }
 
   function schirm(shader, uniforms) {
@@ -150,7 +194,10 @@
         uKorn: { value: 0.016 }, uZeit: { value: 0 },
         uSaettigung: { value: 0.95 }, uKontrast: { value: 1.05 },
         uHauch: { value: new THREE.Color(0.02, 0.03, 0.06) },
-        uSchaden: { value: 0 }, uBelichtung: { value: 1.0 }
+        uSchaden: { value: 0 }, uBelichtung: { value: 1.0 },
+        tTiefe: { value: null }, uPixel: { value: new THREE.Vector2() },
+        uKontur: { value: 0.85 }, uKonturSchwelle: { value: 0.035 },
+        uNah: { value: 0.1 }, uFern: { value: 1200 }
       });
       PostFX.resize();
       return PostFX;
@@ -168,6 +215,8 @@
       u.uBelichtung.value = g.belichtung === undefined ? 1.0 : g.belichtung;
       if (g.hauch) u.uHauch.value.setHex(g.hauch).multiplyScalar(0.10);
       else u.uHauch.value.setRGB(0, 0, 0);
+      u.uKontur.value = g.kontur === undefined ? 0.85 : g.kontur;
+      u.uKonturSchwelle.value = g.konturSchwelle === undefined ? 0.035 : g.konturSchwelle;
     },
 
     resize() {
@@ -177,10 +226,14 @@
       hoehe = Math.max(2, Math.floor(innerHeight * pr));
       const hw = Math.max(1, breite >> 1), hh = Math.max(1, hoehe >> 1);
       if (szeneRT) { szeneRT.dispose(); hellRT.dispose(); blurA.dispose(); blurB.dispose(); }
-      szeneRT = ziel(breite, hoehe);
+      szeneRT = ziel(breite, hoehe, true);
       hellRT = ziel(hw, hh);
       blurA = ziel(hw, hh);
       blurB = ziel(hw, hh);
+      if (mComp) {
+        mComp.material.uniforms.uPixel.value.set(1 / breite, 1 / hoehe);
+        mComp.material.uniforms.tTiefe.value = szeneRT.depthTexture;
+      }
     },
 
     render(scene, camera, dt) {
@@ -226,6 +279,9 @@
       const c = mComp.material.uniforms;
       c.tSzene.value = szeneRT.texture;
       c.tLeuchten.value = blurB.texture;
+      c.tTiefe.value = szeneRT.depthTexture;
+      c.uNah.value = camera.near;
+      c.uFern.value = camera.far;
       c.uZeit.value += dt * 60;
       c.uSchaden.value += (PostFX.schaden - c.uSchaden.value) * Math.min(1, dt * 9);
       renderer.setRenderTarget(null);

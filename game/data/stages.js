@@ -187,15 +187,28 @@
         grade: { saettigung: 0.88, kontrast: 1.08, leuchten: 0.85, vignette: 0.46, hauch: 0x1c2836 },
         sky: 0x6b86a4, horizon: 0xd6dee6,
         fog: 0xd6dee6, fogDensity: 0.00220,
-        sun: 0xdce8f6, sunIntensity: 1.9,
-        ambientSky: 0xc8d6e4, ambientGround: 0x6a7280, ambientIntensity: 2.1,
-        fillIntensity: 0.7,
+        sun: 0xdce8f6, sunIntensity: 1.75,
+        ambientSky: 0xc8d6e4, ambientGround: 0x6a7280, ambientIntensity: 0.62,
+
+        /* Heller Schnee gegen dunkle Fichten ist der groesste Helligkeitsumfang
+           im Spiel. Das dunkelste Band liegt deshalb hoch (0.62) — sonst
+           kippen die Baeume ins Schwarze, waehrend der Boden noch weiss ist. */
+        rampe: [
+          [0.00, 0.62, 0.66, 0.80],
+          [0.34, 0.78, 0.81, 0.87],
+          [0.58, 0.91, 0.93, 0.96],
+          [0.80, 1.00, 1.00, 1.00]
+        ],
+        fillIntensity: 0.45,
         grass: 0xd4dce2, grassDark: 0x8f9aa6,
         rock: 0x7d848c, rockDark: 0x4a5058,
         dirt: 0x6c7076,
         sand: 0xc2cad2, peak: 0xeef4f8, seabed: 0x2a3640,
         water: 0x38566a,
-        trunk: 0x3a3630, leaf: 0x2e4636, leafAlt: 0x3d5a44
+        /* Die Gruentoene waren fuer die alte flache Beleuchtung gewaehlt und
+           dafuer bewusst dunkel. Mit echter Schattierung wird daraus Schwarz —
+           deshalb hier deutlich heller angesetzt. */
+        trunk: 0x4a453c, leaf: 0x466a50, leafAlt: 0x5b8266
       },
 
       props: { detail: 48000, kinds: [
@@ -243,9 +256,22 @@
         /* In einer Höhle gibt es keine Sonne. Das Licht kommt von unten aus
            der Lava — deshalb ist die Richtungslampe fast aus und das
            Umgebungslicht trägt fast alles, warm und von unten eingefärbt. */
-        sun: 0xff9a50, sunIntensity: 0.8,
-        ambientSky: 0x6a3a30, ambientGround: 0xa04a1c, ambientIntensity: 3.4,
-        fillIntensity: 1.5,
+        sun: 0xff9a50, sunIntensity: 1.45,
+        ambientSky: 0x6a3a30, ambientGround: 0xa04a1c, ambientIntensity: 1.5,
+
+        /* In einer Hoehle gibt es keine Sonne — das Leitlicht ist die Glut von
+           unten. Genau deshalb stand hier Umgebung 3.4 gegen Sonne 0.8, und
+           genau deshalb konnte die Rampe nichts ausrichten: ein
+           Hemisphaerenlicht laeuft nicht durch sie hindurch. Jetzt traegt die
+           gerichtete Glut mehr, und die Baender kippen ins Rotschwarze statt
+           ins Kuehle — in einer Lavahoehle ist auch der Schatten warm. */
+        rampe: [
+          [0.00, 0.42, 0.26, 0.22],
+          [0.34, 0.66, 0.46, 0.36],
+          [0.58, 0.85, 0.66, 0.50],
+          [0.80, 1.00, 0.86, 0.68]
+        ],
+        fillIntensity: 0.9,
         grass: 0x5c4030, grassDark: 0x32201a,
         rock: 0x8e5c46, rockDark: 0x452820,
         dirt: 0x663c26,
@@ -294,9 +320,18 @@
         grade: { saettigung: 1.02, kontrast: 1.03, leuchten: 1.00, vignette: 0.36, hauch: 0x2a1c38 },
         sky: 0x6a5a9c, horizon: 0xf0c8d8,
         fog: 0xf0c8d8, fogDensity: 0.00150,
-        sun: 0xffd8c0, sunIntensity: 2.3,
-        ambientSky: 0xd8c0e0, ambientGround: 0x5c6a48, ambientIntensity: 2.0,
-        fillIntensity: 0.75,
+        sun: 0xffd8c0, sunIntensity: 1.95,
+        ambientSky: 0xd8c0e0, ambientGround: 0x5c6a48, ambientIntensity: 0.55,
+
+        /* Abendhimmel: warmes Licht, violetter Schatten. Der Farbwechsel
+           zwischen den Baendern traegt hier mehr als der Helligkeitswechsel. */
+        rampe: [
+          [0.00, 0.58, 0.52, 0.72],
+          [0.34, 0.78, 0.72, 0.82],
+          [0.58, 0.93, 0.88, 0.90],
+          [0.80, 1.00, 0.97, 0.92]
+        ],
+        fillIntensity: 0.42,
         grass: 0x79ac56, grassDark: 0x3d6440,
         rock: 0x9a8ea8, rockDark: 0x5a4f6a,
         dirt: 0x7a6c72,
@@ -339,9 +374,18 @@
         grade: { saettigung: 1.08, kontrast: 1.04, leuchten: 1.30, vignette: 0.48, hauch: 0x241844, belichtung: 1.2 },
         sky: 0x2a1f4a, horizon: 0x8f6ac0,
         fog: 0x6a4c9a, fogDensity: 0.0060,
-        sun: 0xffd0f0, sunIntensity: 1.9,
-        ambientSky: 0xc0a0e0, ambientGround: 0x5a4080, ambientIntensity: 2.1,
-        fillIntensity: 0.8,
+        sun: 0xffd0f0, sunIntensity: 1.6,
+        ambientSky: 0xc0a0e0, ambientGround: 0x5a4080, ambientIntensity: 0.68,
+
+        /* Ein Marktplatz im Nichts: kein Himmel, kein Boden, nur Licht aus dem
+           Zwischenraum. Der Schatten geht deshalb tief ins Violette. */
+        rampe: [
+          [0.00, 0.52, 0.42, 0.74],
+          [0.34, 0.74, 0.64, 0.86],
+          [0.58, 0.90, 0.83, 0.94],
+          [0.80, 1.00, 0.95, 1.00]
+        ],
+        fillIntensity: 0.45,
         grass: 0x7a6aa8, grassDark: 0x4a3c72,
         rock: 0xa89ad0, rockDark: 0x5e5090,
         dirt: 0x6e5f9a,
@@ -379,9 +423,19 @@
         grade: { saettigung: 0.80, kontrast: 1.06, leuchten: 1.10, vignette: 0.52, hauch: 0x14182a, belichtung: 1.25 },
         sky: 0x0a0a12, horizon: 0x3a3a56,
         fog: 0x2a2a40, fogDensity: 0.0040,
-        sun: 0xf0f0ff, sunIntensity: 2.2,
-        ambientSky: 0x9098c0, ambientGround: 0x50506a, ambientIntensity: 1.8,
-        fillIntensity: 0.7,
+        sun: 0xf0f0ff, sunIntensity: 2.0,
+        ambientSky: 0x9098c0, ambientGround: 0x50506a, ambientIntensity: 0.30,
+
+        /* Der Mond hat keine Lufthuelle, die Licht streut. Der Schatten faellt
+           deshalb haerter und tiefer als auf jeder anderen Stage — das ist
+           kein Fehler, sondern das Merkmal des Ortes. */
+        rampe: [
+          [0.00, 0.24, 0.26, 0.38],
+          [0.40, 0.58, 0.60, 0.70],
+          [0.68, 0.88, 0.89, 0.94],
+          [0.86, 1.00, 1.00, 1.00]
+        ],
+        fillIntensity: 0.25,
         grass: 0x8a8a98, grassDark: 0x50505e,
         rock: 0xb0b0be, rockDark: 0x5a5a68,
         dirt: 0x70707e,

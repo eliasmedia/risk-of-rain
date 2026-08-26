@@ -205,10 +205,16 @@
         }
       }
 
-      if (active.soul) {
+      /* Ein Wisp je Tod — und der Wisp selbst zaehlt nicht.
+
+         Ohne die Markierung spawnt der Tod eines Wisps den naechsten, dessen
+         Tod wieder einen, und nach einer Minute steht nur noch Soul auf der
+         Karte. Der Markierte gibt beim Sterben nichts mehr weiter. */
+      if (active.soul && !m.body.ausSoul) {
         const def = ROR.Data.monster('lesser_wisp');
-        if (def) ROR.Monsters.spawn(def, ROR.Difficulty.spawnLevel,
+        const w = def && ROR.Monsters.spawn(def, ROR.Difficulty.spawnLevel,
           pos.clone().setY(pos.y + 2.5));
+        if (w) w.body.ausSoul = true;
       }
     }
   };

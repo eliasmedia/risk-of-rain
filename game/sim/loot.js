@@ -139,14 +139,32 @@
     drop(position, def) {
       if (!group) Loot.init();
       const mesh = ROR.Attire.pickupModel(def);
-      mesh.position.copy(position).setY(position.y + 0.9);
       group.add(mesh);
+
+      /* Der Boden entscheidet, wo das Item liegt — nicht der Sterbeort.
+
+         Fliegende Gegner (Wisp, Vagrant, Imp im Sprung) starben oft weit
+         ueber dem Boden, und ihr Item blieb genau dort schweben: sichtbar,
+         aber unerreichbar. Liegt der Boden tiefer, faellt das Item erst
+         hinunter und zeigt sich dann wie gewohnt. */
+      const st = ROR.Stage.current;
+      let boden = position.y;
+      if (st && st.supportAt) {
+        const b = st.supportAt(position.x, position.z, position.y).y;
+        if (b < boden) boden = b;
+      }
+
+      const faellt = position.y - boden > 1.2;
+      mesh.position.copy(position).setY(faellt ? position.y : boden + 0.9);
+      if (faellt) mesh.scale.setScalar(0.7);
 
       drops.push({
         def: def, mesh: mesh,
-        phase: 'steigt',
+        phase: faellt ? 'faellt' : 'steigt',
+        vy: 0,
+        boden: boden,
         start: mesh.position.clone(),
-        hoehe: position.y + 2.4,
+        hoehe: boden + 2.4,
         t: 0, life: 0
       });
       return mesh;
@@ -162,7 +180,18 @@
         d.life += dt;
         d.mesh.rotation.y += dt * 1.5;
 
-        if (d.phase === 'steigt') {
+        if (d.phase === 'faellt') {
+          d.vy -= 30 * dt;
+          d.mesh.position.y += d.vy * dt;
+          if (d.mesh.position.y <= d.boden + 0.9) {
+            d.mesh.position.y = d.boden + 0.9;
+            d.mesh.scale.setScalar(0.4);
+            d.phase = 'steigt';
+            d.start.copy(d.mesh.position);
+            d.t = 0;
+          }
+
+        } else if (d.phase === 'steigt') {
           d.t += dt / 0.45;
           // Weich ausschwingen statt gleichmäßig steigen.
           const k = 1 - Math.pow(1 - Math.min(1, d.t), 3);

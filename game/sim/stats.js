@@ -65,6 +65,11 @@
       if (out.moveSpeed < 0) out.moveSpeed = 0;
       if (out.attackSpeed < 0.1) out.attackSpeed = 0.1;
 
+      /* Sinkt das Maximum (Shaped Glass, Transcendence), darf der aktuelle
+         Wert nicht darüber stehen bleiben — sonst zeigt das HUD 110/55. */
+      if (body.health > out.maxHealth) body.health = out.maxHealth;
+      if (body.shield > out.maxShield) body.shield = out.maxShield;
+
       return out;
     },
 

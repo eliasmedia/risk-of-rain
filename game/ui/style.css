@@ -826,3 +826,188 @@ body.touch-an #diffwrap { top: 30px; width: min(220px, 26vw); }
   margin-right: 6px;
 }
 .skill.passive .key { font-size: 12px; }
+
+
+/* ====================================================== Startbildschirm neu
+
+   Aufbau: Kopf, drei Spalten, Fuss. Der Startbildschirm soll ohne Scrollen
+   auskommen — alles Weitere liegt in Tafeln, die sich darueberlegen. */
+
+.menu-innen { display: flex; flex-direction: column; height: 100%;
+  max-width: 1240px; margin: 0 auto; padding: 14px 22px 16px; gap: 12px; }
+
+.menu-innen .kopf { text-align: center; flex: 0 0 auto; }
+/* Kleiner als der alte Titel: die Kopfzeile hat vorher 240 Pixel Hoehe
+   gekostet, wodurch die vierte Faehigkeit in der Detailspalte unter den
+   Rand rutschte. Ziel ist eine Ansicht ohne Scrollen. */
+.menu-innen .kopf h1 { margin: 0; font-size: clamp(28px, 4.4vw, 50px); }
+.menu-innen .kopf .unter { margin: 2px 0 0; font-size: 10px; }
+
+.spalten { flex: 1 1 auto; display: grid; gap: 16px; min-height: 0;
+  grid-template-columns: minmax(180px, 225px) minmax(200px, 1fr) minmax(280px, 430px); }
+
+/* ------------------------------------------------------- Figurenliste */
+
+.figurliste { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; min-height: 0; }
+.figurliste .figur {
+  display: flex; align-items: center; gap: 10px; text-align: left;
+  padding: 9px 11px; background: rgba(14, 21, 28, 0.7);
+  border: 1px solid var(--edge); color: var(--ink); cursor: pointer;
+  font: var(--ui); letter-spacing: 0.03em;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+}
+.figurliste .figur:hover { background: rgba(26, 38, 50, 0.85); }
+.figurliste .figur.an { border-color: var(--gold); background: rgba(40, 34, 16, 0.8); }
+.figurliste .figur.locked { opacity: 0.42; cursor: not-allowed; }
+.figurliste .marke { width: 12px; height: 30px; flex: 0 0 auto;
+  background: linear-gradient(var(--a) 0 60%, var(--b) 60% 100%); }
+.figurliste .wer { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.figurliste .wer b { font-size: 13px; }
+.figurliste .wer em { font-size: 10px; opacity: 0.6; font-style: normal;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.figurliste .schloss { margin-left: auto; font-size: 9px; opacity: 0.5; }
+
+/* ------------------------------------------------------------- Buehne */
+
+.buehne { position: relative; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(ellipse at 50% 62%, rgba(60, 84, 108, 0.30), transparent 68%);
+  border: 1px solid var(--edge); min-height: 0;
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+}
+.figur-canvas { display: block; width: 100%; height: 100%; }
+
+/* --------------------------------------------------------- Figurtafel */
+
+.figurtafel { overflow-y: auto; min-height: 0; padding-right: 4px; }
+.figurtafel h2 { margin: 0; font-size: 20px; letter-spacing: 0.08em; color: var(--ink); }
+.figurtafel .unterzeile { margin: 2px 0 8px; font-size: 11px; opacity: 0.6; }
+.figurtafel .werte { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+  margin-bottom: 10px; }
+.figurtafel .werte span { display: flex; flex-direction: column; align-items: center;
+  padding: 6px 4px; background: rgba(14, 21, 28, 0.66); border: 1px solid var(--edge);
+  font-size: 9px; letter-spacing: 0.06em; opacity: 0.75; }
+.figurtafel .werte b { font-size: 15px; opacity: 1; margin-bottom: 2px; }
+.figurtafel .gesperrt { color: #ff9a80; font-size: 11px; margin: 0 0 10px; }
+
+/* `faehigkeit` und nicht `skill`: `.skill` gehoert bereits den
+   Fertigkeitsknoepfen im HUD und ist dort auf 58x58 Pixel festgenagelt. Die
+   Menuekarten erbten diese Groesse und zeigten nur noch das Tastenkuerzel. */
+.figurtafel .faehigkeiten { display: flex; flex-direction: column; gap: 5px; }
+.figurtafel .faehigkeit { display: flex; gap: 10px; padding: 5px 10px;
+  background: rgba(14, 21, 28, 0.6); border-left: 3px solid var(--c); }
+.figurtafel .faehigkeit i { flex: 0 0 46px; text-align: center;
+  font-style: normal; font-size: 11px; font-weight: 700; color: var(--c);
+  padding-top: 1px; }
+.figurtafel .faehigkeit > div { flex: 1 1 auto; min-width: 0; }
+.figurtafel .faehigkeit b { display: block; font-size: 12px; margin-bottom: 3px; }
+.figurtafel .faehigkeit p { margin: 0; font-size: 11px; line-height: 1.4; opacity: 0.72; }
+
+/* --------------------------------------------------------------- Fuss */
+
+.menu-innen .fuss { flex: 0 0 auto; display: flex; align-items: center; gap: 12px;
+  flex-wrap: wrap; }
+.regen { display: flex; gap: 6px; }
+.regen .stufe { display: flex; flex-direction: column; align-items: center;
+  padding: 7px 14px; background: rgba(14, 21, 28, 0.7); border: 1px solid var(--edge);
+  color: var(--ink); cursor: pointer; font: var(--ui); }
+.regen .stufe.an { border-color: var(--gold); background: rgba(40, 34, 16, 0.8); }
+.regen .stufe b { font-size: 12px; }
+.regen .stufe span { font-size: 9px; opacity: 0.55; }
+
+.menu-innen .fuss .start { margin-left: auto; padding: 12px 34px;
+  background: var(--gold); color: #10161c; border: none; font: var(--ui);
+  font-weight: 700; font-size: 14px; letter-spacing: 0.1em; cursor: pointer;
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+}
+.menu-innen .fuss .start:hover { background: #ffd76a; }
+
+.tafelknoepfe { display: flex; gap: 6px; width: 100%; order: 3; }
+.tafelknoepfe .neben { flex: 1 1 0; padding: 9px 8px; background: rgba(14, 21, 28, 0.7);
+  border: 1px solid var(--edge); color: var(--ink); cursor: pointer;
+  font: var(--ui); font-size: 11px; letter-spacing: 0.06em; }
+.tafelknoepfe .neben:hover { background: rgba(26, 38, 50, 0.9); border-color: var(--gold); }
+
+/* ------------------------------------------------------------- Tafeln */
+
+.tafel { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column;
+  background: rgba(8, 12, 17, 0.97); padding: 20px 26px; }
+.tafel.versteckt { display: none; }
+.tafelkopf { display: flex; align-items: center; justify-content: space-between;
+  flex: 0 0 auto; border-bottom: 1px solid var(--edge); padding-bottom: 10px; }
+.tafelkopf h2 { margin: 0; font-size: 18px; letter-spacing: 0.1em; }
+.tafelkopf .zu { background: none; border: 1px solid var(--edge); color: var(--ink);
+  width: 32px; height: 32px; cursor: pointer; font-size: 14px; }
+.tafelkopf .zu:hover { border-color: var(--gold); color: var(--gold); }
+.tafelinhalt { flex: 1 1 auto; overflow-y: auto; padding: 16px 2px 0;
+  max-width: 900px; margin: 0 auto; width: 100%; }
+.tafelinhalt h3 { font-size: 12px; letter-spacing: 0.12em; opacity: 0.72;
+  margin: 22px 0 8px; }
+.tafelinhalt .fliess { font-size: 12px; line-height: 1.7; opacity: 0.78; margin: 0 0 12px; }
+.tafelinhalt .fliess em { color: var(--gold); font-style: normal; }
+
+.schritte { display: flex; flex-direction: column; gap: 10px; }
+.schritt { display: flex; gap: 12px; padding: 11px 12px;
+  background: rgba(14, 21, 28, 0.6); border-left: 3px solid var(--gold); }
+.schritt i { flex: 0 0 auto; width: 26px; height: 26px; display: grid; place-items: center;
+  background: var(--gold); color: #10161c; font-style: normal; font-weight: 700;
+  font-size: 12px; }
+.schritt b { display: block; font-size: 13px; margin-bottom: 3px; }
+.schritt p { margin: 0; font-size: 11.5px; line-height: 1.6; opacity: 0.75; }
+
+.tasten { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 5px; }
+.tasten div { display: flex; gap: 8px; align-items: baseline; padding: 6px 9px;
+  background: rgba(14, 21, 28, 0.6); font-size: 11px; }
+.tasten b { color: var(--gold); min-width: 68px; }
+.tasten span { opacity: 0.65; }
+
+.tafelinhalt .bilanz { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 6px; }
+.tafelinhalt .bilanz span { display: flex; flex-direction: column; align-items: center;
+  padding: 9px 4px; background: rgba(14, 21, 28, 0.66); border: 1px solid var(--edge);
+  font-size: 9px; letter-spacing: 0.06em; opacity: 0.72; }
+.tafelinhalt .bilanz b { font-size: 16px; opacity: 1; margin-bottom: 2px; }
+.tafelinhalt .zaehler { font-size: 11px; opacity: 0.6; margin-top: 10px; }
+.seedfeld { width: 100%; max-width: 320px; padding: 9px 11px;
+  background: rgba(10, 15, 20, 0.9); border: 1px solid var(--edge);
+  color: var(--ink); font: var(--ui); }
+
+/* =============================================== Pausemenue mit Items */
+
+.pause-innen .wer { margin: 4px 0 14px; }
+.pausewerte { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 5px; margin-bottom: 16px; }
+.pausewerte span { display: flex; flex-direction: column; align-items: center;
+  padding: 7px 4px; background: rgba(14, 21, 28, 0.7); border: 1px solid var(--edge);
+  font-size: 8.5px; letter-spacing: 0.06em; opacity: 0.7; }
+.pausewerte b { font-size: 13px; opacity: 1; margin-bottom: 2px; }
+
+.itemtafel { text-align: left; max-height: 34vh; overflow-y: auto; margin-bottom: 14px; }
+.itemgruppe { margin-bottom: 12px; }
+.itemgruppe h4 { margin: 0 0 5px; font-size: 9px; letter-spacing: 0.14em;
+  opacity: 0.5; font-weight: 400; }
+.itemreihe { display: flex; flex-wrap: wrap; gap: 5px; }
+.itemtafel .item { position: relative; width: 38px; height: 38px;
+  display: grid; place-items: center; background: rgba(14, 21, 28, 0.8);
+  border: 1px solid var(--c); color: var(--c); }
+.itemtafel .item i { font-style: normal; font-size: 15px; font-weight: 700; }
+.itemtafel .item .anzahl { position: absolute; right: 1px; bottom: 0;
+  font-size: 9px; color: var(--ink); background: rgba(8, 12, 17, 0.9);
+  padding: 0 2px; }
+/* Die Karte haengt am Hover — aber die Zahl daneben steht immer da, also geht
+   auch ohne Maus keine Information verloren. */
+.itemtafel .item .karte { display: none; position: absolute; bottom: 44px; left: 50%;
+  transform: translateX(-50%); width: 210px; padding: 8px 10px; z-index: 3;
+  background: rgba(8, 12, 17, 0.97); border: 1px solid var(--c); color: var(--ink);
+  text-align: left; pointer-events: none; }
+.itemtafel .item:hover .karte { display: block; }
+.itemtafel .item .karte b { display: block; font-size: 11px; margin-bottom: 3px; color: var(--c); }
+.itemtafel .item .karte p { margin: 0; font-size: 10.5px; line-height: 1.5; opacity: 0.8; }
+
+/* Schmale Fenster: aus drei Spalten wird eine Rolle. */
+@media (max-width: 860px), (max-height: 560px) {
+  .spalten { grid-template-columns: 1fr; overflow-y: auto; }
+  .buehne { min-height: 220px; }
+  .figurliste { flex-direction: row; overflow-x: auto; }
+  .figurliste .figur { flex: 0 0 auto; }
+}

@@ -50,7 +50,7 @@
       desc: 'Wisps rise from slain monsters.' },
 
     { id: 'chaos', name: 'Chaos', glyph: '⚡',
-      desc: 'Eigenbeschuss: alles trifft alles.' },
+      desc: 'Friendly fire: everything can hurt everything.' },
 
     { id: 'frailty', name: 'Frailty', glyph: '↓',
       desc: 'Fall damage is doubled — and lethal.' },
@@ -59,7 +59,7 @@
       desc: 'You start with random equipment that changes on every use.' },
 
     { id: 'rebirth', name: 'Rebirth', glyph: '♺',
-      desc: "Man startet mit einem Dio's Best Friend." },
+      desc: "You start with a Dio's Best Friend." },
 
     { id: 'metamorphosis', name: 'Metamorphosis', glyph: '∞',
       desc: 'Every stage assigns you a random survivor.' },
@@ -161,11 +161,11 @@
         new THREE.Vector3(spot.x, def.flying ? spot.y + def.hoverHeight : spot.y, spot.z),
         U.chaos.pick(ROR.Data.elitesOfTier(1)));
       if (!m) return;
-      m.body.name = 'Doppelgänger';
+      m.body.name = 'Doppelganger';
       for (const id in player.body.items) {
         ROR.Items.give(m.body, id, player.body.items[id]);
       }
-      ROR.HUD.toast('Ein Doppelgänger ist erschienen', 'bad');
+      ROR.HUD.toast('A doppelganger has appeared', 'bad');
     },
 
     rollEnigma(body) {

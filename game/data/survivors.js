@@ -347,7 +347,7 @@
 
       utility: {
         id: 'bubble_shield', name: 'Bubble Shield', glyph: 'Shift', color: 0x8fd6ff,
-        desc: 'Undurchdringliche Kuppel, 15 Sekunden lang.',
+        desc: 'An impenetrable dome for 15 seconds.',
         mode: 'press', cooldown: 25, charges: 1, cancelsSprint: false,
         fire(ctx) {
           ROR.Deployables.spawn('shield', ctx.body,

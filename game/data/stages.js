@@ -402,22 +402,23 @@
 
     {
       id: 'commencement', name: 'Commencement', subtitle: 'Der Mond',
-      order: 6, size: 240, res: 160, seaLevel: -36,
+      order: 6, size: 400, res: 240, seaLevel: -60,
       /* Kahler Fels, harte Kanten, kein Bewuchs. Am Ende steht nur noch
          der Boden, auf dem gekämpft wird. */
       /* Der Mond: dieselbe Tischform wie Titanic Plains, aber kahl, härter
          und mit höherem Wall — hier gibt es nichts als den Boden. */
+      /* Kein Zufallsgelaende: Startscheibe, Bruecke, Arena. Der Weg ist hier
+         die Inszenierung, und der darf nicht ausgewuerfelt werden. */
       terrain: {
-        shape: 'plateau',
+        shape: 'mond',
         baseHeight: 7,
-        hillAmp: 3,        hillScale: 70,
-        detailAmp: 1.1,    detailScale: 14,
-        ridgeAmp: 34,      ridgeScale: 84,
-        mesaLow: 0.52,     mesaHigh: 0.65,     mesaEdge: 0.03,
-        maskScale: 100,    maskBias: -0.04,    maskWidth: 0.28,
-        terraceStep: 7,    terraceSharp: 0.11,
-        rimInner: 0.68,    rimOuter: 0.78,     rimLip: 9,
-        shoreWarp: 0.19,   drop: 165
+        hillAmp: 2,
+        startRadius: 0.15,  startZ: 0.80,
+        arenaRadius: 0.44,  arenaZ: -0.28,
+        brueckeBreite: 0.070,
+        wallHoehe: 9,
+        rimInner: 0.99,    rimOuter: 1.0,
+        shoreWarp: 0.0,    drop: 200
       },
       palette: {
         grade: { saettigung: 0.80, kontrast: 1.06, leuchten: 1.10, vignette: 0.52, hauch: 0x14182a, belichtung: 1.25 },
@@ -443,9 +444,11 @@
         water: 0x1a1a2e,
         trunk: 0x3a3a46, leaf: 0x5a5a68, leafAlt: 0x6a6a78
       },
-      props: { detail: 1400, kinds: [
-        { kind: 'fels', count: 120 }, { kind: 'monolith', count: 30 },
-        { kind: 'saeule', count: 20 }, { kind: 'scholle', count: 14 }
+      /* Sehr wenig, und nichts Grosses: die Arena ist ein Kampfplatz, kein
+         Steinfeld. Was hier steht, verdeckt im Zweifel den Boss. */
+      props: { detail: 900, kinds: [
+        { kind: 'fels', count: 26 }, { kind: 'monolith', count: 6 },
+        { kind: 'saeule', count: 10 }, { kind: 'scholle', count: 0 }
       ] },
       sun: { azimuth: 4.2, elevation: 0.5 }
     }

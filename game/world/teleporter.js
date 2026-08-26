@@ -161,18 +161,64 @@
       return Teleporter.position;
     },
 
-    /* Mithrix erscheint sofort, sobald die Stage steht. Es gibt nichts zu
-       finden und nichts zu laden — nur ihn. */
+    /* Mithrix steht in der Mitte der Arena und wartet.
+
+       Er greift nicht an, solange man auf der Bruecke ist — der Weg dorthin
+       ist der erste Teil des Kampfes, nicht schon der Kampf. Erst wenn man die
+       Arena betritt, wacht er auf. Bis dahin sieht man ihn ueber die ganze
+       Bruecke hinweg dort stehen, und genau das ist die Inszenierung. */
     spawnMithrix(stage) {
       const def = ROR.Data.monster('mithrix');
       if (!def) return;
-      const spot = stage.findeFreiePosition(U.Rng(stage.seed ^ 0x1111), {
-        rMin: 20, rMax: 60, maxSlope: 0.15, tries: 80, platz: 6
-      }) || stage.spawn;
-      const m = ROR.Monsters.spawn(def, ROR.Difficulty.spawnLevel,
-        new THREE.Vector3(spot.x, spot.y, spot.z));
-      if (m) Teleporter.bosses.push(m);
-      ROR.HUD.toast('Mithrix erwartet dich', 'bad');
+      const t = stage.terrain;
+      const T = t.theme.terrain;
+      const mitte = new THREE.Vector3(0, 0, t.half * (T.arenaZ || -0.28));
+      mitte.y = t.heightAt(mitte.x, mitte.z);
+      const m = ROR.Monsters.spawn(def, ROR.Difficulty.spawnLevel, mitte);
+      if (!m) return;
+      Teleporter.bosses.push(m);
+
+      /* Schlafend: der Gegner-Update laesst ihn stehen, solange `schlaeft`
+         gesetzt ist. */
+      m.schlaeft = true;
+      Teleporter.mithrix = m;
+      Teleporter.arenaMitte = mitte.clone();
+      Teleporter.arenaRadius = t.half * (T.arenaRadius || 0.44);
+      ROR.HUD.toast('Mithrix wartet in der Arena', 'bad');
+
+      /* Wachen auf der Bruecke. Sie sind der Grund, warum der Weg etwas
+         kostet — ohne sie waere die Bruecke nur Laufzeit. */
+      const zStart = t.half * (T.startZ || 0.80);
+      const rng = U.Rng((stage.seed >>> 0) ^ 0x62726b);
+      const wachen = ROR.Data.monstersFor(6, null) || [];
+      const pool = wachen.length ? wachen : [ROR.Data.monster('lemurian')].filter(Boolean);
+      if (!pool.length) return;
+      for (let i = 0; i < 6; i++) {
+        const t01 = 0.18 + (i / 5) * 0.64;
+        const z = zStart + (mitte.z - zStart) * t01;
+        const x = (rng.next() - 0.5) * t.half * 0.09;
+        const y = t.heightAt(x, z);
+        if (y < t.seaLevel) continue;
+        ROR.Monsters.spawn(pool[(rng.next() * pool.length) | 0],
+          ROR.Difficulty.spawnLevel, new THREE.Vector3(x, y + 0.5, z));
+      }
+    },
+
+    /* Wacht er auf? Laeuft als Teil des Teleporter-Updates mit. */
+    pruefeArena() {
+      const m = Teleporter.mithrix;
+      if (!m || !m.schlaeft || !m.body || !m.body.alive) return;
+      const p = ROR.Game.player;
+      if (!p) return;
+      const d = Math.hypot(p.position.x - Teleporter.arenaMitte.x,
+                           p.position.z - Teleporter.arenaMitte.z);
+      // Betreten der Arena reicht; man muss nicht bis in die Mitte laufen.
+      if (d > Teleporter.arenaRadius * 0.82) return;
+      m.schlaeft = false;
+      Teleporter.mithrix = null;
+      ROR.Audio.spiel('boss');
+      ROR.Camera.addShake(0.6);
+      ROR.HUD.toast('MITHRIX ERWACHT', 'bad');
     },
 
     activate() {
@@ -211,6 +257,7 @@
     },
 
     update(dt) {
+      if (Teleporter.mithrix) Teleporter.pruefeArena();
       if (!root) return;
       const t = ROR.Engine.time;
       const p = Teleporter.parts;
@@ -275,29 +322,67 @@
       ROR.Audio.spiel('teleport');
       ROR.HUD.toast('Teleporter bereit  ·  +$' + Math.floor(gold), 'gold');
       ROR.Projectiles.spark(pos.clone().setY(pos.y + 2.6), 0x8fffa8, 5);
+      Teleporter.oeffnePortale();
+    },
+
+    /* Der Teleporter ist nicht selbst der Ausgang — er *oeffnet* ihn.
+
+       Das Standardportal steht immer. Daneben kann ein Mondportal stehen,
+       wenn man vorher an einem Newt-Altar eine Mondmuenze ausgegeben hat, und
+       nach Sky Meadow ein Himmelsportal zu Mithrix. Beide sind zusaetzlich,
+       nicht statt: man entscheidet vor Ort, wohin man will, statt an einer
+       Weiche zu landen, die das Spiel schon gestellt hat. */
+    oeffnePortale() {
+      const stage = ROR.Stage.current;
+      if (!stage || Teleporter.mode === 'bazaar') return;
+
+      const ziele = ['weiter'];
+      if (ROR.Game.bazaarOffen) ziele.push('bazaar');
+      // Nach Sky Meadow im ersten Durchgang steht der Mond offen.
+      if (ROR.Game.stageOrder === 5 && ROR.Game.loop === 0) ziele.push('commencement');
+
+      const mitte = Teleporter.position;
+      const rng = U.Rng((stage.seed >>> 0) ^ 0x9021);
+      const grund = rng.next() * U.TAU;
+
+      for (let i = 0; i < ziele.length; i++) {
+        const def = ROR.Data.interactable(
+          ziele[i] === 'bazaar' ? 'portal_lunar'
+          : ziele[i] === 'commencement' ? 'portal_himmel' : 'portal_weiter');
+        if (!def) continue;
+        /* Im Kreis um den Teleporter, mit genug Abstand, dass man nicht
+           versehentlich das falsche erwischt. */
+        const winkel = grund + (i / Math.max(1, ziele.length)) * U.TAU;
+        let platz = null;
+        for (let v = 0; v < 24 && !platz; v++) {
+          const d = 9 + v * 0.7;
+          const x = mitte.x + Math.cos(winkel) * d;
+          const z = mitte.z + Math.sin(winkel) * d;
+          if (!stage.terrain.isWalkable(x, z, 0.2)) continue;
+          if (!stage.frei(x, z, 3.2)) continue;
+          platz = { x: x, y: stage.terrain.heightAt(x, z), z: z };
+        }
+        if (!platz) platz = { x: mitte.x + Math.cos(winkel) * 9, y: mitte.y,
+                              z: mitte.z + Math.sin(winkel) * 9 };
+        const o = ROR.Interactables.spawn(def, new THREE.Vector3(platz.x, platz.y, platz.z));
+        // Zum Teleporter hin ausrichten, damit man hindurchsieht.
+        if (o) o.model.rotation.y = -winkel + Math.PI / 2;
+      }
+      ROR.HUD.toast(ziele.length > 1 ? 'Portale offen — waehle' : 'Portal offen');
     },
 
     /* Aufforderung und Bedienung laufen über dieselbe Nähe-Prüfung wie die
        Interactables, damit sich beides gleich anfühlt. */
     prompt() {
-      if (Teleporter.mode === 'bazaar') return { text: 'Bazaar verlassen', ok: true };
-      if (Teleporter.state === 'idle') return { text: 'Teleporter aktivieren', ok: true };
-      if (Teleporter.state === 'ready') {
-        return { text: ROR.Game.bazaarOffen ? 'Blaues Portal — in den Bazaar'
-                                            : 'Enter the next stage', ok: true };
-      }
+      if (Teleporter.mode === 'bazaar') return { text: 'Leave the Bazaar', ok: true };
+      if (Teleporter.state === 'idle') return { text: 'Activate the teleporter', ok: true };
+      // Ist er fertig, fuehrt der Weg ueber die Portale, nicht ueber ihn.
       return null;
     },
 
     use() {
       if (Teleporter.mode === 'bazaar') { ROR.Game.leaveBazaar(); return true; }
       if (Teleporter.state === 'idle') return Teleporter.activate();
-      if (Teleporter.state === 'ready') {
-        Teleporter.state = 'used';
-        if (ROR.Game.bazaarOffen) ROR.Game.enterBazaar();
-        else ROR.Game.nextStage();
-        return true;
-      }
       return false;
     },
 

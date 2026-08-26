@@ -59,8 +59,23 @@
 
     /* Der Newt-Altar kostet eine Mondmünze und öffnet nach dem Teleporter
        das blaue Portal in den Bazaar. */
-    { id: 'newt_altar', name: 'Newt-Altar', kind: 'newt',
-      baseCost: 0, directorCost: 12, weight: 7, color: 0x7ec8ff },
+    /* Portale. Sie werden nicht vom Director gestreut, sondern vom Teleporter
+       geoeffnet, wenn sein Ereignis durch ist. `directorCost: 0` und
+       `weight: 0` halten sie aus der Streuung heraus. */
+    { id: 'portal_weiter', name: 'Portal', kind: 'portal', ziel: 'weiter',
+      baseCost: 0, directorCost: 0, weight: 0, color: 0x6fe0c0 },
+
+    { id: 'portal_lunar', name: 'Lunar Portal', kind: 'portal', ziel: 'bazaar',
+      baseCost: 0, directorCost: 0, weight: 0, color: 0x7ec8ff },
+
+    { id: 'portal_himmel', name: 'Celestial Portal', kind: 'portal', ziel: 'commencement',
+      baseCost: 0, directorCost: 0, weight: 0, color: 0xf2c14e },
+
+    /* Der Newt-Altar wird nicht gestreut (`weight: 0`), sondern steht auf
+       ausgewaehlten Stages an einem festen, abgelegenen Platz. Ihn zu finden
+       ist der Punkt — er ist der einzige Weg in den Bazaar. */
+    { id: 'newt_altar', name: 'Newt Altar', kind: 'newt',
+      baseCost: 0, directorCost: 0, weight: 0, color: 0x7ec8ff },
 
     /* Nur im Bazaar: gegen Mondmünzen gibt es Lunar-Items — stark, aber
        jedes mit einem Nachteil. */
@@ -72,6 +87,14 @@
   ];
 
   /* Credits des Scene Directors je Stage — aus dem Wiki. */
+  /* Einzelzugriff nach Kennung — der Teleporter braucht das, um seine Portale
+     zu setzen, ohne die Streuung zu bemuehen. */
+  ROR.Data.interactable = function (id) {
+    const l = ROR.Data.Interactables;
+    for (let i = 0; i < l.length; i++) if (l[i].id === id) return l[i];
+    return null;
+  };
+
   ROR.Data.InteractableBudget = {
     0: 70,                                   // Bazaar: ein paar Kapseln
     /* Die Karten sind seit der Vergroesserung viermal so gross. Das Budget

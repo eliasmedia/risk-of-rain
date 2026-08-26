@@ -149,6 +149,54 @@
 
         /* Getrennte Schollen mit Leere dazwischen. Der Sprung von Insel zu
            Insel ist hier der Weg. */
+        /* Der Mond: kein Gelaende, sondern ein Bauwerk.
+
+           Eine Startscheibe, eine lange Bruecke, eine runde Arena — und
+           ringsum nichts. Das ist die einzige Form im Spiel, die nicht aus
+           Rauschen entsteht, weil dieser Ort nicht zufaellig sein darf: der
+           Weg ist die Inszenierung. Man sieht die Arena schon vom Anfang der
+           Bruecke aus und weiss die ganze Strecke ueber, worauf man zulaeuft. */
+        mond(x, z) {
+          const rStart = half * (T.startRadius || 0.15);
+          const rArena = half * (T.arenaRadius || 0.44);
+          const zStart = half * (T.startZ || 0.80);
+          const zArena = half * (T.arenaZ || -0.28);
+          const bBreite = half * (T.brueckeBreite || 0.070);
+          const kante = half * 0.022;
+
+          const dStart = Math.hypot(x, z - zStart);
+          const dArena = Math.hypot(x, z - zArena);
+          // Abstand zur Bruecke: sie laeuft entlang x = 0 zwischen den Scheiben.
+          const zAufStrecke = U.clamp(z, zArena, zStart);
+          const dBruecke = Math.hypot(x, z - zAufStrecke);
+
+          const auf = Math.max(
+            U.smoothstep(rStart + kante, rStart - kante, dStart),
+            U.smoothstep(rArena + kante, rArena - kante, dArena),
+            U.smoothstep(bBreite + kante, bBreite - kante, dBruecke));
+
+          /* Nur ganz flache Wellen: hier wird gekaempft, und ein Boss, der
+             hinter einer Bodenwelle verschwindet, ist kein Boss, sondern ein
+             Aergernis. */
+          let h = T.baseHeight + n.fbm(x / 46, z / 46, 2) * (T.hillAmp || 2);
+
+          /* Ein umlaufender Wall um die Arena. Er schliesst den Kampfplatz und
+             macht aus einer Flaeche einen Raum — und er faengt einen ab, der
+             im Ausweichen zu weit nach aussen geht. */
+          const wall = U.smoothstep(rArena - half * 0.05, rArena - half * 0.005, dArena)
+                     * U.smoothstep(rArena + kante, rArena - kante, dArena);
+          h += wall * (T.wallHoehe || 9);
+
+          // Bruestung an den Brueckenkanten, damit man nicht blind hinunterlaeuft.
+          const gelaender = U.smoothstep(bBreite - half * 0.016, bBreite - half * 0.002, dBruecke)
+                          * U.smoothstep(bBreite + kante, bBreite - kante, dBruecke)
+                          * U.smoothstep(rArena + kante * 2, rArena + kante * 6, dArena)
+                          * U.smoothstep(rStart + kante * 2, rStart + kante * 6, dStart);
+          h += gelaender * 2.6;
+
+          return h - (1 - auf) * T.drop;
+        },
+
         islands(x, z) {
           const r = radius(x, z);
           const feld = n.fbm(x / T.islandScale, z / T.islandScale, 3);
@@ -316,10 +364,25 @@
 
       /* Sucht eine begehbare Stelle. Wird für Startpunkt, Streuobjekte,
          Kisten und später für Gegner-Spawns benutzt. */
+      /* Wie weit nach aussen ist die Karte ueberhaupt begehbar?
+
+         Jede Form hat eine Grenze, ab der sie aufhoert: beim Plateau faellt
+         der Boden ab `rimInner` ins Nichts, in der Hoehle steigt er dort um
+         `wallRise` zur Decke an, bei den Inseln loest sich das Land auf. Die
+         Platzsuche kannte diese Grenze nicht und durfte bis 0.88 hinaus —
+         also mitten in die Wand. In der Hoehle war das besonders schlimm:
+         begehbar sind dort nur 60 %, und der Teleporter landete regelmaessig
+         auf der Rampe, wo man sich an der Wand entlangquetschen musste.
+
+         Der Abzug von 0.06 haelt zusaetzlich Abstand zur Kante selbst. */
+      const nutzAnteil = Math.max(0.3, (T.rimInner !== undefined ? T.rimInner : 0.88) - 0.06);
+      const nutzHalb = half * nutzAnteil;
+
       function findSpot(rng, opts) {
         opts = opts || {};
         const rMin = opts.rMin || 0;
-        const rMax = opts.rMax || half * 0.88;
+        // Nie ueber die begehbare Grenze hinaus, egal was der Aufrufer moechte.
+        const rMax = Math.min(opts.rMax || nutzHalb, nutzHalb);
         const maxSlope = opts.maxSlope === undefined ? 0.3 : opts.maxSlope;
         const minH = opts.minHeight === undefined ? sea + 1 : opts.minHeight;
         for (let attempt = 0; attempt < (opts.tries || 60); attempt++) {
@@ -343,6 +406,7 @@
 
       return {
         theme, mesh, water, decke, heights, size, res, half, cell, seaLevel: sea,
+        nutzHalb: nutzHalb, nutzAnteil: nutzAnteil,
         heightAt, normalAt, slopeAt, isWalkable, inBounds, findSpot, rawHeight,
         ceilingAt, hatDecke: !!decke
       };

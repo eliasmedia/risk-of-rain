@@ -162,10 +162,38 @@
       ROR.Director.beginStage(order, seed);
       Game.mountainShrines = 0;
       const anzahl = ROR.Interactables.populate(Game.stage, order, seed);
+      Game.setzeNewtAltar(order);
       ROR.Teleporter.place(Game.stage, seed);
 
       console.log('[ROR] Stage ' + order + ' »' + theme.name + '«, Seed ' + seed
                 + ', Loop ' + Game.loop + ', ' + anzahl + ' Objekte');
+    },
+
+    /* Der Newt-Altar steht nicht in der Streuung, sondern auf zwei Stages an
+       einem festen Platz.
+
+       Fest heisst hier wirklich fest: das Gelaende einer Stage haengt seit
+       dem Umbau am `mapSeed` und nicht am Durchlauf, also liegt der Altar in
+       jedem Durchlauf an derselben Stelle. Genau das ist der Sinn — man lernt
+       den Ort und weiss beim naechsten Mal, ob sich der Umweg lohnt.
+
+       Er liegt bewusst weit draussen, abseits der Wege zwischen Startpunkt und
+       Teleporter. Wer in den Bazaar will, muss ihn suchen. */
+    setzeNewtAltar(order) {
+      if (order !== 1 && order !== 3) return;
+      const def = ROR.Data.interactable('newt_altar');
+      if (!def) return;
+      const stage = Game.stage;
+      const t = stage.terrain;
+      // Eigener Zufallsstrom aus dem Kartenseed — unabhaengig vom Durchlauf.
+      const rng = ROR.Util.Rng(((t.theme.mapSeed || 0) ^ 0x4e657774) >>> 0);
+      const spot = stage.findeFreiePosition(rng, {
+        rMin: t.nutzHalb * 0.62, rMax: t.nutzHalb * 0.96,
+        maxSlope: 0.14, tries: 200, platz: 4
+      });
+      if (!spot) return;
+      const o = ROR.Interactables.spawn(def, new THREE.Vector3(spot.x, spot.y, spot.z));
+      if (o) o.model.rotation.y = Math.atan2(-spot.x, -spot.z);   // schaut zur Mitte
     },
 
     /* Alles, was nach dem Aufbau am Spieler passieren muss. */
@@ -199,6 +227,19 @@
 
     /* Der Sprung ins nächste Environment. Hier springt auch der
        Schwierigkeitskoeffizient um den Faktor 1.15. */
+    /* Der Weg zu Mithrix. Er fuehrt ueber das Himmelsportal, das der
+       Teleporter auf Sky Meadow zusaetzlich oeffnet — also eine Entscheidung
+       und keine Weiche, die das Spiel schon gestellt hat. */
+    enterCommencement() {
+      const rest = Math.floor(Game.player.gold);
+      if (rest > 0) { Game.player.gold = 0; Game.player.addExp(rest); }
+      Game.stagesCleared++;
+      ROR.Difficulty.advanceStage();
+      Game.stageOrder = 6;
+      Game.buildWorld(6, (Game.seed + Game.stagesCleared * 0x9e3779b9) >>> 0);
+      Game.afterStage();
+    },
+
     /* Der Bazaar liegt zwischen den Stages: man geht hinein, kauft mit
        Mondmünzen und kommt an derselben Stelle wieder heraus. Deshalb zählt
        er weder als Stage noch für den Koeffizienten. */
@@ -236,13 +277,12 @@
       Game.stagesCleared++;
       ROR.Difficulty.advanceStage();
 
-      /* Nach Sky Meadow steht im ersten Durchgang Commencement an — das ist
-         das Ende des Laufs. Wer weiterspielt, landet danach wieder bei
-         Stage 1 und der Loop beginnt. */
-      if (Game.stageOrder === 5 && Game.loop === 0) Game.stageOrder = 6;
-      else if (Game.stageOrder >= 6) { Game.stageOrder = 1; Game.loop++; }
+      /* Der Weg nach Commencement laeuft ueber das Himmelsportal, nicht
+         automatisch. Nach Sky Meadow geht es hier also zurueck auf Stage 1
+         und in den naechsten Loop — wer zu Mithrix will, nimmt das zweite
+         Portal, das der Teleporter dort oeffnet. */
+      if (Game.stageOrder >= 5) { Game.stageOrder = 1; Game.loop++; }
       else Game.stageOrder++;
-      if (Game.stageOrder > 5 && Game.stageOrder !== 6) { Game.stageOrder = 1; Game.loop++; }
       const seed = (Game.seed + Game.stagesCleared * 0x9e3779b9) >>> 0;
       Game.buildWorld(Game.stageOrder, seed);
       Game.afterStage();

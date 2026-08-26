@@ -86,6 +86,108 @@
     return g;
   }
 
+  /* Ein Portal: ein stehender Ring mit einer flimmernden Scheibe darin.
+     Bewusst gross und von weitem sichtbar — man soll aus der Ferne erkennen,
+     dass die Stage einen Ausgang hat, und bei mehreren auch, welchen. */
+  function buildPortal(def) {
+    const g = new THREE.Group();
+    // Sockel
+    box(g, 2.6, 0.3, 1.2, 0x3a3f46, 0, 0.15, 0);
+    // Ring
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(2.0, 0.22, 6, 20), mat(0x4e5560));
+    ring.position.y = 2.4;
+    ring.castShadow = true;
+    g.add(ring);
+    // Zwei Streben, damit der Ring nicht schwebt
+    for (let k = -1; k <= 1; k += 2) {
+      const st = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 1.1, 5), mat(0x4e5560));
+      st.position.set(k * 1.35, 0.6, 0);
+      st.rotation.z = -k * 0.28;
+      g.add(st);
+    }
+    // Die Scheibe im Ring
+    const scheibe = new THREE.Mesh(new THREE.CircleGeometry(1.85, 20),
+      new THREE.MeshBasicMaterial({ color: def.color, transparent: true, opacity: 0.55,
+                                    side: THREE.DoubleSide, depthWrite: false,
+                                    blending: THREE.AdditiveBlending }));
+    scheibe.position.y = 2.4;
+    scheibe.userData.role = 'glow';
+    g.add(scheibe);
+    // Ein zweiter, kleinerer Ring dreht sich gegenlaeufig
+    const innen = new THREE.Mesh(new THREE.TorusGeometry(1.5, 0.07, 5, 16),
+      new THREE.MeshBasicMaterial({ color: def.color, transparent: true, opacity: 0.8,
+                                    depthWrite: false, blending: THREE.AdditiveBlending }));
+    innen.position.y = 2.4;
+    innen.userData.role = 'ring';
+    g.add(innen);
+    return g;
+  }
+
+  /* Der Newt-Altar. Er teilt sich mit den Schreinen nichts mehr: eine flache
+     Schale auf einem Steinsockel, davor die kauernde Gestalt des Newt, und
+     ueber der Schale ein Mondlicht. Wer ihn einmal gesehen hat, erkennt ihn
+     im Vorbeilaufen wieder — und darum geht es, denn er steht abseits. */
+  function buildNewt(def) {
+    const g = new THREE.Group();
+    // Stufenpodest
+    box(g, 3.0, 0.24, 3.0, 0x4a4640, 0, 0.12, 0);
+    box(g, 2.2, 0.26, 2.2, 0x565149, 0, 0.37, 0);
+    // Schale
+    const schale = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.62, 0.42, 10), mat(0x6b665c));
+    schale.position.y = 0.71; schale.castShadow = true; g.add(schale);
+    const wasser = new THREE.Mesh(new THREE.CircleGeometry(0.82, 14),
+      new THREE.MeshBasicMaterial({ color: def.color, transparent: true, opacity: 0.7,
+                                    depthWrite: false, blending: THREE.AdditiveBlending }));
+    wasser.rotation.x = -Math.PI / 2;
+    wasser.position.y = 0.9;
+    wasser.userData.role = 'glow';
+    g.add(wasser);
+    /* Der Newt selbst: geduckter Koerper, langer Schwanz, ein Auge. Klein
+       genug, dass er nicht wie ein Gegner wirkt. */
+    const tier = new THREE.Group();
+    tier.position.set(0, 0.5, -1.05);
+    g.add(tier);
+    const koerper = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.26, 0.62, 6), mat(0x4a6f7a));
+    koerper.rotation.x = Math.PI / 2 - 0.3;
+    koerper.position.y = 0.2;
+    tier.add(koerper);
+    const kopf = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.18, 0.3, 6), mat(0x4a6f7a));
+    kopf.rotation.x = Math.PI / 2;
+    kopf.position.set(0, 0.32, -0.3);
+    tier.add(kopf);
+    const auge = new THREE.Mesh(new THREE.IcosahedronGeometry(0.07, 0),
+      new THREE.MeshBasicMaterial({ color: def.color, transparent: true, opacity: 0.95,
+                                    depthWrite: false, blending: THREE.AdditiveBlending }));
+    auge.position.set(0, 0.38, -0.42);
+    auge.userData.role = 'glow2';
+    tier.add(auge);
+    // Schwanz in drei Gliedern
+    let z = 0.28;
+    for (let i = 0; i < 3; i++) {
+      const t = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.09 - i * 0.025, 0.12 - i * 0.025, 0.32, 5), mat(0x40606a));
+      t.rotation.x = Math.PI / 2 + 0.2 * (i + 1);
+      t.position.set(0, 0.16 - i * 0.03, z);
+      tier.add(t);
+      z += 0.28;
+    }
+    // Zwei Steinstelen dahinter, damit er auch aus der Ferne auffaellt
+    for (let k = -1; k <= 1; k += 2) {
+      const st = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.24, 2.4, 5), mat(0x5f5a51));
+      st.position.set(k * 1.15, 1.2, 0.9);
+      st.rotation.z = -k * 0.08;
+      st.castShadow = true;
+      g.add(st);
+      const licht = new THREE.Mesh(new THREE.IcosahedronGeometry(0.17, 0),
+        new THREE.MeshBasicMaterial({ color: def.color, transparent: true, opacity: 0.85,
+                                      depthWrite: false, blending: THREE.AdditiveBlending }));
+      licht.position.set(k * 1.15, 2.5, 0.9);
+      licht.userData.role = 'glow' + (k > 0 ? 3 : 4);
+      g.add(licht);
+    }
+    return g;
+  }
+
   function buildShrine(def) {
     const g = new THREE.Group();
     box(g, 1.4, 0.3, 1.4, 0x5b5750, 0, 0.15, 0);
@@ -132,7 +234,8 @@
 
   const BUILDERS = {
     chest: buildChest, multishop: buildMultishop, equipment: buildBarrel,
-    drone: buildDrone, newt: buildShrine, lunar: buildBarrel, cleanse: buildShrine,
+    drone: buildDrone, newt: buildNewt, lunar: buildBarrel, cleanse: buildShrine,
+    portal: buildPortal,
     shrine_chance: buildShrine, shrine_blood: buildShrine,
     shrine_combat: buildShrine, shrine_mountain: buildShrine,
     printer: (d) => buildMachine(d, true), scrapper: (d) => buildMachine(d, false)
@@ -245,7 +348,10 @@
       /* Der Bazaar hat sein eigenes Sortiment, Commencement gar keines —
          dort steht nur noch Mithrix. */
       if (stageOrder === 6) return 0;
+      /* `weight > 0` haelt die Portale heraus: sie stehen zwar in derselben
+         Tabelle, werden aber nicht gestreut, sondern vom Teleporter gesetzt. */
       const defs = ROR.Data.Interactables.filter(function (d) {
+        if (!(d.weight > 0)) return false;
         return imBazaar ? !!d.bazaarOnly : !d.bazaarOnly;
       });
       let guard = 400;
@@ -423,6 +529,12 @@
         case 'newt':
           return { text: 'Newt Altar — 1 lunar coin (opens the Bazaar)',
                    ok: ROR.Game.lunarCoins >= 1 };
+        case 'portal':
+          return { text: d.name + ' — ' +
+                     (d.ziel === 'bazaar' ? 'to the Bazaar'
+                      : d.ziel === 'commencement' ? 'face Mithrix'
+                      : 'to the next stage'), ok: true };
+
         case 'multishop': {
           const t = Interactables.nahesTerminal(o);
           return { text: t ? t.item.name + ' — $' + o.cost : d.name,
@@ -453,6 +565,16 @@
           o.used = true;
           ROR.Loot.dropFrom(ROR.Loot[d.table], pos, body);
           break;
+
+        case 'portal': {
+          /* Ein Portal wird nicht verbraucht — es fuehrt einfach woandershin.
+             Deshalb kein `o.used`; wer davorsteht und es sich anders ueberlegt,
+             kann zurueckgehen und ein anderes nehmen. */
+          if (d.ziel === 'bazaar') ROR.Game.enterBazaar();
+          else if (d.ziel === 'commencement') ROR.Game.enterCommencement();
+          else ROR.Game.nextStage();
+          return;
+        }
 
         case 'multishop': {
           /* Das gewaehlte Terminal gibt sein Item aus, die beiden anderen

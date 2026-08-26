@@ -330,9 +330,18 @@
 
       /* Startpunkt: möglichst eben, nicht am Rand, nicht auf einem Plateau. */
       const startRng = U.Rng(seed ^ 0x1234);
-      current.spawn = findeFreiePosition(startRng, {
-        rMin: 0, rMax: terrain.half * 0.35, maxSlope: 0.12, tries: 400, platz: 4
-      }) || { x: 0, y: terrain.heightAt(0, 0), z: 0 };
+      if (theme.terrain.shape === 'mond') {
+        /* Auf dem Mond ist der Startpunkt gesetzt, nicht gesucht: er gehoert
+           auf die Startscheibe am anderen Ende der Bruecke. Die allgemeine
+           Suche kennt den Aufbau nicht und landete mitten in der Arena — der
+           ganze Weg waere damit uebersprungen gewesen. */
+        const zs = terrain.half * (theme.terrain.startZ || 0.80);
+        current.spawn = { x: 0, y: terrain.heightAt(0, zs), z: zs };
+      } else {
+        current.spawn = findeFreiePosition(startRng, {
+          rMin: 0, rMax: terrain.half * 0.35, maxSlope: 0.12, tries: 400, platz: 4
+        }) || { x: 0, y: terrain.heightAt(0, 0), z: 0 };
+      }
 
       ROR.Camera.clearance = current.clearance;
 

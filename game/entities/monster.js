@@ -230,6 +230,15 @@
     update(dt) {
       for (let i = list.length - 1; i >= 0; i--) {
         const m = list[i];
+
+        /* Schlafende Gegner stehen still. Mithrix wartet so in seiner Arena,
+           bis man sie betritt — er soll den Weg ueber die Bruecke nicht schon
+           mit Angriffen begleiten. Die Todes- und Erscheinungsstufen laufen
+           weiter, nur die KI ruht. */
+        if (m.schlaeft && m.deathFx <= 0 && m.spawnFx <= 0) {
+          animate(m, dt, 0);
+          continue;
+        }
         if (m.deathFx > 0) {
           m.deathFx -= dt;
           const k = Math.max(0, m.deathFx / 0.7);

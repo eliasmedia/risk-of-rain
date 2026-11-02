@@ -272,8 +272,8 @@ sich am Ziel orientiert. Nur Querformat.
 
 Der Ordner ist von Anfang an fertig zum Ablegen: kein Build, keine absoluten
 Pfade, alle Verweise relativ. Auf der Website wird `risk-of-rain-html/` an eine
-beliebige Stelle kopiert und mit einem Link auf `risk-of-rain.html` verknüpft —
-so wie `pokemon/` in `eliasmedia-website`. Zum Entfernen: Ordner löschen, Link
+beliebige Stelle kopiert und mit einem Link auf `risk-of-rain.html` verknüpft.
+Zum Entfernen: Ordner löschen, Link
 löschen. Nichts greift außerhalb des Ordners; `localStorage` läuft unter einem
 eigenen Präfix (`ror2:`), damit nichts mit anderen Spielen auf der Domain kollidiert.
 

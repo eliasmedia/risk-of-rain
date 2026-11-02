@@ -1,7 +1,7 @@
 # Risk of Rain — HTML Edition
 
 Ein Nachbau von *Risk of Rain 2* als eigenständige HTML-Anwendung.
-**Start: Doppelklick auf `risk-of-rain.html`.** Keine Installation, kein
+**Start: Doppelklick auf `risk-of-rain.html`** (eine Ebene über diesem Ordner). Keine Installation, kein
 Build-Schritt, keine Internetverbindung, keine einzige Bild- oder Tondatei.
 
 ---
@@ -130,6 +130,8 @@ game/
     menus.js               Startbildschirm, Figuren- und Artefaktauswahl
     mobile.js              Touch-Overlay: Joystick, Knöpfe, Blickfeld
   main.js                  Verdrahtung und Reihenfolge der Aktualisierer
+  README.md                diese Datei
+  docs/                    Plan und Figuren (PLAN.md, CHARAKTERE.md)
 ```
 
 Die Ladereihenfolge in `risk-of-rain.html` **ist** die Abhängigkeitsreihenfolge.
@@ -302,23 +304,6 @@ Lokal mit Server testen:
 ```bash
 python3 -m http.server 8792
 ```
-
-### Auf eliasmedia.at
-
-Das Spiel liegt dort als eigener Ordner `risk-of-rain/` neben `pokemon/` und
-`minecraft/` und ist unter **eliasmedia.at/risk-of-rain** erreichbar. Der einzige
-Unterschied zum Projektordner: der Einstieg heißt dort `index.html` statt
-`risk-of-rain.html`, damit die Adresse ohne Dateinamen funktioniert.
-
-Abgleich mit einem Befehl:
-
-```bash
-./deploy.sh --push
-```
-
-Das kopiert `game/` und den Einstieg ins Website-Repo, committet und lädt hoch.
-Ohne `--push` wird nur kopiert. Liegt das Website-Repo woanders, hilft
-`ROR_WEB=/pfad/zum/repo ./deploy.sh`.
 
 ---
 
